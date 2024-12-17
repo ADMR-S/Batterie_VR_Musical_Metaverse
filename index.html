@@ -2,7 +2,12 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 
     <head>
+        <!-- From generated code on Web Audio Module Drum sampler-->
+        <script type="module" src="https://mainline.i3s.unice.fr/wam_wc/wam-host/wamHost.js"> </script>
+        <script type="module" src="https://mainline.i3s.unice.fr/wam_wc/wam-plugin/wamPlugin.js"></script>
+    
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+       
         <title>Babylon Template</title>
 
         <style>
@@ -20,15 +25,40 @@
             }
         </style>
 
+        <script src="https://cdn.babylonjs.com/havok/HavokPhysics_umd.js"></script>
         <script src="https://cdn.babylonjs.com/babylon.js"></script>
+        <audio id="player" src="https://wasabi.i3s.unice.fr/WebAudioPluginBank/BasketCaseGreendayriffDI.mp3" controls loop crossOrigin="anonymous"></audio>
+        <div id="mount"></div>
 
     </head>
 
    <body>
 
+
+    <!-- From Complete generated code on Web Audio Module Drum sampler-->
+    <!--
+    <wam-host>
+        <wam-plugin
+          id="wamRemote"
+          src="https://www.webaudiomodules.com/community/plugins/burns-audio/drumsampler/index.js"
+        ></wam-plugin>
+    -->
+        <!-- OPTIONNAL <wam-plugin src="../../packages/faustPingPongDelay/plugin/index.js"></wam-plugin> -->
+    <!--  
+    </wam-host>
+    -->
+    <button id="btn-start" class="ui button">Start</button>
 	<canvas id="renderCanvas"></canvas>
 
-	<script src="script.js"></script>
+	<!--<script src="audio-player-node.js"></script>
+    <script src="operable-audio-buffer.js"></script>
+    <script src="audio-player-processor.js"></script>
+    <script src="scriptWAM.js"></script>
+    <script src="drumSampler.js"></script>
+        <script src="drumSamplerCompleteCopy.js"></script>
+        -->
+    <script src="./js/scales.js"></script>
+    <script src="./js/script.js"></script>
 
    </body>
 
