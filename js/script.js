@@ -63,6 +63,26 @@ var createScene = async function () {
     const moveSpeed = 0.1;
     addKeyboardControls(xr, moveSpeed);
 
+    // Add collision detection for the ground
+    groundAggregate.body.getCollisionObservable().add((collisionEvent) => {
+        if (collisionEvent.type === "COLLISION_STARTED") {
+            var collidedBody = null;
+            if(collisionEvent.collider != groundAggregate.body){
+                console.log("OUI")
+                collidedBody = collisionEvent.collider;
+            }
+            else{
+                console.log("NON")
+                collidedBody = collisionEvent.collidedAgainst;
+            }
+            const position = collidedBody.transformNode.position;
+            console.log("Position du sol : " + ground.position.y);
+            collidedBody.transformNode.position = new BABYLON.Vector3(position.x, ground.position.y + 5, position.z); // Adjust the y-coordinate to be just above the ground
+            collidedBody.setLinearVelocity(BABYLON.Vector3.Zero());
+            collidedBody.setAngularVelocity(BABYLON.Vector3.Zero());
+        }
+    });
+
     return scene;
 };
 

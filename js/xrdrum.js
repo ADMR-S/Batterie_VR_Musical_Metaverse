@@ -1,20 +1,10 @@
-//TODO : 
-//Intégration avec Musical Metaverse
-//Prendre en compte la vitesse du mouvement 
-//Commande pour reset l'emplacement des drumSticks
+//TODO : Commande pour reset l'emplacement des drumSticks
 //Cleaner
-//Empêcher de taper par dessous pour les tambours, autoriser pour cymbales
-//Empêcher de passer à travers un objet ? 
-//Empêcher les objets de passer à travers le sol
-//Sons différents en bordure / au centre de la peau ? (+ bordure métallique)
+//Faire cymbales
+//Prendre en compte la vitesse du mouvement 
 //Grosse caisse / Hi-Hat ? Besoin d'une pédale (appuyer sur un bouton ?)
 //Empêcher de taper dans un trigger par dessous
 //Tenir les baguettes avec la gachette interne plutôt (permet d'avoir une autre position de main plus adaptée)
-//Replace invisible cube meshes for controllers by physicsImpostors
-//Create classes for drumComponents, drumSticks
-
-//Preparer code pour demo
-//Preparer diapos oral
 
 class XRDrum{
     constructor(audioContext, scene, eventMask, xr, hk){ //Retirer eventMask ?
@@ -24,7 +14,6 @@ class XRDrum{
         this.eventMask = eventMask;
         this.wamInstance = null;
         this.drumComponents = [];
-        this.drumContainer = new BABYLON.TransformNode("drumContainer", this.scene);
         this.initializePlugin().then((wamInstance) => {
             this.wamInstance = wamInstance;
             this.snareKey = 38;
@@ -44,12 +33,9 @@ class XRDrum{
             this.hiHat = this.createHiHat();
             this.move(new BABYLON.Vector3(0, 0, 4))//NEW POSITION
         });
-        this.add6dofBehavior(this.drumContainer);//Make the drumkit movable in the VR space on selection
         this.xr = xr;
         this.drumSticks = this.createSticks(xr);
-        this.drumSoundsEnabled = false; // Initialize to false and set to true only when controllers are added
-        //Currently in pickstick, move later
-    }   
+    }
 
     async initializePlugin() {
         const hostGroupId = await setupWamHost(this.audioContext);
@@ -67,38 +53,40 @@ class XRDrum{
     }
 
     createSnare() {
-        this.createDrumComponent("snare", 0.5, 0.3, new BABYLON.Vector3(0, 0.3, 0), this.snareKey);
+        this.createDrumComponent("snare", 0.7, 0.4, new BABYLON.Vector3(0, 0.4, 0), this.snareKey);
         this.playSoundOnTrigger("snare", this.snareKey, 0.25);
     }
     createFloorTom() {
-        this.createDrumComponent("floorTom", 0.6, 0.3, new BABYLON.Vector3(0.8, 0.3, 0), this.floorTomKey);
+        this.createDrumComponent("floorTom", 0.8, 0.4, new BABYLON.Vector3(1, 0.4, 0), this.floorTomKey);
         this.playSoundOnTrigger("floorTom", this.floorTomKey, 0.25);
     }
     createMidTom() {
-        this.createDrumComponent("midTom", 0.5, 0.25, new BABYLON.Vector3(0.6, 0.8, 0.3), this.midTomKey);
+        this.createDrumComponent("midTom", 0.6, 0.3, new BABYLON.Vector3(0.75, 1, 0.4), this.midTomKey);
         this.playSoundOnTrigger("midTom", this.midTomKey, 0.25);
     }
     createHighTom() {
-        this.createDrumComponent("highTom", 0.4, 0.2, new BABYLON.Vector3(0.1, 0.7, 0.3), this.highTomKey);
+        this.createDrumComponent("highTom", 0.5, 0.25, new BABYLON.Vector3(0.15, 0.95, 0.4), this.highTomKey);
         this.playSoundOnTrigger("highTom", this.highTomKey, 0.25);
     }
     createCrashCymbal(){
-        this.createCymbalComponent("crashCymbal", 1.0, 0.07, new BABYLON.Vector3(-0.4, 1.2, 0.5));
+        this.createCymbalComponent("crashCymbal", 1.2, 0.1, new BABYLON.Vector3(-0.5, 1.6, 0.6));
         this.playSoundOnTrigger("crashCymbal", this.crashCymbalKey, 3);
     }
     createRideCymbal(){
-        this.createCymbalComponent("rideCymbal", 1.0, 0.07, new BABYLON.Vector3(1.2, 1.2, 0.5));
+        this.createCymbalComponent("rideCymbal", 1.2, 0.1, new BABYLON.Vector3(1.5, 1.6, 0.6));
         this.playSoundOnTrigger("rideCymbal", this.rideCymbalKey, 3);
     }
     createHiHat(){ 
-        this.createCymbalComponent("hiHat", 0.4, 0.07, new BABYLON.Vector3(-0.5, 0.8, 0.2));
+        this.createCymbalComponent("hiHat", 0.5, 0.1, new BABYLON.Vector3(-0.6, 1, 0.2));
         this.playSoundOnTrigger("hiHat", this.closedHiHatKey, 1);
     }
 
 
 
      move(displacementVector) {
-        this.drumContainer.position.addInPlace(displacementVector);
+        this.drumComponents.forEach(component => {
+            component.position.addInPlace(displacementVector);
+        });
     }
 
     createDrumComponentBody(name, diameter, height, drumComponentContainer){//Créer les percussions à peau (snare, kick, tom, etc.)
@@ -118,7 +106,7 @@ class XRDrum{
 
     createDrumComponentTrigger(name, diameter, height, drumComponentContainer){//Créer les peaux des percussions à peau (snare, kick, tom, etc.)
         // Create the trigger for the top surface
-        let triggerHeight = 0.07;
+        let triggerHeight = 0.1;
         const trigger = BABYLON.MeshBuilder.CreateCylinder(name + "Trigger", { diameter: diameter, height: triggerHeight }, this.scene);
         trigger.position = new BABYLON.Vector3(0, height-(triggerHeight/2), 0); //0.05 = trigger height / 2 pour aligner parfaitement avec le body
         trigger.material = new BABYLON.StandardMaterial("wireframeMaterial", this.scene);
@@ -133,7 +121,6 @@ class XRDrum{
     
     createDrumComponent(name, diameter, height, coordinates){//Créer les percussions à peau (snare, kick, tom, etc.)
         const drumComponentContainer = new BABYLON.TransformNode(name + "Container", this.scene);
-        drumComponentContainer.parent = this.drumContainer;
         
         this.createDrumComponentBody(name, diameter, height, drumComponentContainer);
 
@@ -185,45 +172,17 @@ class XRDrum{
         this.hk.onTriggerCollisionObservable.add((collision) => {
             if (collision.type === "TRIGGER_ENTERED" && collision.collidedAgainst.transformNode.id === name +"Trigger") {
                 console.log(name + " trigger entered", collision);
-                console.log("Collider : ");
-                console.log(collision.collider);
-                console.log("Collided against : ");
-                console.log(collision.collidedAgainst);
-                
-                if (!this.drumSoundsEnabled) {
-                    return; // Do not play sounds if drum sounds are disabled
-                }
 
-                const currentVelocity = new BABYLON.Vector3();
-                /* We already know collided against is a trigger so we should calculate its velocity (currently 0 but if the drum starts moving for a reason we should)
-                if(collision.collidedAgainst.transformNode.physicsBody.controllerPhysicsImpostor){
-                    console.log("Collision avec une baguette !");
-                    const controllerPhysics = collision.collidedAgainst.controllerPhysicsImpostor;
-                    currentVelocity.copyFrom(controllerPhysics.getLinearVelocity());
-                    console.log("Vitesse de la baguette : " + currentVelocity);
-                }
-                    */
-                        
-                const otherVelocity = new BABYLON.Vector3();
+                //const currentVelocity = new BABYLON.Vector3();
+                //collision.collidedAgainst.body.getLinearVelocityToRef(currentVelocity);
+                //const speed = currentVelocity.length();
+                //const intensity = Math.min(Math.max(speed * 10, 0), 127); // Scale speed to MIDI velocity range (0-127)
                 /*
-                if(collision.collider.transformNode.physicsBody.controllerPhysicsImpostor){
-                    console.log("Collision avec une baguette !"); 
-                    const controllerPhysics = collision.collider.transformNode.controllerPhysicsImpostor;
-                    otherVelocity.copyFrom(controllerPhysics.getLinearVelocity());
-                    console.log("Vitesse de la baguette : " + otherVelocity);
-                }
-                */
-                const relativeVelocity = currentVelocity.subtract(otherVelocity);
-                const speed = Math.abs(relativeVelocity.length());
-                console.log('Speed:', speed);
-                const intensity = Math.min(Math.max(speed * 10, 0), 127); // Scale speed to MIDI velocity range (0-127)
-
                 if (currentVelocity.y > 0) {
                     console.log('Upward movement detected, ignoring collision');
                     return;
                 }
-                    
-                    
+                  */  
                 if (this.wamInstance) {
                     // Joue une note lors de la collision
                     this.wamInstance.audioNode.scheduleEvents({
@@ -243,7 +202,6 @@ class XRDrum{
         });
     }
 
-    /*
     createLeg(position, parent) {
         const leg = BABYLON.MeshBuilder.CreateCylinder("leg", { diameter: 0.1, height: 1 }, this.scene);
         leg.position = position;
@@ -259,11 +217,9 @@ class XRDrum{
 
         return leg;
     }
-        */
 
     createCymbalComponent(name, diameter, height, coordinates){//Créer les cymbales (hi-hat, crash, ride, etc.)
         const drumComponentContainer = new BABYLON.TransformNode(name + "Container", this.scene);
-        drumComponentContainer.parent = this.drumContainer;
 
         this.createDrumComponentBody(name, diameter, height, drumComponentContainer);
         this.createDrumComponentTrigger(name, diameter, height, drumComponentContainer);
@@ -290,92 +246,45 @@ class XRDrum{
     }
             */
 
-    add6dofBehavior(drumContainer){
-        // Add 6-DoF behavior to the drum container
-        const sixDofBehavior = new BABYLON.SixDofDragBehavior();
-        drumContainer.addBehavior(sixDofBehavior);
-
-        // Highlight the drum container in green when selected
-        sixDofBehavior.onDragStartObservable.add(() => {
-            drumContainer.getChildMeshes().forEach(mesh => {
-                mesh.material.emissiveColor = new BABYLON.Color3(0, 1, 0); // Green color
-            });
-            this.drumSoundsEnabled = false; // Disable drum sounds when moving
-        });
-
-        sixDofBehavior.onDragEndObservable.add(() => {
-            drumContainer.getChildMeshes().forEach(mesh => {
-                mesh.material.emissiveColor = BABYLON.Color3.Black(); // Reset to default color
-            });
-            this.drumSoundsEnabled = true; // Enable drum sounds after moving
-        });
-    }
     createSticks(xr) {
-        // Create two drumsticks
-        const stickLength = 0.4; // Length of the drumstick
-        const stickDiameter = 0.02; // Diameter of the drumstick
-        const ballDiameter = 0.03; // Diameter of the ball at the tip
+        // Create two sticks
+        var stick1 = BABYLON.MeshBuilder.CreateBox("stick1", { height: 1, width: 0.1, depth: 0.1 }, this.scene);
+        var stick2 = BABYLON.MeshBuilder.CreateBox("stick2", { height: 1, width: 0.1, depth: 0.1 }, this.scene);
+        stick1.position = new BABYLON.Vector3(0, 5, 4);
+        stick2.position = new BABYLON.Vector3(0, 5, 4);
 
-        var stick = BABYLON.MeshBuilder.CreateCylinder("stick1", { height: stickLength, diameter: stickDiameter }, this.scene);
+        stick1.material = new BABYLON.StandardMaterial("wireframeMaterial", this.scene);
+        stick2.material = new BABYLON.StandardMaterial("wireframeMaterial", this.scene);
 
-        var ball = BABYLON.MeshBuilder.CreateSphere("ball1", { diameter: ballDiameter }, this.scene);
-
-        
-        ball.parent = stick;
-        
-
-        ball.position = new BABYLON.Vector3(0, stickLength / 2, 0);
-
-        stick.position = new BABYLON.Vector3(0, 5, 4);
-
-        stick.material = new BABYLON.StandardMaterial("stickMaterial", this.scene);
-        ball.material = new BABYLON.StandardMaterial("ballMaterial", this.scene);
-
-        const stick2 = stick.clone("stick2");
-        const ball2 = ball.clone("ball2");
-
-        
-        const avgPosition = stick.position.add(ball.position).scale(0.5);
-
-        //TRY TO USE MERGED MESHES INSTEAD OF CONVEX_HULL to not distinguish between ball or stick
-        /*
-        var mergeArray = [stick, ball];
-        const mergedStick1 = BABYLON.Mesh.MergeMeshes(mergeArray, false, false, false, false, true);
-        const mergedStick2 = mergedStick1.clone("stick2_merged");
-        mergedStick1.setPivotMatrix(BABYLON.Matrix.Translation(-avgPosition.x, -avgPosition.y, -avgPosition.z), false);
-        mergedStick2.setPivotMatrix(BABYLON.Matrix.Translation(-avgPosition.x, -avgPosition.y, -avgPosition.z), false);
-        
-        console.log("Merged stick 1 : " + mergedStick1.name);
-        console.log("Merged stick 2 : " + mergedStick2.name);
-        */
-        var stick1Aggregate = new BABYLON.PhysicsAggregate(stick, BABYLON.PhysicsShapeType.CONVEX_HULL, { mass: 1 }, this.scene);
-        var stick2Aggregate = new BABYLON.PhysicsAggregate(stick2, BABYLON.PhysicsShapeType.CONVEX_HULL, { mass: 1 }, this.scene);
+        var stick1Aggregate = new BABYLON.PhysicsAggregate(stick1, BABYLON.PhysicsShapeType.BOX, { mass: 1 }, this.scene);
+        var stick2Aggregate = new BABYLON.PhysicsAggregate(stick2, BABYLON.PhysicsShapeType.BOX, { mass: 1 }, this.scene);
         stick1Aggregate.body.setCollisionCallbackEnabled(true);
         stick2Aggregate.body.setCollisionCallbackEnabled(true);
         stick1Aggregate.body.setEventMask(this.eventMask);
         stick2Aggregate.body.setEventMask(this.eventMask);
 
+        const stick1Observable = stick1Aggregate.body.getCollisionObservable();
+        const stick2Observable = stick2Aggregate.body.getCollisionObservable();
+        
         xr.input.onControllerAddedObservable.add((controller) => {
             controller.onMotionControllerInitObservable.add((motionController) => {
-                this.drumSoundsEnabled = true; // Enable drum sounds when controllers are added
                 let pickedStick = null;
 
                 motionController.getComponent("xr-standard-trigger").onButtonStateChangedObservable.add((button) => {
                     if (button.pressed) {
-                        pickedStick = this.pickStick(controller, stick1Aggregate, stickLength) || this.pickStick(controller, stick2Aggregate, stickLength);
-                        motionController.heldStick = pickedStick;
+                        pickedStick = this.pickStick(controller, stick1Aggregate) || this.pickStick(controller, stick2Aggregate);
                     } else {
-                        this.releaseStick(motionController.heldStick);
-                        motionController.heldStick = null;
+                        this.releaseStick(pickedStick);
+                        pickedStick = null;
                     }
                 });
             });
         });
-
+        
         return { stick1Aggregate, stick2Aggregate };
     }
 
-    pickStick(controller, stickAggregate, stickLength) {
+    pickStick(controller, stickAggregate){
         console.log("Déclenchement de pickStick");
         const meshUnderPointer = this.xr.pointerSelection.getMeshUnderPointer(controller.uniqueId);
         if(meshUnderPointer){
@@ -390,21 +299,11 @@ class XRDrum{
             stickAggregate.body.setPrestepType(BABYLON.PhysicsPrestepType.TELEPORT);
             stickAggregate.body.setCollisionCallbackEnabled(true);
             stickAggregate.body.setEventMask(this.eventMask);
-            stickAggregate.transformNode.setParent(controller.grip);
-            stickAggregate.transformNode.position = new BABYLON.Vector3(0, 0, stickLength/4); // Adjust position to remove offset
-            stickAggregate.transformNode.rotationQuaternion = new BABYLON.Quaternion.RotationAxis(BABYLON.Axis.X, Math.PI / 2); // Align with the hand
-            
-            //DOES NOT WORK, RETURNS NULL, BUT SEEMS TO FIND THE FUNCTION ? FIND WHY
-            /*
-            var impostor = controller.physics.getImpostorForController(controller); //To be able to calculate velocity when hitting
-            console.log("Impostor : ");
-            console.log(impostor);
-            */
-
-            // Set velocity to a null vector to stop movement if any
-            stickAggregate.body.setLinearVelocity(BABYLON.Vector3.Zero());
-            stickAggregate.body.setAngularVelocity(BABYLON.Vector3.Zero());
-         
+            //TODO
+            //stickAggregate.transformNode.addBehavior(handConstraintBehavior);
+            stickAggregate.transformNode.setParent(controller.grip); // Ensure the stick follows the controller
+            stickAggregate.transformNode.position = BABYLON.Vector3.Zero(); // Teleport to the hand
+            //stickAggregate.transformNode.rotationQuaternion = BABYLON.Quaternion.Identity(); // Match rotation to the controller
             return stickAggregate;
         }
         return null;
@@ -414,9 +313,7 @@ class XRDrum{
     releaseStick(stickAggregate){
         if (stickAggregate) {
             stickAggregate.body.setMotionType(BABYLON.PhysicsMotionType.DYNAMIC);
-            stickAggregate.body.setPrestepType(BABYLON.PhysicsPrestepType.DISABLED);
             stickAggregate.transformNode.setParent(null); // Ensure the stick is released from the controller
-            //stickAggregate.controllerPhysicsImpostor = null;
         }
     };
 }
