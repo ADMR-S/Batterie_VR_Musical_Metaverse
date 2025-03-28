@@ -52,7 +52,7 @@ window.onload = () => {
   });
 }
 
-
+// @ts-ignore
 const startRenderLoop = (engine: AbstractEngine, canvas: HTMLCanvasElement) => { //canvas inutile ?
   engine.runRenderLoop(() => {
       if (sceneToRender && sceneToRender.activeCamera) {

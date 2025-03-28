@@ -1,11 +1,11 @@
 import { Scene } from "@babylonjs/core/scene";
-import {Color3, Axis} from "@babylonjs/core";
-import { Vector3, Quaternion, Matrix } from "@babylonjs/core/Maths/math.vector";
+import {Color3 } from "@babylonjs/core";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { MeshBuilder, TransformNode, StandardMaterial, SixDofDragBehavior, PhysicsAggregate, PhysicsShapeType, PhysicsMotionType, PhysicsPrestepType } from "@babylonjs/core";
 import { WebXRDefaultExperience } from "@babylonjs/core";
-import { WebXRInputSource } from "@babylonjs/core/XR/webXRInputSource";
-import { WebXRControllerPhysics } from "@babylonjs/core/XR/features/WebXRControllerPhysics";
-import { Observable } from "@babylonjs/core/Misc/observable";
+//import { WebXRInputSource } from "@babylonjs/core/XR/webXRInputSource";
+//import { WebXRControllerPhysics } from "@babylonjs/core/XR/features/WebXRControllerPhysics";
+//import { Observable } from "@babylonjs/core/Misc/observable";
 import XRDrumstick from "./xrDrumstick";
 
 //TODO : 
@@ -50,8 +50,8 @@ class XRDrumKit {
     hiHat: TransformNode;
     closedHiHatKey: number = 42;
     openHiHatKey: number = 46;
-    log = true;
-
+    log = false;
+    
     constructor(audioContext: AudioContext, scene: Scene, eventMask: number, xr: WebXRDefaultExperience, hk: any) {
         this.audioContext = audioContext;
         this.hk = hk;
@@ -77,7 +77,7 @@ class XRDrumKit {
         for(var i=0; i<2; i++){
             this.drumsticks[i] = new XRDrumstick(this.xr, this, this.scene, this.eventMask);
         }
-        //Currently in pickstick, move later
+                //Currently in pickstick, move later
     }   
 
     async initializePlugin() {
@@ -220,27 +220,25 @@ class XRDrumKit {
     playSoundOnTrigger(name: string, midiKey: number, duration: number) { //duration in seconds
         this.hk.onTriggerCollisionObservable.add((collision: any) => {
             if (collision.type === "TRIGGER_ENTERED" && collision.collidedAgainst.transformNode.id === name + "Trigger") {
-                if (this.log){
-                console.log(name + " trigger entered", collision);
-                console.log("Collider : ");
-                console.log(collision.collider);
-                console.log("Collided against : ");
-                console.log(collision.collidedAgainst);
+                if (this.log) {
+                    console.log(name + " trigger entered", collision);
+                    console.log("Collider : ");
+                    console.log(collision.collider);
+                    console.log("Collided against : ");
+                    console.log(collision.collidedAgainst);
                 }
                 if (!this.drumSoundsEnabled) {
                     return; // Do not play sounds if drum sounds are disabled
                 }
-                for(var i = 0; i<this.drumsticks.length ; i++){
-                    if (collision.collider.transformNode.id === this.drumsticks[i].drumstickAggregate.transformNode.id){
+                var currentVelocity = 100;
+                for (var i = 0; i < this.drumsticks.length; i++) {
+                    if (collision.collider.transformNode.id === this.drumsticks[i].drumstickAggregate.transformNode.id) {
                         console.log("Collision avec le drumstick : " + this.drumsticks[i].drumstickAggregate.transformNode.id);
-                        if(this.drumsticks[i].controllerAttached){
-                            console.log(this.drumsticks[i].getControllerVelocity(this.xr))
-                        }
+                        console.log("Vitesse linéaire de la baguette : ", this.drumsticks[i].getVelocity().length());
+                        console.log("Vitesse angulaire de la baguette : ", this.drumsticks[i].getAngularVelocity().length());
+                        currentVelocity = this.drumsticks[i].getVelocity().length() + this.drumsticks[i].getAngularVelocity().length();
                     }
                 }
-            
-
-
                 //const currentVelocity = new Vector3();
                 /* We already know collided against is a trigger so we should calculate its velocity (currently 0 but if the drum starts moving for a reason we should)
                 if(collision.collidedAgainst.transformNode.physicsBody.controllerPhysicsImpostor){
@@ -284,12 +282,12 @@ class XRDrumKit {
                     this.wamInstance.audioNode.scheduleEvents({
                         type: 'wam-midi',
                         time: this.audioContext.currentTime,
-                        data: { bytes: new Uint8Array([0x90, midiKey, 100]) } // Note ON with intensity
+                        data: { bytes: new Uint8Array([0x90, midiKey, currentVelocity]) } // Note ON with intensity
                     });
                     this.wamInstance.audioNode.scheduleEvents({
                         type: 'wam-midi',
                         time: this.audioContext.currentTime + duration,
-                        data: { bytes: new Uint8Array([0x80, midiKey, 100]) } // Note OFF
+                        data: { bytes: new Uint8Array([0x80, midiKey, currentVelocity]) } // Note OFF
                     });
                 }
             } else {

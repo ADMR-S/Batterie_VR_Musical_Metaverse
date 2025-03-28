@@ -16,7 +16,7 @@ import { CreateSceneClass } from "../createScene";
 import "@babylonjs/core/Debug/debugLayer";
 import "@babylonjs/inspector";
 import "@babylonjs/loaders/glTF";
-import { Mesh, MeshBuilder, PhysicsAggregate, PhysicsShapeType, PhysicsPrestepType, WebXRControllerPhysics } from "@babylonjs/core";
+import { Mesh, MeshBuilder, PhysicsAggregate, PhysicsShapeType, PhysicsPrestepType } from "@babylonjs/core";
 import { AbstractEngine } from "@babylonjs/core/Engines/abstractEngine";
 import HavokPhysics from "@babylonjs/havok";
 
@@ -26,8 +26,9 @@ import XRDrumKit from "../xrDrumKit";
 export class XRSceneWithHavok implements CreateSceneClass {
     preTasks = [havokModule];
 
-    
+    // @ts-ignore
     createScene = async (engine: AbstractEngine, canvas : HTMLCanvasElement, audioContext : AudioContext): Promise<Scene> => {
+    
     const scene: Scene = new Scene(engine);
 
     const light: HemisphericLight = new HemisphericLight("light", new Vector3(0, 1, 0), scene);
@@ -57,7 +58,8 @@ export class XRSceneWithHavok implements CreateSceneClass {
     const finished = hk._hknp.EventType.COLLISION_FINISHED.value;
 
     const eventMask = started | continued | finished;
-      
+    
+    // @ts-ignore
     const drum = new XRDrumKit(audioContext, scene, eventMask, xr, hk);
 
     //addScaleRoutineToSphere(sphereObservable);
@@ -141,7 +143,8 @@ function addXRControllersRoutine(scene: Scene, xr: any, eventMask: number) {
     // Add physics to controllers when the mesh is loaded
     xr.input.onControllerAddedObservable.add((controller: any) => {
       controller.onMotionControllerInitObservable.add((motionController: any) => {
-          motionController.onModelLoadedObservable.add((mc: any) => {
+        // @ts-ignore  
+        motionController.onModelLoadedObservable.add((mc: any) => {
                 
                 console.log("Ajout d'un mesh au controller");
                 

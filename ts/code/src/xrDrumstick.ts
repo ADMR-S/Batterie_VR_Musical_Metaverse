@@ -1,13 +1,12 @@
 import { WebXRInputSource } from "@babylonjs/core/XR/webXRInputSource";
-import { WebXRControllerPhysics } from "@babylonjs/core/XR/features/WebXRControllerPhysics";
-import { Observable } from "@babylonjs/core/Misc/observable";
+//import { WebXRControllerPhysics } from "@babylonjs/core/XR/features/WebXRControllerPhysics";
+//import { Observable } from "@babylonjs/core/Misc/observable";
 import { Scene } from "@babylonjs/core/scene";
-import { MeshBuilder, StandardMaterial, PhysicsAggregate, PhysicsShapeType, PhysicsMotionType, PhysicsPrestepType, FlowGraphBitwiseXorBlock } from "@babylonjs/core";
+import { MeshBuilder, StandardMaterial, PhysicsAggregate, PhysicsShapeType, PhysicsMotionType, PhysicsPrestepType } from "@babylonjs/core";
 import { Vector3, Quaternion, Axis } from "@babylonjs/core/Maths/math";
 import { WebXRDefaultExperience } from "@babylonjs/core/XR/webXRDefaultExperience";
-import { PhysicsImpostor } from "@babylonjs/core/Physics/physicsImpostor";
+//import { PhysicsImpostor } from "@babylonjs/core/Physics/physicsImpostor";
 import XRDrumKit from "./xrDrumKit";
-//TODO : Déplacer code sticks ici
 
 class XRDrumstick {
 
@@ -16,12 +15,19 @@ class XRDrumstick {
     scene: Scene;
     eventMask: number;
     controllerAttached : WebXRInputSource | null = null;
+    private previousPosition: Vector3 = new Vector3();
+    private velocity: Vector3 = new Vector3();
+    private lastUpdateTime: number = performance.now();
+    private previousRotation: Quaternion = new Quaternion();
+    private angularVelocity: Vector3 = new Vector3();
+    log = true;
 
     constructor(xr : WebXRDefaultExperience, xrDrumKit : XRDrumKit, scene: Scene, eventMask: number) {
         this.eventMask = eventMask;
         this.scene = scene;
         this.drumstickAggregate = this.createDrumstick(xr);
         this.xrDrumKit = xrDrumKit;
+        scene.onBeforeRenderObservable.add(() => this.updateVelocity());
     }
 
     createDrumstick(xr: WebXRDefaultExperience) {
@@ -61,6 +67,7 @@ class XRDrumstick {
         xr.input.onControllerAddedObservable.add((controller: WebXRInputSource) => {
             controller.onMotionControllerInitObservable.add((motionController: any) => {
                 this.xrDrumKit.drumSoundsEnabled = true;
+                // @ts-ignore
                 let pickedStick: PhysicsAggregate | null = null;
 
                 motionController.getComponent("xr-standard-trigger").onButtonStateChangedObservable.add((button: any) => {
@@ -165,6 +172,35 @@ class XRDrumstick {
                 }
             }
         }
+    }
+
+    private updateVelocity() {
+        const currentTime = performance.now();
+        const deltaTime = (currentTime - this.lastUpdateTime) / 1000; // Convert to seconds
+        this.lastUpdateTime = currentTime;
+
+        // Update linear velocity
+        const currentPosition = this.drumstickAggregate.transformNode.getAbsolutePosition();
+        if(this.log){
+            //console.log("Current position DRUMSTICK : " + currentPosition);
+        }
+        this.velocity = currentPosition.subtract(this.previousPosition).scale(1 / deltaTime);
+        this.previousPosition.copyFrom(currentPosition);
+
+        // Update angular velocity
+        const currentRotation = this.drumstickAggregate.transformNode.rotationQuaternion || Quaternion.Identity();
+        const deltaRotation = currentRotation.multiply(Quaternion.Inverse(this.previousRotation));
+        deltaRotation.toEulerAnglesToRef(this.angularVelocity);
+        this.angularVelocity.scaleInPlace(1 / deltaTime);
+        this.previousRotation.copyFrom(currentRotation);
+    }
+
+    getVelocity(): Vector3 {
+        return this.velocity;
+    }
+
+    getAngularVelocity(): Vector3 {
+        return this.angularVelocity;
     }
 }
 export default XRDrumstick;
