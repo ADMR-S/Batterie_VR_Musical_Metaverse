@@ -7,6 +7,8 @@ import { WebXRDefaultExperience } from "@babylonjs/core";
 //import { WebXRControllerPhysics } from "@babylonjs/core/XR/features/WebXRControllerPhysics";
 //import { Observable } from "@babylonjs/core/Misc/observable";
 import XRDrumstick from "./xrDrumstick";
+import { Instrument3D } from "../Instrument3D";
+import { IAudioNodeConfig, IWamConfig } from "../../types";
 
 //TODO : 
 //Intégration avec Musical Metaverse
@@ -30,7 +32,7 @@ import XRDrumstick from "./xrDrumstick";
 //Ajouter signature de la batterie
 
 
-class XRDrumKit {
+class XRDrumKit extends Instrument3D{
     audioContext: AudioContext;
     hk: any;
     scene: Scene;
@@ -59,6 +61,20 @@ class XRDrumKit {
     log = false;
     
     constructor(audioContext: AudioContext, scene: Scene, eventMask: number, xr: WebXRDefaultExperience, hk: any) {
+        var test : IWamConfig = JSON.parse("./IWamConfigDrumkit.json");
+        console.log(test);
+        var test2 : IAudioNodeConfig = JSON.parse("drumKitConfig.json");
+        console.log(test2);
+        /*
+        // Load JSON configurations asynchronously
+        Promise.all([
+            fetch("./IWamConfigDrumkit.json").then(res => res.json()),
+            fetch("drumKitConfig.json").then(res => res.json())
+        ]).then(([wamConfig, audioNodeConfig]) => {
+            console.log(wamConfig);
+            console.log(audioNodeConfig);
+            */
+        super(scene, audioContext, "XRDrumKit", {"name": "DrumKit", "url": "https://www.webaudiomodules.com/community/plugins/burns-audio/drumsampler/index.js", "root" : "", "customParameters" : "" }, {}));
         this.audioContext = audioContext;
         this.hk = hk;
         this.scene = scene;
@@ -243,7 +259,7 @@ class XRDrumKit {
                         console.log("Collision avec le drumstick : " + this.drumsticks[i].drumstickAggregate.transformNode.id);
                         console.log("Vitesse linéaire de la baguette : ", this.drumsticks[i].getVelocity().length());
                         console.log("Vitesse angulaire de la baguette : ", this.drumsticks[i].getAngularVelocity().length());
-                        currentVelocity = 5*(this.drumsticks[i].getVelocity().length() + this.drumsticks[i].getAngularVelocity().length());
+                        currentVelocity = this.drumsticks[i].getVelocity().length() + this.drumsticks[i].getAngularVelocity().length();
                     }
                 }
                 //const currentVelocity = new Vector3();

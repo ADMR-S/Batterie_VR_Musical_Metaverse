@@ -153,7 +153,6 @@ class XRDrumstick {
         }
     }
 
-    /*
     getControllerVelocity(xr: WebXRDefaultExperience) {
         
         const xrFrame = xr.baseExperience.sessionManager.currentFrame;
@@ -174,7 +173,6 @@ class XRDrumstick {
             }
         }
     }
-    */
 
     private updateVelocity() {
         const currentTime = performance.now();
