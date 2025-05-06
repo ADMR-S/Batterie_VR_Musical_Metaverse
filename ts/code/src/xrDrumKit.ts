@@ -134,16 +134,6 @@ class XRDrumKit {
 
         this.redirectConsoleToXRUI();
 
-        // Add controller position update logic
-        xr.input.onControllerAddedObservable.add((controller: WebXRInputSource) => {
-            this.scene.onBeforeRenderObservable.add(() => {
-                if (controller.grip) {
-                    const controller1Pos = controller.grip.position;
-                    const controller2Pos = this.drumsticks[1]?.controllerAttached?.grip?.position || new Vector3(0, 0, 0);
-                    this.updateControllerPositions(controller1Pos, controller2Pos);
-                }
-            });
-        });
     }
 
     // Utility function to safely stringify objects with circular references and BigInt handling
@@ -182,8 +172,8 @@ class XRDrumKit {
         this.controllerPositionText.text = positionText;
     }
 
-    updateControllerPositions(controller1Pos: Vector3, controller2Pos: Vector3) {
-        const positionText = `Controller 1: ${controller1Pos.toString()}\nController 2: ${controller2Pos.toString()}`;
+    updateControllerPositions(controllerPos: Vector3, handedness : string) {
+        const positionText = `Controller ${handedness} : ${controllerPos.toString()}\n`;
         this.updateControllerPositionText(positionText);
     }
 

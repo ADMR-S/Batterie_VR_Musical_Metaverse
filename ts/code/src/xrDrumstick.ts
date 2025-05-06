@@ -100,6 +100,12 @@ class XRDrumstick {
                     }
                 });
             });
+            this.scene.onBeforeRenderObservable.add(() => {
+                if (controller.grip) {
+                    const controllerPos = controller.grip.position;
+                    this.xrDrumKit.updateControllerPositions(controllerPos, controller.inputSource.handedness);
+                }
+            });
         });
 
         return drumstickAggregate;
