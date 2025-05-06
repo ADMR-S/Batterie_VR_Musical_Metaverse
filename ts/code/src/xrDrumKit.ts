@@ -167,8 +167,13 @@ class XRDrumKit {
         const maxLines = 20;
         const maxLineLength = 100; // Maximum characters per line
         const logBuffer: string[] = [];
+        const originalConsoleLog = console.log; // Preserve the original console.log
 
         console.log = (...args: any[]) => {
+            // Log to the browser console
+            originalConsoleLog(...args);
+
+            // Format and log to the XR UI console
             const newText = args
                 .map(arg => {
                     if (typeof arg === "object") {
