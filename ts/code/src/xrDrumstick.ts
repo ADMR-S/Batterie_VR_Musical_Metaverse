@@ -7,6 +7,7 @@ import { Vector3, Quaternion, Axis } from "@babylonjs/core/Maths/math";
 import { WebXRDefaultExperience } from "@babylonjs/core/XR/webXRDefaultExperience";
 //import { PhysicsImpostor } from "@babylonjs/core/Physics/physicsImpostor";
 import XRDrumKit from "./xrDrumKit";
+import { AdvancedDynamicTexture, TextBlock } from "@babylonjs/gui";
 
 class XRDrumstick {
 
@@ -20,6 +21,9 @@ class XRDrumstick {
     private lastUpdateTime: number = performance.now();
     private previousRotation: Quaternion = new Quaternion();
     private angularVelocity: Vector3 = new Vector3();
+    private xrUI: AdvancedDynamicTexture;
+    private positionText: TextBlock;
+    private consoleText: TextBlock;
     log = true;
 
     constructor(xr : WebXRDefaultExperience, xrDrumKit : XRDrumKit, scene: Scene, eventMask: number) {
@@ -28,6 +32,42 @@ class XRDrumstick {
         this.drumstickAggregate = this.createDrumstick(xr);
         this.xrDrumKit = xrDrumKit;
         scene.onBeforeRenderObservable.add(() => this.updateVelocity());
+
+        this.xrUI = AdvancedDynamicTexture.CreateFullscreenUI("UI");
+        this.positionText = new TextBlock();
+        this.positionText.color = "white";
+        this.positionText.fontSize = 24;
+        this.positionText.top = "-40px";
+        this.xrUI.addControl(this.positionText);
+
+        this.consoleText = new TextBlock();
+        this.consoleText.color = "white";
+        this.consoleText.fontSize = 18;
+        this.consoleText.textWrapping = true;
+        this.consoleText.resizeToFit = true;
+        this.consoleText.height = "200px";
+        this.consoleText.top = "40px";
+        this.xrUI.addControl(this.consoleText);
+
+        this.redirectConsoleToXRUI();
+    }
+
+    private redirectConsoleToXRUI() {
+        const originalConsoleLog = console.log;
+        console.log = (...args: any[]) => {
+            originalConsoleLog(...args);
+            this.consoleText.text = args.map(arg => (typeof arg === "object" ? JSON.stringify(arg) : arg)).join(" ") + "\n" + this.consoleText.text;
+            if (this.consoleText.text.length > 1000) {
+                this.consoleText.text = this.consoleText.text.substring(0, 1000); // Limit text length
+            }
+        };
+    }
+
+    private updateControllerPosition(controller: WebXRInputSource) {
+        if (controller.grip) {
+            const position = controller.grip.position;
+            this.positionText.text = `Controller Position: X=${position.x.toFixed(2)}, Y=${position.y.toFixed(2)}, Z=${position.z.toFixed(2)}`;
+        }
     }
 
     createDrumstick(xr: WebXRDefaultExperience) {
@@ -77,6 +117,10 @@ class XRDrumstick {
                         this.releaseStick(motionController.heldStick);
                     }
                 });
+            });
+
+            this.scene.onBeforeRenderObservable.add(() => {
+                this.updateControllerPosition(controller);
             });
         });
 
