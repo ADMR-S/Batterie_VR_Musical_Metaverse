@@ -91,11 +91,14 @@ class XRDrumKit {
         this.xrUI = AdvancedDynamicTexture.CreateFullscreenUI("UI");
         const consoleContainer = new Rectangle();
         consoleContainer.width = "50%";
-        consoleContainer.height = "20%";
+        consoleContainer.height = "40%";
         consoleContainer.background = "rgba(0, 0, 0, 0.5)"; // Semi-opaque black
         consoleContainer.color = "white";
         consoleContainer.thickness = 0;
-        consoleContainer.verticalAlignment = TextBlock.VERTICAL_ALIGNMENT_BOTTOM;
+        consoleContainer.verticalAlignment = TextBlock.VERTICAL_ALIGNMENT_CENTER;
+        //Décaler la console vers la gauche
+        consoleContainer.horizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_LEFT;
+        consoleContainer.left = "-25%"; // Center the console horizontally
         this.xrUI.addControl(consoleContainer);
 
         this.consoleText = new TextBlock();
@@ -112,9 +115,12 @@ class XRDrumKit {
         const originalConsoleLog = console.log;
         console.log = (...args: any[]) => {
             originalConsoleLog(...args);
-            this.consoleText.text = args.map(arg => (typeof arg === "object" ? JSON.stringify(arg) : arg)).join(" ") + "\n" + this.consoleText.text;
-            if (this.consoleText.text.length > 1000) {
-                this.consoleText.text = this.consoleText.text.substring(0, 1000); // Limit text length
+            const newText = args.map(arg => (typeof arg === "object" ? JSON.stringify(arg) : arg)).join(" ");
+            this.consoleText.text = `${newText}\n${this.consoleText.text}`; // Append new text at the top
+            const maxLines = 20; // Limit the number of lines displayed
+            const lines = this.consoleText.text.split("\n");
+            if (lines.length > maxLines) {
+                this.consoleText.text = lines.slice(0, maxLines).join("\n"); // Keep only the latest lines
             }
         };
     }
