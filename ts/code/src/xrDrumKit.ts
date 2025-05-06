@@ -1,11 +1,13 @@
 import { Scene } from "@babylonjs/core/scene";
-import {Color3 } from "@babylonjs/core";
+import { Color3 } from "@babylonjs/core";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { MeshBuilder, TransformNode, StandardMaterial, SixDofDragBehavior, PhysicsAggregate, PhysicsShapeType, PhysicsMotionType, PhysicsPrestepType } from "@babylonjs/core";
 import { WebXRDefaultExperience } from "@babylonjs/core";
 //import { WebXRInputSource } from "@babylonjs/core/XR/webXRInputSource";
 //import { WebXRControllerPhysics } from "@babylonjs/core/XR/features/WebXRControllerPhysics";
 //import { Observable } from "@babylonjs/core/Misc/observable";
+import { AdvancedDynamicTexture, Rectangle, TextBlock } from "@babylonjs/gui";
+
 import XRDrumstick from "./xrDrumstick";
 
 //TODO : 
@@ -29,7 +31,6 @@ import XRDrumstick from "./xrDrumstick";
 //EventBus Emitter
 //Ajouter signature de la batterie
 
-
 class XRDrumKit {
     audioContext: AudioContext;
     hk: any;
@@ -41,7 +42,7 @@ class XRDrumKit {
     xr: WebXRDefaultExperience;
     drumsticks: XRDrumstick[] = [];
     drumSoundsEnabled: boolean;
-    snare : TransformNode;
+    snare: TransformNode;
     snareKey: number = 38;
     floorTom: TransformNode;
     floorTomKey: number = 41;
@@ -57,7 +58,9 @@ class XRDrumKit {
     closedHiHatKey: number = 42;
     openHiHatKey: number = 46;
     log = false;
-    
+    xrUI: AdvancedDynamicTexture;
+    consoleText: TextBlock;
+
     constructor(audioContext: AudioContext, scene: Scene, eventMask: number, xr: WebXRDefaultExperience, hk: any) {
         this.audioContext = audioContext;
         this.hk = hk;
@@ -80,11 +83,41 @@ class XRDrumKit {
         this.add6dofBehavior(this.drumContainer); // Make the drumkit movable in the VR space on selection
         this.xr = xr;
         this.drumSoundsEnabled = false; // Initialize to false and set to true only when controllers are added
-        for(var i=0; i<2; i++){
+        for (var i = 0; i < 2; i++) {
             this.drumsticks[i] = new XRDrumstick(this.xr, this, this.scene, this.eventMask);
         }
-                //Currently in pickstick, move later
-    }   
+
+        // Initialize XR console
+        this.xrUI = AdvancedDynamicTexture.CreateFullscreenUI("UI");
+        const consoleContainer = new Rectangle();
+        consoleContainer.width = "50%";
+        consoleContainer.height = "20%";
+        consoleContainer.background = "rgba(0, 0, 0, 0.5)"; // Semi-opaque black
+        consoleContainer.color = "white";
+        consoleContainer.thickness = 0;
+        consoleContainer.verticalAlignment = TextBlock.VERTICAL_ALIGNMENT_BOTTOM;
+        this.xrUI.addControl(consoleContainer);
+
+        this.consoleText = new TextBlock();
+        this.consoleText.color = "white";
+        this.consoleText.fontSize = 18;
+        this.consoleText.textWrapping = true;
+        this.consoleText.resizeToFit = true;
+        consoleContainer.addControl(this.consoleText);
+
+        this.redirectConsoleToXRUI();
+    }
+
+    private redirectConsoleToXRUI() {
+        const originalConsoleLog = console.log;
+        console.log = (...args: any[]) => {
+            originalConsoleLog(...args);
+            this.consoleText.text = args.map(arg => (typeof arg === "object" ? JSON.stringify(arg) : arg)).join(" ") + "\n" + this.consoleText.text;
+            if (this.consoleText.text.length > 1000) {
+                this.consoleText.text = this.consoleText.text.substring(0, 1000); // Limit text length
+            }
+        };
+    }
 
     async initializePlugin() {
         const hostGroupId = await setupWamHost(this.audioContext);
@@ -180,11 +213,11 @@ class XRDrumKit {
     createDrumComponent(name: string, diameter: number, height: number, coordinates: Vector3) {
         const drumComponentContainer = new TransformNode(name + "Container", this.scene);
         drumComponentContainer.parent = this.drumContainer;
-        
+
         this.createDrumComponentBody(name, diameter, height, drumComponentContainer);
         this.createDrumComponentTrigger(name, diameter, height, drumComponentContainer);
-        
-        /*
+
+/*
         // Add three legs to the drum container
         const leg1 = this.createLeg(new BABYLON.Vector3(-diameter / 2, -height / 2, 0), drumContainer);
         const leg2 = this.createLeg(new BABYLON.Vector3(diameter / 2, -height / 2, 0), drumContainer);
@@ -238,17 +271,17 @@ class XRDrumKit {
                 }
                 var currentVelocity = 100;
                 for (var i = 0; i < this.drumsticks.length; i++) {
-                    //Attention en cas de collision avec la balle ? (velocité = 100 ?)
+//Attention en cas de collision avec la balle ? (velocité = 100 ?)
                     if (collision.collider.transformNode.id === this.drumsticks[i].drumstickAggregate.transformNode.id) {
                         console.log("Collision avec le drumstick : " + this.drumsticks[i].drumstickAggregate.transformNode.id);
                         console.log("Vitesse linéaire de la baguette : ", this.drumsticks[i].getVelocity().length());
                         console.log("Vitesse angulaire de la baguette : ", this.drumsticks[i].getAngularVelocity().length());
-                        currentVelocity = Math.round(10*(this.drumsticks[i].getVelocity().length() + this.drumsticks[i].getAngularVelocity().length()));
+                        currentVelocity = Math.round(10 * (this.drumsticks[i].getVelocity().length() + this.drumsticks[i].getAngularVelocity().length()));
                         console.log("Vitesse de la baguette : " + currentVelocity);
                     }
                 }
                 console.log("Vitesse de la baguette hors boucle : " + currentVelocity);
-                //const currentVelocity = new Vector3();
+//const currentVelocity = new Vector3();
                 /* We already know collided against is a trigger so we should calculate its velocity (currently 0 but if the drum starts moving for a reason we should)
                 if(collision.collidedAgainst.transformNode.physicsBody.controllerPhysicsImpostor){
                     console.log("Collision avec une baguette !");
@@ -300,7 +333,7 @@ class XRDrumKit {
                     });
                 }
             } else {
-                if(this.log){
+                if (this.log) {
                     console.log('trigger exited', collision);
                 }
             }
@@ -337,7 +370,7 @@ class XRDrumKit {
         return drumComponentContainer;
     }
 
-    /*
+/*
     createCymbalComponentBody(name, diameter, height, coordinates){
             // Create the main body of the drum
             const body = BABYLON.MeshBuilder.CreateCylinder(name + "Body", { diameter: diameter, height: height }, this.scene);

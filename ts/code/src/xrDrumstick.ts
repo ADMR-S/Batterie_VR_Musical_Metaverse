@@ -7,66 +7,37 @@ import { Vector3, Quaternion, Axis } from "@babylonjs/core/Maths/math";
 import { WebXRDefaultExperience } from "@babylonjs/core/XR/webXRDefaultExperience";
 //import { PhysicsImpostor } from "@babylonjs/core/Physics/physicsImpostor";
 import XRDrumKit from "./xrDrumKit";
-import { AdvancedDynamicTexture, TextBlock } from "@babylonjs/gui";
 
 class XRDrumstick {
 
-    xrDrumKit : XRDrumKit; //To have a reference (only used to activate drum sounds after sticks are created to avoid multiple sounds at initialization)
+    xrDrumKit: XRDrumKit; // Reference to XRDrumKit for shared console and to deactivate sounds if needed
     drumstickAggregate: PhysicsAggregate;
     scene: Scene;
     eventMask: number;
-    controllerAttached : WebXRInputSource | null = null;
+    controllerAttached: WebXRInputSource | null = null;
     private previousPosition: Vector3 = new Vector3();
     private velocity: Vector3 = new Vector3();
     private lastUpdateTime: number = performance.now();
     private previousRotation: Quaternion = new Quaternion();
     private angularVelocity: Vector3 = new Vector3();
-    private xrUI: AdvancedDynamicTexture;
-    private positionText: TextBlock;
-    private consoleText: TextBlock;
     log = true;
 
-    constructor(xr : WebXRDefaultExperience, xrDrumKit : XRDrumKit, scene: Scene, eventMask: number) {
+    constructor(xr: WebXRDefaultExperience, xrDrumKit: XRDrumKit, scene: Scene, eventMask: number) {
         this.eventMask = eventMask;
         this.scene = scene;
         this.drumstickAggregate = this.createDrumstick(xr);
         this.xrDrumKit = xrDrumKit;
         scene.onBeforeRenderObservable.add(() => this.updateVelocity());
-
-        this.xrUI = AdvancedDynamicTexture.CreateFullscreenUI("UI");
-        this.positionText = new TextBlock();
-        this.positionText.color = "white";
-        this.positionText.fontSize = 24;
-        this.positionText.top = "-40px";
-        this.xrUI.addControl(this.positionText);
-
-        this.consoleText = new TextBlock();
-        this.consoleText.color = "white";
-        this.consoleText.fontSize = 18;
-        this.consoleText.textWrapping = true;
-        this.consoleText.resizeToFit = true;
-        this.consoleText.height = "200px";
-        this.consoleText.top = "40px";
-        this.xrUI.addControl(this.consoleText);
-
-        this.redirectConsoleToXRUI();
     }
 
-    private redirectConsoleToXRUI() {
-        const originalConsoleLog = console.log;
-        console.log = (...args: any[]) => {
-            originalConsoleLog(...args);
-            this.consoleText.text = args.map(arg => (typeof arg === "object" ? JSON.stringify(arg) : arg)).join(" ") + "\n" + this.consoleText.text;
-            if (this.consoleText.text.length > 1000) {
-                this.consoleText.text = this.consoleText.text.substring(0, 1000); // Limit text length
-            }
-        };
+    private logToConsole(...args: any[]) {
+        console.log(...args); // Logs to the shared XR console in XRDrumKit
     }
 
     private updateControllerPosition(controller: WebXRInputSource) {
         if (controller.grip) {
             const position = controller.grip.position;
-            this.positionText.text = `Controller Position: X=${position.x.toFixed(2)}, Y=${position.y.toFixed(2)}, Z=${position.z.toFixed(2)}`;
+            this.logToConsole(`Controller Position: X=${position.x.toFixed(2)}, Y=${position.y.toFixed(2)}, Z=${position.z.toFixed(2)}`);
         }
     }
 
@@ -127,25 +98,24 @@ class XRDrumstick {
         return drumstickAggregate;
     }
 
-    pickStick(controller: WebXRInputSource, stickLength: number, xr : WebXRDefaultExperience) {
-        console.log("Déclenchement de pickStick");
+    pickStick(controller: WebXRInputSource, stickLength: number, xr: WebXRDefaultExperience) {
+        this.logToConsole("Déclenchement de pickStick");
         const meshUnderPointer = xr.pointerSelection.getMeshUnderPointer(controller.uniqueId);
-        if(meshUnderPointer){
-            console.log("Mesh under pointer : " + meshUnderPointer.name);
-        }
-        else{
-            console.log("Aucun mesh sous le pointeur");
+        if (meshUnderPointer) {
+            this.logToConsole("Mesh under pointer : " + meshUnderPointer.name);
+        } else {
+            this.logToConsole("Aucun mesh sous le pointeur");
         }
         if (meshUnderPointer === this.drumstickAggregate.transformNode) {
-            if(controller.grip){
+            if (controller.grip) {
                 this.drumstickAggregate.body.setMotionType(PhysicsMotionType.ANIMATED);
                 this.drumstickAggregate.body.setPrestepType(PhysicsPrestepType.TELEPORT);
                 this.drumstickAggregate.body.setCollisionCallbackEnabled(true);
                 this.drumstickAggregate.body.setEventMask(this.eventMask);
-                this.drumstickAggregate.transformNode.setParent(controller.grip);                
+                this.drumstickAggregate.transformNode.setParent(controller.grip);
                 this.controllerAttached = controller;
 
-                this.drumstickAggregate.transformNode.position = new Vector3(0, 0, stickLength/4); // Adjust position to remove offset
+                this.drumstickAggregate.transformNode.position = new Vector3(0, 0, stickLength / 4); // Adjust position to remove offset
                 this.drumstickAggregate.transformNode.rotationQuaternion = Quaternion.RotationAxis(Axis.X, Math.PI / 2); // Align with the hand
             }
             /*
@@ -181,7 +151,7 @@ class XRDrumstick {
             // Set velocity to a null vector to stop movement if any
             this.drumstickAggregate.body.setLinearVelocity(Vector3.Zero());
             this.drumstickAggregate.body.setAngularVelocity(Vector3.Zero());
-         
+
             return this.drumstickAggregate;
         }
         return null;
@@ -227,7 +197,7 @@ class XRDrumstick {
 
         // Update linear velocity
         const currentPosition = this.drumstickAggregate.transformNode.getAbsolutePosition();
-        if(this.log){
+        if (this.log) {
             //console.log("Current position DRUMSTICK : " + currentPosition);
         }
         this.velocity = currentPosition.subtract(this.previousPosition).scale(1 / deltaTime);
