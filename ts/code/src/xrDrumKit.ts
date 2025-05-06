@@ -247,6 +247,7 @@ class XRDrumKit {
                         console.log("Vitesse de la baguette : " + currentVelocity);
                     }
                 }
+                console.log("Vitesse de la baguette hors boucle : " + currentVelocity);
                 //const currentVelocity = new Vector3();
                 /* We already know collided against is a trigger so we should calculate its velocity (currently 0 but if the drum starts moving for a reason we should)
                 if(collision.collidedAgainst.transformNode.physicsBody.controllerPhysicsImpostor){
