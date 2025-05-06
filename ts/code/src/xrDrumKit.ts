@@ -171,7 +171,10 @@ class XRDrumKit {
         console.log = (...args: any[]) => {
             const newText = args
                 .map(arg => {
-                    const str = typeof arg === "object" ? JSON.stringify(arg) : String(arg);
+                    if (typeof arg === "object") {
+                        return arg ? arg.constructor.name : "unnamed Object"; // Print object name or null
+                    }
+                    const str = String(arg);
                     return str.length > maxLineLength ? str.slice(0, maxLineLength) + "..." : str;
                 })
                 .join(" ");
