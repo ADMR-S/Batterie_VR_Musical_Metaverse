@@ -60,6 +60,7 @@ class XRDrumKit {
     xrUI: AdvancedDynamicTexture;
     consoleText: TextBlock;
     controllerPositionText: TextBlock; // New text block for controller positions
+    private controllerPositions: { [handedness: string]: string } = {}; // Store positions for both controllers
 
     constructor(audioContext: AudioContext, scene: Scene, eventMask: number, xr: WebXRDefaultExperience, hk: any) {
         this.audioContext = audioContext;
@@ -170,9 +171,10 @@ class XRDrumKit {
         this.controllerPositionText.text = positionText;
     }
 
-    updateControllerPositions(controllerPos: Vector3, handedness : string) {
-        const positionText = `Controller ${handedness} : ${controllerPos.toString()}\n`;
-        this.updateControllerPositionText(positionText);
+    updateControllerPositions(controllerPos: Vector3, handedness: string) {
+        this.controllerPositions[handedness] = `Controller ${handedness}:\nPosition: ${controllerPos.toString()}\n`;
+        const combinedText = Object.values(this.controllerPositions).join("\n"); // Combine positions for both controllers
+        this.updateControllerPositionText(combinedText);
     }
 
     async initializePlugin() {
