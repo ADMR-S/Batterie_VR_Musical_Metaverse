@@ -92,14 +92,14 @@ class XRDrumKit {
 
         // Top section for controller positions
         const controllerPositionContainer = new Rectangle();
-        controllerPositionContainer.width = "25%"; 
+        controllerPositionContainer.width = "50%"; 
         controllerPositionContainer.height = "25%"; 
         controllerPositionContainer.background = "rgba(0, 0, 0, 0.5)";
         controllerPositionContainer.color = "white";
         controllerPositionContainer.thickness = 0;
         controllerPositionContainer.verticalAlignment = TextBlock.VERTICAL_ALIGNMENT_BOTTOM;
         controllerPositionContainer.horizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_LEFT;
-        controllerPositionContainer.left = "-37%"; 
+        controllerPositionContainer.left = "-25%"; 
         this.xrUI.addControl(controllerPositionContainer);
 
         this.controllerPositionText = new TextBlock();
