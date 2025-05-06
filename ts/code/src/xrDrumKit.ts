@@ -243,7 +243,7 @@ class XRDrumKit {
                         console.log("Collision avec le drumstick : " + this.drumsticks[i].drumstickAggregate.transformNode.id);
                         console.log("Vitesse linéaire de la baguette : ", this.drumsticks[i].getVelocity().length());
                         console.log("Vitesse angulaire de la baguette : ", this.drumsticks[i].getAngularVelocity().length());
-                        currentVelocity = 5*(this.drumsticks[i].getVelocity().length() + this.drumsticks[i].getAngularVelocity().length());
+                        currentVelocity = Math.round(5*(this.drumsticks[i].getVelocity().length() + this.drumsticks[i].getAngularVelocity().length()));
                         console.log("Vitesse de la baguette : " + currentVelocity);
                     }
                 }
