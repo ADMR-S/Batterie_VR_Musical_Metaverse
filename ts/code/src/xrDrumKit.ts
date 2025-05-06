@@ -60,6 +60,7 @@ class XRDrumKit {
     log = false;
     xrUI: AdvancedDynamicTexture;
     consoleText: TextBlock;
+    controllerPositionText: TextBlock; // New text block for controller positions
 
     constructor(audioContext: AudioContext, scene: Scene, eventMask: number, xr: WebXRDefaultExperience, hk: any) {
         this.audioContext = audioContext;
@@ -89,10 +90,31 @@ class XRDrumKit {
 
         // Initialize XR console
         this.xrUI = AdvancedDynamicTexture.CreateFullscreenUI("UI");
+
+        // Top section for controller positions
+        const controllerPositionContainer = new Rectangle();
+        controllerPositionContainer.width = "50%";
+        controllerPositionContainer.height = "20%";
+        controllerPositionContainer.background = "rgba(0, 0, 0, 0.5)";
+        controllerPositionContainer.color = "white";
+        controllerPositionContainer.thickness = 0;
+        controllerPositionContainer.verticalAlignment = TextBlock.VERTICAL_ALIGNMENT_TOP;
+        controllerPositionContainer.horizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_LEFT;
+        controllerPositionContainer.left = "-25%";
+        this.xrUI.addControl(controllerPositionContainer);
+
+        this.controllerPositionText = new TextBlock();
+        this.controllerPositionText.color = "white";
+        this.controllerPositionText.fontSize = 18;
+        this.controllerPositionText.textWrapping = true;
+        this.controllerPositionText.resizeToFit = true;
+        controllerPositionContainer.addControl(this.controllerPositionText);
+
+        // Bottom section for general console messages
         const consoleContainer = new Rectangle();
         consoleContainer.width = "50%";
-        consoleContainer.height = "40%";
-        consoleContainer.background = "rgba(0, 0, 0, 0.5)"; // Semi-opaque black
+        consoleContainer.height = "20%";
+        consoleContainer.background = "rgba(0, 0, 0, 0.5)";
         consoleContainer.color = "white";
         consoleContainer.thickness = 0;
         consoleContainer.verticalAlignment = TextBlock.VERTICAL_ALIGNMENT_CENTER;
@@ -123,6 +145,10 @@ class XRDrumKit {
                 this.consoleText.text = lines.slice(0, maxLines).join("\n"); // Keep only the latest lines
             }
         };
+    }
+
+    updateControllerPositionText(positionText: string) {
+        this.controllerPositionText.text = positionText;
     }
 
     async initializePlugin() {

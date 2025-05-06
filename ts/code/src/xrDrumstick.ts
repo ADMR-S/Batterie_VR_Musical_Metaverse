@@ -37,7 +37,8 @@ class XRDrumstick {
     private updateControllerPosition(controller: WebXRInputSource) {
         if (controller.grip) {
             const position = controller.grip.position;
-            this.logToConsole(`Controller Position: X=${position.x.toFixed(2)}, Y=${position.y.toFixed(2)}, Z=${position.z.toFixed(2)}`);
+            const positionText = `Controller Position: X=${position.x.toFixed(2)}, Y=${position.y.toFixed(2)}, Z=${position.z.toFixed(2)}`;
+            this.xrDrumKit.updateControllerPositionText(positionText); // Update the top console section
         }
     }
 
