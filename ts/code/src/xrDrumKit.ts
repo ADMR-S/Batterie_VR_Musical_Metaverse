@@ -135,11 +135,12 @@ class XRDrumKit {
 
     }
 
-    // Utility function to safely stringify objects with circular references and BigInt handling
-    private safeStringify(obj: any, space: number = 2): string {
+    // Utility function to safely stringify objects with circular references, BigInt handling, and depth limitation
+    private safeStringify(obj: any, space: number = 2, depthLimit: number = 5): string {
         const seen = new WeakSet();
-        //@ts-ignore
-        return JSON.stringify(obj, (key, value) => {
+
+        //@ts-ignore        
+        function replacer(key: string, value: any, currentDepth: number): any {
             if (typeof value === "bigint") {
                 return value.toString(); // Convert BigInt to string
             }
@@ -147,18 +148,31 @@ class XRDrumKit {
                 if (seen.has(value)) {
                     return "[Circular]";
                 }
+                if (currentDepth >= depthLimit) {
+                    return "[Truncated]";
+                }
                 seen.add(value);
+                return value; // Return the object to continue serialization
             }
             return value;
-        }, space);
+        }
+
+        function recursiveStringify(obj: any, currentDepth: number): any {
+            return JSON.stringify(obj, (key, value) => replacer(key, value, currentDepth + 1), space);
+        }
+
+        return recursiveStringify(obj, 0); // Start with depth 0
     }
 
     private redirectConsoleToXRUI() {
         const originalConsoleLog = console.log;
         console.log = (...args: any[]) => {
             originalConsoleLog(...args);
-            const newText = args.map(arg => (typeof arg === "object" ? this.safeStringify(arg) : arg)).join(" ");
-            this.consoleText.text = `${newText}\n${this.consoleText.text}`; // Append new text at the top
+            const newText = args
+                .map(arg => (typeof arg === "object" ? this.safeStringify(arg) : arg))
+                .join(" ");
+            const truncatedText = newText.length > 1000 ? newText.slice(0, 1000) + " [Truncated]" : newText; // Truncate long strings
+            this.consoleText.text = `${truncatedText}\n${this.consoleText.text}`; // Append new text at the top
             const maxLines = 20; // Limit the number of lines displayed
             const lines = this.consoleText.text.split("\n");
             if (lines.length > maxLines) {
