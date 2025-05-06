@@ -105,7 +105,9 @@ class XRDrumKit {
         this.controllerPositionText.color = "white";
         this.controllerPositionText.fontSize = 18;
         this.controllerPositionText.textWrapping = true;
-        this.controllerPositionText.resizeToFit = true;
+        this.controllerPositionText.resizeToFit = false; // Disable resizing to fit the text
+        this.controllerPositionText.textHorizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_LEFT; // Align text to the left
+        this.controllerPositionText.textVerticalAlignment = TextBlock.VERTICAL_ALIGNMENT_TOP; // Align text to the top
         controllerPositionContainer.addControl(this.controllerPositionText);
 
         // Center section for general console messages
@@ -134,35 +136,6 @@ class XRDrumKit {
         this.initializeSimpleConsoleLogger(); // Replace the old logging redirection with the new method
     }
 
-    // Utility function to safely stringify objects with circular references, BigInt handling, and depth limitation
-    //@ts-ignore
-    private safeStringify(obj: any, space: number = 2, depthLimit: number = 5): string {
-        const seen = new WeakSet();
-
-        //@ts-ignore
-        function replacer(key: string, value: any): any {
-            if (typeof value === "bigint") {
-                return value.toString(); // Convert BigInt to string
-            }
-            if (typeof value === "object" && value !== null) {
-                if (seen.has(value)) {
-                    return "[Circular]";
-                }
-                if (depthLimit <= 0) {
-                    return "[Truncated]";
-                }
-                seen.add(value);
-            }
-            return value;
-        }
-
-        try {
-            return JSON.stringify(obj, replacer, space);
-        } catch (error) {
-            return "[Unserializable Object]";
-        }
-    }
-
     private initializeSimpleConsoleLogger() {
         const maxLines = 20;
         const maxLineLength = 100; // Maximum characters per line
@@ -177,7 +150,7 @@ class XRDrumKit {
             const newText = args
                 .map(arg => {
                     if (typeof arg === "object") {
-                        return arg ? arg.constructor.name : "unnamed Object"; // Print object name or null
+                        return arg ? ("Objet : " + arg.constructor.name) : "unnamed Object"; // Print object name or null
                     }
                     const str = String(arg);
                     return str.length > maxLineLength ? str.slice(0, maxLineLength) + "..." : str;
