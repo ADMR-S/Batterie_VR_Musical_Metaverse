@@ -35,6 +35,7 @@ class XRDrumstick {
             const seen = new WeakSet();
             const sanitizedArgs = args.map(arg => {
                 if (typeof arg === "object") {
+                    //@ts-ignore
                     return JSON.stringify(arg, (key, value) => {
                         if (value && typeof value === "object" && seen.has(value)) {
                             return "[Circular]";
