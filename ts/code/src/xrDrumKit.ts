@@ -93,14 +93,15 @@ class XRDrumKit {
 
         // Top section for controller positions
         const controllerPositionContainer = new Rectangle();
-        controllerPositionContainer.width = "50%";
-        controllerPositionContainer.height = "20%";
+        controllerPositionContainer.width = "25%"; 
+        controllerPositionContainer.height = "25%"; 
         controllerPositionContainer.background = "rgba(0, 0, 0, 0.5)";
         controllerPositionContainer.color = "white";
         controllerPositionContainer.thickness = 0;
         controllerPositionContainer.verticalAlignment = TextBlock.VERTICAL_ALIGNMENT_TOP;
         controllerPositionContainer.horizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_LEFT;
-        controllerPositionContainer.left = "-25%";
+        controllerPositionContainer.left = "-37.5%"; 
+        controllerPositionContainer.top = "10%";
         this.xrUI.addControl(controllerPositionContainer);
 
         this.controllerPositionText = new TextBlock();
@@ -112,15 +113,16 @@ class XRDrumKit {
 
         // Bottom section for general console messages
         const consoleContainer = new Rectangle();
-        consoleContainer.width = "50%";
-        consoleContainer.height = "20%";
+        consoleContainer.width = "25%"; 
+        consoleContainer.height = "25%"; 
         consoleContainer.background = "rgba(0, 0, 0, 0.5)";
         consoleContainer.color = "white";
         consoleContainer.thickness = 0;
         consoleContainer.verticalAlignment = TextBlock.VERTICAL_ALIGNMENT_CENTER;
         //Décaler la console vers la gauche
         consoleContainer.horizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_LEFT;
-        consoleContainer.left = "-25%"; // Center the console horizontally
+        consoleContainer.left = "-37.5%"; 
+        consoleContainer.top = "35%"; 
         this.xrUI.addControl(consoleContainer);
 
         this.consoleText = new TextBlock();
