@@ -131,11 +131,11 @@ class XRDrumKit {
         this.consoleText.resizeToFit = true;
         consoleContainer.addControl(this.consoleText);
 
-        this.redirectConsoleToXRUI();
-
+        this.initializeSimpleConsoleLogger(); // Replace the old logging redirection with the new method
     }
 
     // Utility function to safely stringify objects with circular references, BigInt handling, and depth limitation
+    //@ts-ignore
     private safeStringify(obj: any, space: number = 2, depthLimit: number = 5): string {
         const seen = new WeakSet();
 
@@ -163,25 +163,25 @@ class XRDrumKit {
         }
     }
 
-    private redirectConsoleToXRUI() {
-        const originalConsoleLog = console.log;
+    private initializeSimpleConsoleLogger() {
+        const maxLines = 20;
+        const maxLineLength = 100; // Maximum characters per line
+        const logBuffer: string[] = [];
+
         console.log = (...args: any[]) => {
-            originalConsoleLog(...args);
             const newText = args
                 .map(arg => {
-                    if (typeof arg === "object") {
-                        return this.safeStringify(arg, 2, 3); // Limit depth to 3
-                    }
-                    const str = String(arg);
-                    return str.length > 1000 ? str.slice(0, 1000) + " [Truncated]" : str; // Truncate long strings
+                    const str = typeof arg === "object" ? JSON.stringify(arg) : String(arg);
+                    return str.length > maxLineLength ? str.slice(0, maxLineLength) + "..." : str;
                 })
                 .join(" ");
-            this.consoleText.text = `${newText}\n${this.consoleText.text}`; // Append new text at the top
-            const maxLines = 20; // Limit the number of lines displayed
-            const lines = this.consoleText.text.split("\n");
-            if (lines.length > maxLines) {
-                this.consoleText.text = lines.slice(0, maxLines).join("\n"); // Keep only the latest lines
+            
+            logBuffer.unshift(newText); // Add new log at the top
+            if (logBuffer.length > maxLines) {
+                logBuffer.pop(); // Remove the oldest log if buffer exceeds maxLines
             }
+
+            this.consoleText.text = logBuffer.join("\n"); // Update the XR UI console
         };
     }
 
