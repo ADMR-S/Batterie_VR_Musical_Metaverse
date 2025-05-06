@@ -93,8 +93,8 @@ class XRDrumKit {
 
         // Center section for controller positions
         const controllerPositionContainer = new Rectangle();
-        controllerPositionContainer.width = "50%"; 
-        controllerPositionContainer.height = "25%"; // Increase height
+        controllerPositionContainer.width = "40%"; 
+        controllerPositionContainer.height = "30%"; // Increase height
         controllerPositionContainer.background = "rgba(0, 0, 0, 0.5)";
         controllerPositionContainer.color = "white";
         controllerPositionContainer.thickness = 0;
@@ -113,7 +113,7 @@ class XRDrumKit {
 
         // Center section for general console messages
         const consoleContainer = new Rectangle();
-        consoleContainer.width = "50%"; 
+        consoleContainer.width = "40%"; 
         consoleContainer.height = "50%"; // Increase height
         consoleContainer.background = "rgba(0, 0, 0, 0.5)";
         consoleContainer.color = "white";
