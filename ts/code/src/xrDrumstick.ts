@@ -100,13 +100,13 @@ class XRDrumstick {
                     }
                 });
             });
-            /*
+            
             this.scene.onBeforeRenderObservable.add(() => {
                 if (controller.grip) {
                     const controllerPos = controller.grip.position;
                     this.xrDrumKit.updateControllerPositions(controllerPos, controller.inputSource.handedness);
                 }
-            });*/
+            });
         });
 
         return drumstickAggregate;
@@ -212,7 +212,7 @@ class XRDrumstick {
         // Update linear velocity
         const currentPosition = this.drumstickAggregate.transformNode.getAbsolutePosition();
         if (this.log) {
-            //console.log("Current position DRUMSTICK : " + currentPosition);
+                        //console.log("Current position DRUMSTICK : " + currentPosition);
         }
         this.velocity = currentPosition.subtract(this.previousPosition).scale(1 / deltaTime);
         this.previousPosition.copyFrom(currentPosition);
