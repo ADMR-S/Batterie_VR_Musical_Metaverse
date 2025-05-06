@@ -31,7 +31,24 @@ class XRDrumstick {
     }
 
     private logToConsole(...args: any[]) {
-        console.log(...args); // Logs to the shared XR console in XRDrumKit
+        try {
+            const seen = new WeakSet();
+            const sanitizedArgs = args.map(arg => {
+                if (typeof arg === "object") {
+                    return JSON.stringify(arg, (key, value) => {
+                        if (value && typeof value === "object" && seen.has(value)) {
+                            return "[Circular]";
+                        }
+                        seen.add(value);
+                        return value;
+                    });
+                }
+                return arg;
+            });
+            console.log(...sanitizedArgs); // Logs to the shared XR console in XRDrumKit
+        } catch (error) {
+            console.error("Error logging to console:", error);
+        }
     }
 
     private updateControllerPosition(controller: WebXRInputSource) {
@@ -91,9 +108,14 @@ class XRDrumstick {
                 });
             });
 
-            this.scene.onBeforeRenderObservable.add(() => {
-                this.updateControllerPosition(controller);
-            });
+            // Add error handling for controller model loading
+            try {
+                this.scene.onBeforeRenderObservable.add(() => {
+                    this.updateControllerPosition(controller);
+                });
+            } catch (error) {
+                console.error("Error updating controller position:", error);
+            }
         });
 
         return drumstickAggregate;
