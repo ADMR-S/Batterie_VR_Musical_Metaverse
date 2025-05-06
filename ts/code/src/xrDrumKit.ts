@@ -124,7 +124,11 @@ class XRDrumKit {
         this.consoleText.color = "white";
         this.consoleText.fontSize = 18;
         this.consoleText.textWrapping = true;
-        this.consoleText.resizeToFit = true;
+        this.consoleText.resizeToFit = false; // Disable resizing to fit the text
+        this.consoleText.textHorizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_LEFT; // Align text to the left
+        this.consoleText.textVerticalAlignment = TextBlock.VERTICAL_ALIGNMENT_TOP; // Align text to the top
+        this.consoleText.clipChildren = true; // Ensure text is clipped to the container
+        this.consoleText.clipContent = true; // Clip overflowing content
         consoleContainer.addControl(this.consoleText);
 
         this.initializeSimpleConsoleLogger(); // Replace the old logging redirection with the new method
