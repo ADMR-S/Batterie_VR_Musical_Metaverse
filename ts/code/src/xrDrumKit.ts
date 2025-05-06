@@ -146,11 +146,14 @@ class XRDrumKit {
         });
     }
 
-    // Utility function to safely stringify objects with circular references
+    // Utility function to safely stringify objects with circular references and BigInt handling
     private safeStringify(obj: any, space: number = 2): string {
         const seen = new WeakSet();
         //@ts-ignore
         return JSON.stringify(obj, (key, value) => {
+            if (typeof value === "bigint") {
+                return value.toString(); // Convert BigInt to string
+            }
             if (typeof value === "object" && value !== null) {
                 if (seen.has(value)) {
                     return "[Circular]";
