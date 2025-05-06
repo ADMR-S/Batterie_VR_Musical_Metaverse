@@ -99,7 +99,7 @@ class XRDrumKit {
         controllerPositionContainer.thickness = 0;
         controllerPositionContainer.verticalAlignment = TextBlock.VERTICAL_ALIGNMENT_TOP;
         controllerPositionContainer.horizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_LEFT;
-        controllerPositionContainer.left = "-37.5%"; 
+        controllerPositionContainer.left = "-37%"; 
         controllerPositionContainer.top = "10%";
         this.xrUI.addControl(controllerPositionContainer);
 
@@ -120,7 +120,7 @@ class XRDrumKit {
         consoleContainer.verticalAlignment = TextBlock.VERTICAL_ALIGNMENT_CENTER;
         //Décaler la console vers la gauche
         consoleContainer.horizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_LEFT;
-        consoleContainer.left = "-37.5%"; 
+        consoleContainer.left = "-37%"; 
         consoleContainer.top = "35%"; 
         this.xrUI.addControl(consoleContainer);
 
