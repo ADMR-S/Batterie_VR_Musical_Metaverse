@@ -3,7 +3,7 @@ import { Color3 } from "@babylonjs/core";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { MeshBuilder, TransformNode, StandardMaterial, SixDofDragBehavior, PhysicsAggregate, PhysicsShapeType, PhysicsMotionType, PhysicsPrestepType } from "@babylonjs/core";
 import { WebXRDefaultExperience } from "@babylonjs/core";
-//import { WebXRInputSource } from "@babylonjs/core/XR/webXRInputSource";
+import { WebXRInputSource } from "@babylonjs/core/XR/webXRInputSource";
 //import { WebXRControllerPhysics } from "@babylonjs/core/XR/features/WebXRControllerPhysics";
 //import { Observable } from "@babylonjs/core/Misc/observable";
 import { AdvancedDynamicTexture, Rectangle, TextBlock } from "@babylonjs/gui";
@@ -133,13 +133,39 @@ class XRDrumKit {
         consoleContainer.addControl(this.consoleText);
 
         this.redirectConsoleToXRUI();
+
+        // Add controller position update logic
+        xr.input.onControllerAddedObservable.add((controller: WebXRInputSource) => {
+            this.scene.onBeforeRenderObservable.add(() => {
+                if (controller.grip) {
+                    const controller1Pos = controller.grip.position;
+                    const controller2Pos = this.drumsticks[1]?.controllerAttached?.grip?.position || new Vector3(0, 0, 0);
+                    this.updateControllerPositions(controller1Pos, controller2Pos);
+                }
+            });
+        });
+    }
+
+    // Utility function to safely stringify objects with circular references
+    private safeStringify(obj: any, space: number = 2): string {
+        const seen = new WeakSet();
+        //@ts-ignore
+        return JSON.stringify(obj, (key, value) => {
+            if (typeof value === "object" && value !== null) {
+                if (seen.has(value)) {
+                    return "[Circular]";
+                }
+                seen.add(value);
+            }
+            return value;
+        }, space);
     }
 
     private redirectConsoleToXRUI() {
         const originalConsoleLog = console.log;
         console.log = (...args: any[]) => {
             originalConsoleLog(...args);
-            const newText = args.map(arg => (typeof arg === "object" ? JSON.stringify(arg) : arg)).join(" ");
+            const newText = args.map(arg => (typeof arg === "object" ? this.safeStringify(arg) : arg)).join(" ");
             this.consoleText.text = `${newText}\n${this.consoleText.text}`; // Append new text at the top
             const maxLines = 20; // Limit the number of lines displayed
             const lines = this.consoleText.text.split("\n");
@@ -151,6 +177,11 @@ class XRDrumKit {
 
     updateControllerPositionText(positionText: string) {
         this.controllerPositionText.text = positionText;
+    }
+
+    updateControllerPositions(controller1Pos: Vector3, controller2Pos: Vector3) {
+        const positionText = `Controller 1: ${controller1Pos.toString()}\nController 2: ${controller2Pos.toString()}`;
+        this.updateControllerPositionText(positionText);
     }
 
     async initializePlugin() {
