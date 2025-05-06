@@ -90,16 +90,15 @@ class XRDrumKit {
         // Initialize XR console
         this.xrUI = AdvancedDynamicTexture.CreateFullscreenUI("UI");
 
-        // Top section for controller positions
+        // Center section for controller positions
         const controllerPositionContainer = new Rectangle();
         controllerPositionContainer.width = "50%"; 
         controllerPositionContainer.height = "25%"; 
         controllerPositionContainer.background = "rgba(0, 0, 0, 0.5)";
         controllerPositionContainer.color = "white";
         controllerPositionContainer.thickness = 0;
-        controllerPositionContainer.verticalAlignment = TextBlock.VERTICAL_ALIGNMENT_BOTTOM;
-        controllerPositionContainer.horizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_LEFT;
-        controllerPositionContainer.left = "-25%"; 
+        controllerPositionContainer.verticalAlignment = TextBlock.VERTICAL_ALIGNMENT_CENTER;
+        controllerPositionContainer.horizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_CENTER;
         this.xrUI.addControl(controllerPositionContainer);
 
         this.controllerPositionText = new TextBlock();
@@ -109,17 +108,16 @@ class XRDrumKit {
         this.controllerPositionText.resizeToFit = true;
         controllerPositionContainer.addControl(this.controllerPositionText);
 
-        // Bottom section for general console messages
+        // Center section for general console messages
         const consoleContainer = new Rectangle();
-        consoleContainer.width = "25%"; 
+        consoleContainer.width = "50%"; 
         consoleContainer.height = "25%"; 
         consoleContainer.background = "rgba(0, 0, 0, 0.5)";
         consoleContainer.color = "white";
         consoleContainer.thickness = 0;
         consoleContainer.verticalAlignment = TextBlock.VERTICAL_ALIGNMENT_CENTER;
-        //Décaler la console vers la gauche
-        consoleContainer.horizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_LEFT;
-        consoleContainer.left = "-37%"; 
+        consoleContainer.horizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_CENTER;
+        consoleContainer.top = "30%"; // Slightly below the controller position container
         this.xrUI.addControl(consoleContainer);
 
         this.consoleText = new TextBlock();
