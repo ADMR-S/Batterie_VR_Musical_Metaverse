@@ -97,6 +97,7 @@ class XRDrumKit {
         controllerPositionContainer.background = "rgba(0, 0, 0, 0.5)";
         controllerPositionContainer.color = "white";
         controllerPositionContainer.thickness = 0;
+        controllerPositionContainer.isVisible = true; // Ensure visibility
         controllerPositionContainer.verticalAlignment = TextBlock.VERTICAL_ALIGNMENT_TOP;
         controllerPositionContainer.horizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_LEFT;
         controllerPositionContainer.left = "-37%"; 
@@ -107,6 +108,7 @@ class XRDrumKit {
         this.controllerPositionText.fontSize = 18;
         this.controllerPositionText.textWrapping = true;
         this.controllerPositionText.resizeToFit = true;
+        this.controllerPositionText.isVisible = true; // Ensure visibility
         controllerPositionContainer.addControl(this.controllerPositionText);
 
         // Bottom section for general console messages
@@ -116,6 +118,7 @@ class XRDrumKit {
         consoleContainer.background = "rgba(0, 0, 0, 0.5)";
         consoleContainer.color = "white";
         consoleContainer.thickness = 0;
+        consoleContainer.isVisible = true; // Ensure visibility
         consoleContainer.verticalAlignment = TextBlock.VERTICAL_ALIGNMENT_CENTER;
         //Décaler la console vers la gauche
         consoleContainer.horizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_LEFT;
@@ -127,6 +130,7 @@ class XRDrumKit {
         this.consoleText.fontSize = 18;
         this.consoleText.textWrapping = true;
         this.consoleText.resizeToFit = true;
+        this.consoleText.isVisible = true; // Ensure visibility
         consoleContainer.addControl(this.consoleText);
 
         this.initializeSimpleConsoleLogger(); // Replace the old logging redirection with the new method
