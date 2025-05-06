@@ -94,12 +94,12 @@ class XRDrumKit {
         // Center section for controller positions
         const controllerPositionContainer = new Rectangle();
         controllerPositionContainer.width = "50%"; 
-        controllerPositionContainer.height = "25%"; 
+        controllerPositionContainer.height = "35%"; // Increase height
         controllerPositionContainer.background = "rgba(0, 0, 0, 0.5)";
         controllerPositionContainer.color = "white";
         controllerPositionContainer.thickness = 0;
         controllerPositionContainer.verticalAlignment = TextBlock.VERTICAL_ALIGNMENT_CENTER;
-        controllerPositionContainer.horizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_CENTER;
+        controllerPositionContainer.horizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_LEFT; // Move to the left
         this.xrUI.addControl(controllerPositionContainer);
 
         this.controllerPositionText = new TextBlock();
@@ -114,13 +114,13 @@ class XRDrumKit {
         // Center section for general console messages
         const consoleContainer = new Rectangle();
         consoleContainer.width = "50%"; 
-        consoleContainer.height = "25%"; 
+        consoleContainer.height = "35%"; // Increase height
         consoleContainer.background = "rgba(0, 0, 0, 0.5)";
         consoleContainer.color = "white";
         consoleContainer.thickness = 0;
         consoleContainer.verticalAlignment = TextBlock.VERTICAL_ALIGNMENT_CENTER;
-        consoleContainer.horizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_CENTER;
-        consoleContainer.top = "30%"; // Slightly below the controller position container
+        consoleContainer.horizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_LEFT; // Move to the left
+        consoleContainer.top = "40%"; // Slightly below the controller position container
         this.xrUI.addControl(consoleContainer);
 
         this.consoleText = new TextBlock();
