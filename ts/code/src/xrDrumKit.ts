@@ -3,6 +3,7 @@ import { Color3 } from "@babylonjs/core";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { MeshBuilder, TransformNode, StandardMaterial, SixDofDragBehavior, PhysicsAggregate, PhysicsShapeType, PhysicsMotionType, PhysicsPrestepType } from "@babylonjs/core";
 import { WebXRDefaultExperience } from "@babylonjs/core";
+import { Quaternion } from "@babylonjs/core";
 //import { WebXRControllerPhysics } from "@babylonjs/core/XR/features/WebXRControllerPhysics";
 //import { Observable } from "@babylonjs/core/Misc/observable";
 import { AdvancedDynamicTexture, Rectangle, TextBlock } from "@babylonjs/gui";
@@ -135,13 +136,16 @@ class XRDrumKit {
         this.consoleText.clipContent = true; // Clip overflowing content
         consoleContainer.addControl(this.consoleText);
 
-        // Adjust the distance of the console parts in XR
+        // Link the console parts to the XR headset
+        const headsetNode = xr.baseExperience.camera.parent; // Get the headset's parent node
         const controllerPositionTransformNode = new TransformNode("controllerPositionTransformNode", this.scene);
-        controllerPositionTransformNode.position = new Vector3(0, 1.5, 3); // Position for controller positions
+        controllerPositionTransformNode.parent = headsetNode; // Attach to the headset
+        controllerPositionTransformNode.position = new Vector3(0, 0.2, -1); // Position in front of the headset
         controllerPositionContainer.linkWithMesh(controllerPositionTransformNode);
 
         const consoleTransformNode = new TransformNode("consoleTransformNode", this.scene);
-        consoleTransformNode.position = new Vector3(0, 0.5, 3); // Position for general console messages
+        consoleTransformNode.parent = headsetNode; // Attach to the headset
+        consoleTransformNode.position = new Vector3(0, -0.5, -1); // Position below the controller positions
         consoleContainer.linkWithMesh(consoleTransformNode);
 
         // Monitor the right controller's internal trigger
@@ -195,8 +199,11 @@ class XRDrumKit {
         this.controllerPositionText.text = positionText;
     }
 
-    updateControllerPositions(controllerPos: Vector3, handedness: string) {
-        this.controllerPositions[handedness] = `Controller ${handedness}:\nPosition: ${controllerPos.toString()}\n`;
+    updateControllerPositions(controllerPos: Vector3, controllerRot: Quaternion, handedness: string) {
+        //get controller angular rotation :
+
+
+        this.controllerPositions[handedness] = `Controller ${handedness}:\nLinear position: ${controllerPos.toString()}\nAngular position : ${controllerRot}`;
         const combinedText = Object.values(this.controllerPositions).join("\n"); // Combine positions for both controllers
         this.updateControllerPositionText(combinedText);
     }
@@ -352,19 +359,18 @@ class XRDrumKit {
                     return; // Do not play sounds if drum sounds are disabled
                 }
                 var currentVelocity = 0;
-                for (var i = 0; i < this.drumsticks.length; i++) {
-                //Attention en cas de collision avec la balle ? (velocité = 100 ?)
+                for (let i = 0; i < this.drumsticks.length; i++) {
                     if (collision.collider.transformNode.id === this.drumsticks[i].drumstickAggregate.transformNode.id) {
-                        const velocity = this.drumsticks[i].getVelocity();
-                        console.log("Vitesse linéaire de la baguette : ", velocity.length());
-                        console.log("Vitesse angulaire de la baguette : ", this.drumsticks[i].getAngularVelocity().length());
+                        const { linear, angular } = this.drumsticks[i].getVelocity();
+                        console.log("Linear Velocity: ", linear.length());
+                        console.log("Angular Velocity: ", angular.length());
 
-                        if (velocity.y > 0) {
+                        if (linear.y > 0 || angular.y > 0) {
                             console.log("MOUVEMENT MONTANT");
                             currentVelocity = 0; // Ignore upward movement
                         } else {
                             console.log("MOUVEMENT DESCENDANT");
-                            currentVelocity = Math.round(10 * (velocity.length() + this.drumsticks[i].getAngularVelocity().length()));
+                            currentVelocity = Math.round(10 * (linear.length() + angular.length()));
                         }
                         console.log("Vitesse de la baguette : " + currentVelocity);
                     }
@@ -377,8 +383,8 @@ class XRDrumKit {
                     const controllerPhysics = collision.collidedAgainst.controllerPhysicsImpostor;
                     currentVelocity.copyFrom(controllerPhysics.getLinearVelocity());
                     console.log("Vitesse de la baguette : " + currentVelocity);
-                }
-                    */
+                    }
+                */
                         
                 //const otherVelocity = new Vector3();
                 /*
