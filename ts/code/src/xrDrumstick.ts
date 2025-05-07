@@ -104,7 +104,8 @@ class XRDrumstick {
             this.scene.onBeforeRenderObservable.add(() => {
                 if (controller.grip) {
                     const controllerPos = controller.grip.position;
-                    this.xrDrumKit.updateControllerPositions(controllerPos, controller.inputSource.handedness);
+                    const controllerRot = controller.grip.rotationQuaternion || Quaternion.Identity();
+                    this.xrDrumKit.updateControllerPositions(controllerPos, controllerRot, controller.inputSource.handedness);
                 }
             });
         });
@@ -211,26 +212,20 @@ class XRDrumstick {
 
         // Update linear velocity
         const currentPosition = this.drumstickAggregate.transformNode.getAbsolutePosition();
-        if (this.log) {
-                        //console.log("Current position DRUMSTICK : " + currentPosition);
-        }
         this.velocity = currentPosition.subtract(this.previousPosition).scale(1 / deltaTime);
         this.previousPosition.copyFrom(currentPosition);
 
-        // Update angular velocity
+        // Update angular velocity and position
         const currentRotation = this.drumstickAggregate.transformNode.rotationQuaternion || Quaternion.Identity();
         const deltaRotation = currentRotation.multiply(Quaternion.Inverse(this.previousRotation));
         deltaRotation.toEulerAnglesToRef(this.angularVelocity);
         this.angularVelocity.scaleInPlace(1 / deltaTime);
         this.previousRotation.copyFrom(currentRotation);
+        
     }
 
-    getVelocity(): Vector3 {
-        return this.velocity;
-    }
-
-    getAngularVelocity(): Vector3 {
-        return this.angularVelocity;
+    getVelocity(): { linear: Vector3; angular: Vector3 } {
+        return { linear: this.velocity, angular: this.angularVelocity };
     }
 }
 export default XRDrumstick;
