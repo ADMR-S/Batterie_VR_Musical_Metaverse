@@ -353,17 +353,24 @@ class XRDrumKit {
                 }
                 var currentVelocity = 100;
                 for (var i = 0; i < this.drumsticks.length; i++) {
-//Attention en cas de collision avec la balle ? (velocité = 100 ?)
+                //Attention en cas de collision avec la balle ? (velocité = 100 ?)
                     if (collision.collider.transformNode.id === this.drumsticks[i].drumstickAggregate.transformNode.id) {
-                        console.log("Collision avec le drumstick : " + this.drumsticks[i].drumstickAggregate.transformNode.id);
-                        console.log("Vitesse linéaire de la baguette : ", this.drumsticks[i].getVelocity().length());
+                        const velocity = this.drumsticks[i].getVelocity();
+                        console.log("Vitesse linéaire de la baguette : ", velocity.length());
                         console.log("Vitesse angulaire de la baguette : ", this.drumsticks[i].getAngularVelocity().length());
-                        currentVelocity = Math.round(10 * (this.drumsticks[i].getVelocity().length() + this.drumsticks[i].getAngularVelocity().length()));
+
+                        if (velocity.y > 0) {
+                            console.log("MOUVEMENT MONTANT");
+                            currentVelocity = 0; // Ignore upward movement
+                        } else {
+                            console.log("MOUVEMENT DESCENDANT");
+                            currentVelocity = Math.round(10 * (velocity.length() + this.drumsticks[i].getAngularVelocity().length()));
+                        }
                         console.log("Vitesse de la baguette : " + currentVelocity);
                     }
                 }
                 console.log("Vitesse de la baguette hors boucle : " + currentVelocity);
-//const currentVelocity = new Vector3();
+                //const currentVelocity = new Vector3();
                 /* We already know collided against is a trigger so we should calculate its velocity (currently 0 but if the drum starts moving for a reason we should)
                 if(collision.collidedAgainst.transformNode.physicsBody.controllerPhysicsImpostor){
                     console.log("Collision avec une baguette !");
