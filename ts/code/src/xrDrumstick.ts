@@ -22,10 +22,10 @@ class XRDrumstick {
     private angularVelocity: Vector3 = new Vector3();
     log = true;
 
-    constructor(xr: WebXRDefaultExperience, xrDrumKit: XRDrumKit, scene: Scene, eventMask: number) {
+    constructor(xr: WebXRDefaultExperience, xrDrumKit: XRDrumKit, scene: Scene, eventMask: number, stickNumber : Number) {
         this.eventMask = eventMask;
         this.scene = scene;
-        this.drumstickAggregate = this.createDrumstick(xr);
+        this.drumstickAggregate = this.createDrumstick(xr, stickNumber);
         this.xrDrumKit = xrDrumKit;
         scene.onBeforeRenderObservable.add(() => this.updateVelocity());
     }
@@ -52,13 +52,13 @@ class XRDrumstick {
         }
     }
 
-    createDrumstick(xr: WebXRDefaultExperience) {
+    createDrumstick(xr: WebXRDefaultExperience, stickNumber : Number) {
         const stickLength = 0.4;
         const stickDiameter = 0.02;
         const ballDiameter = 0.03;
 
-        const stick = MeshBuilder.CreateCylinder("stick1", { height: stickLength, diameter: stickDiameter }, this.scene);
-        const ball = MeshBuilder.CreateSphere("ball1", { diameter: ballDiameter }, this.scene);
+        const stick = MeshBuilder.CreateCylinder("stick" + stickNumber, { height: stickLength, diameter: stickDiameter }, this.scene);
+        const ball = MeshBuilder.CreateSphere("ball" + stickNumber, { diameter: ballDiameter }, this.scene);
 
         ball.parent = stick;
         ball.position = new Vector3(0, stickLength / 2, 0);
