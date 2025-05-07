@@ -139,7 +139,7 @@ class XRDrumKit {
         xr.input.onControllerAddedObservable.add((controller) => {
             if (controller.inputSource.handedness === "right") {
                 controller.onMotionControllerInitObservable.add((motionController) => {
-                    const trigger = motionController.getComponent("xr-standard-grip");
+                    const trigger = motionController.getComponent("xr-standard-squeeze");
                     trigger.onButtonStateChangedObservable.add((button) => {
                         const isPressed = button.pressed;
                         controllerPositionContainer.isVisible = isPressed;
