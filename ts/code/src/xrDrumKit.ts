@@ -135,6 +135,12 @@ class XRDrumKit {
         this.consoleText.clipContent = true; // Clip overflowing content
         consoleContainer.addControl(this.consoleText);
 
+        // Adjust the distance of the console in XR
+        const consoleTransformNode = new TransformNode("consoleTransformNode", this.scene);
+        consoleTransformNode.position = new Vector3(0, 0, 3); // Move the console further away (z = 3)
+        controllerPositionContainer.linkWithMesh(consoleTransformNode);
+        consoleContainer.linkWithMesh(consoleTransformNode);
+
         // Monitor the right controller's internal trigger
         xr.input.onControllerAddedObservable.add((controller) => {
             if (controller.inputSource.handedness === "right") {
