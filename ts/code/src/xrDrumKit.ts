@@ -10,22 +10,21 @@ import { AdvancedDynamicTexture, Rectangle, TextBlock } from "@babylonjs/gui";
 import XRDrumstick from "./xrDrumstick";
 
 //TODO : 
-//Intégration avec Musical Metaverse
-//Prendre en compte la vitesse du mouvement 
+//Intégration avec Musical Metaverse (interface PedalNode3D)
+//Ajouter texture
+//Ajuster vélocité (voir prototype scheduleEvent)
 //Commande pour reset l'emplacement des drumSticks
 //Cleaner
 //Empêcher de taper par dessous pour les tambours, autoriser pour cymbales
-//Empêcher de passer à travers un objet ? 
+//Retour haptique et visuel collision baguettes (vibrations, tremblement du tambour...)
 //Empêcher les objets de passer à travers le sol
 //Sons différents en bordure / au centre de la peau ? (+ bordure métallique)
 //Grosse caisse / Hi-Hat ? Besoin d'une pédale (appuyer sur un bouton ?)
-//Empêcher de taper dans un trigger par dessous
-//Tenir les baguettes avec la gachette interne plutôt (permet d'avoir une autre position de main plus adaptée)
+//Tenir les baguettes avec la gachette interne plutôt ? (permet d'avoir une autre position de main plus adaptée)
 //Replace invisible cube meshes for controllers by physicsImpostors
 //Use a 0 distance constraint to snap drumsticks to hands ? 
 //Test interactions projet Ismail
 //Test si 200 volume fonctionne (faire attention à velocité à ce moment là)
-//Ajuster valeurs vélocité
 
 //EventBus Emitter
 //Ajouter signature de la batterie
@@ -94,12 +93,13 @@ class XRDrumKit {
         // Center section for controller positions
         const controllerPositionContainer = new Rectangle();
         controllerPositionContainer.width = "40%"; 
-        controllerPositionContainer.height = "30%"; // Increase height
+        controllerPositionContainer.height = "35%"; // Increase height
         controllerPositionContainer.background = "rgba(0, 0, 0, 0.5)";
         controllerPositionContainer.color = "white";
         controllerPositionContainer.thickness = 0;
         controllerPositionContainer.verticalAlignment = TextBlock.VERTICAL_ALIGNMENT_TOP;
         controllerPositionContainer.horizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_LEFT; // Move to the left
+        controllerPositionContainer.isVisible = false; // Initially hidden
         this.xrUI.addControl(controllerPositionContainer);
 
         this.controllerPositionText = new TextBlock();
@@ -119,8 +119,9 @@ class XRDrumKit {
         consoleContainer.color = "white";
         consoleContainer.thickness = 0;
         consoleContainer.verticalAlignment = TextBlock.VERTICAL_ALIGNMENT_TOP;
-        consoleContainer.horizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_LEFT; // Move to the left
+        consoleContainer.horizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_CENTER; // Move to the left
         consoleContainer.top = "40%"; // Slightly below the controller position container
+        consoleContainer.isVisible = false; // Initially hidden
         this.xrUI.addControl(consoleContainer);
 
         this.consoleText = new TextBlock();
@@ -133,6 +134,20 @@ class XRDrumKit {
         this.consoleText.clipChildren = true; // Ensure text is clipped to the container
         this.consoleText.clipContent = true; // Clip overflowing content
         consoleContainer.addControl(this.consoleText);
+
+        // Monitor the right controller's internal trigger
+        xr.input.onControllerAddedObservable.add((controller) => {
+            if (controller.inputSource.handedness === "right") {
+                controller.onMotionControllerInitObservable.add((motionController) => {
+                    const trigger = motionController.getComponent("xr-standard-trigger");
+                    trigger.onButtonStateChangedObservable.add((button) => {
+                        const isPressed = button.pressed;
+                        controllerPositionContainer.isVisible = isPressed;
+                        consoleContainer.isVisible = isPressed;
+                    });
+                });
+            }
+        });
 
         this.initializeSimpleConsoleLogger(); // Replace the old logging redirection with the new method
     }
