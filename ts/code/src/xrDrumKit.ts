@@ -11,13 +11,13 @@ import { AdvancedDynamicTexture, Rectangle, TextBlock } from "@babylonjs/gui";
 import XRDrumstick from "./xrDrumstick";
 
 //TODO : 
+//Retour haptique et visuel collision baguettes (vibrations, tremblement du tambour...)
 //Intégration avec Musical Metaverse (interface PedalNode3D)
 //Ajouter texture
 //Ajuster vélocité (voir prototype scheduleEvent)
 //Commande pour reset l'emplacement des drumSticks
 //Cleaner
 //Empêcher de taper par dessous pour les tambours, autoriser pour cymbales
-//Retour haptique et visuel collision baguettes (vibrations, tremblement du tambour...)
 //Empêcher les objets de passer à travers le sol
 //Sons différents en bordure / au centre de la peau ? (+ bordure métallique)
 //Grosse caisse / Hi-Hat ? Besoin d'une pédale (appuyer sur un bouton ?)
@@ -85,7 +85,7 @@ class XRDrumKit {
         this.xr = xr;
         this.drumSoundsEnabled = false; // Initialize to false and set to true only when controllers are added
         for (var i = 0; i < 2; i++) {
-            this.drumsticks[i] = new XRDrumstick(this.xr, this, this.scene, this.eventMask, i);
+            this.drumsticks[i] = new XRDrumstick(this.xr, this, this.scene, this.eventMask, i-1);
         }
 
         // Initialize XR console
@@ -157,6 +157,19 @@ class XRDrumKit {
                     const trigger = motionController.getComponent("xr-standard-squeeze");
                     trigger.onButtonStateChangedObservable.add((button) => {
                         const isPressed = button.pressed;
+
+                        // Reposition the containers dynamically in front of the camera
+                        const camera = xr.baseExperience.camera;
+                        if (isPressed) {
+                            const forward = camera.getForwardRay(1).direction; // Get the forward direction of the camera
+                            const offset = new Vector3(forward.x, forward.y, forward.z).scale(1); // Scale to desired distance
+                            const cameraPosition = camera.position;
+
+                            controllerPositionTransformNode.position = cameraPosition.add(offset).add(new Vector3(0, 0.5, 0)); // Slightly above
+                            consoleTransformNode.position = cameraPosition.add(offset).add(new Vector3(0, -0.5, 0)); // Slightly below
+                        }
+
+                        // Toggle visibility
                         controllerPositionContainer.isVisible = isPressed;
                         consoleContainer.isVisible = isPressed;
                     });
