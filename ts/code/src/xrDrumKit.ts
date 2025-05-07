@@ -351,7 +351,7 @@ class XRDrumKit {
                 if (!this.drumSoundsEnabled) {
                     return; // Do not play sounds if drum sounds are disabled
                 }
-                var currentVelocity = 100;
+                var currentVelocity = 0;
                 for (var i = 0; i < this.drumsticks.length; i++) {
                 //Attention en cas de collision avec la balle ? (velocité = 100 ?)
                     if (collision.collider.transformNode.id === this.drumsticks[i].drumstickAggregate.transformNode.id) {
