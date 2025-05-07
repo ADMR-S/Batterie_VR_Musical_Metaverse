@@ -363,6 +363,7 @@ class XRDrumKit {
                 var currentVelocity = 0;
                 for (let i = 0; i < this.drumsticks.length; i++) {
                     if (collision.collider.transformNode.id === this.drumsticks[i].drumstickAggregate.transformNode.id) {
+                        console.log("Collision avec " + collision.collider.transformNode.id)
                         const { linear, angular } = this.drumsticks[i].getVelocity();
                         console.log("Linear Velocity: ", linear.length());
                         console.log("Angular Velocity: ", angular.length());
