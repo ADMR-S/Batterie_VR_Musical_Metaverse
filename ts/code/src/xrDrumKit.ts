@@ -98,7 +98,7 @@ class XRDrumKit {
         controllerPositionContainer.color = "white";
         controllerPositionContainer.thickness = 0;
         controllerPositionContainer.verticalAlignment = TextBlock.VERTICAL_ALIGNMENT_TOP;
-        controllerPositionContainer.horizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_LEFT; // Move to the left
+        controllerPositionContainer.horizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_CENTER; // Move to the left
         controllerPositionContainer.isVisible = false; // Initially hidden
         this.xrUI.addControl(controllerPositionContainer);
 
@@ -139,7 +139,7 @@ class XRDrumKit {
         xr.input.onControllerAddedObservable.add((controller) => {
             if (controller.inputSource.handedness === "right") {
                 controller.onMotionControllerInitObservable.add((motionController) => {
-                    const trigger = motionController.getComponent("xr-standard-trigger");
+                    const trigger = motionController.getComponent("xr-standard-grip");
                     trigger.onButtonStateChangedObservable.add((button) => {
                         const isPressed = button.pressed;
                         controllerPositionContainer.isVisible = isPressed;
