@@ -1,7 +1,7 @@
 import { Scene } from "@babylonjs/core/scene";
 import { Color3 } from "@babylonjs/core";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
-import { MeshBuilder, TransformNode, StandardMaterial, SixDofDragBehavior, PhysicsAggregate, PhysicsShapeType, PhysicsMotionType, PhysicsPrestepType } from "@babylonjs/core";
+import { MeshBuilder, TransformNode, StandardMaterial, SixDofDragBehavior, PhysicsAggregate, PhysicsShapeType, PhysicsMotionType, PhysicsPrestepType, Mesh } from "@babylonjs/core";
 import { WebXRDefaultExperience } from "@babylonjs/core";
 import { Quaternion } from "@babylonjs/core";
 //import { WebXRControllerPhysics } from "@babylonjs/core/XR/features/WebXRControllerPhysics";
@@ -140,12 +140,14 @@ class XRDrumKit {
         const headsetNode = xr.baseExperience.camera.parent; // Get the headset's parent node
         const controllerPositionTransformNode = new TransformNode("controllerPositionTransformNode", this.scene);
         controllerPositionTransformNode.parent = headsetNode; // Attach to the headset
-        controllerPositionTransformNode.position = new Vector3(0, 0.2, -1); // Position in front of the headset
+        controllerPositionTransformNode.position = new Vector3(0, 1.5, 1); // Position in front of the headset
+        controllerPositionTransformNode.billboardMode = Mesh.BILLBOARDMODE_ALL; // Make it always face the camera
         controllerPositionContainer.linkWithMesh(controllerPositionTransformNode);
 
         const consoleTransformNode = new TransformNode("consoleTransformNode", this.scene);
         consoleTransformNode.parent = headsetNode; // Attach to the headset
-        consoleTransformNode.position = new Vector3(0, -0.5, -1); // Position below the controller positions
+        consoleTransformNode.position = new Vector3(0, 0.5, 1); // Position below the controller positions
+        consoleTransformNode.billboardMode = Mesh.BILLBOARDMODE_ALL; // Make it always face the camera
         consoleContainer.linkWithMesh(consoleTransformNode);
 
         // Monitor the right controller's internal trigger
