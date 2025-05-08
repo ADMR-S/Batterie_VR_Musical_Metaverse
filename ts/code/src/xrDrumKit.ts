@@ -1,14 +1,16 @@
 import { Scene } from "@babylonjs/core/scene";
 import { Color3 } from "@babylonjs/core";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
-import { MeshBuilder, TransformNode, StandardMaterial, SixDofDragBehavior, PhysicsAggregate, PhysicsShapeType, PhysicsMotionType, PhysicsPrestepType, Mesh } from "@babylonjs/core";
+import { Mesh, TransformNode, StandardMaterial, SixDofDragBehavior } from "@babylonjs/core";
 import { WebXRDefaultExperience } from "@babylonjs/core";
 import { Quaternion } from "@babylonjs/core";
 //import { WebXRControllerPhysics } from "@babylonjs/core/XR/features/WebXRControllerPhysics";
 //import { Observable } from "@babylonjs/core/Misc/observable";
 import { AdvancedDynamicTexture, Rectangle, TextBlock } from "@babylonjs/gui";
 
+//@ts-ignore
 import XRDrumstick from "./XRDrumstick";
+//@ts-ignore
 import XRDrum from "./XRDrum";
 import XRCymbal from "./XRCymbal"
 
