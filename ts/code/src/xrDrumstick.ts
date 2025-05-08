@@ -6,7 +6,7 @@ import { MeshBuilder, StandardMaterial, PhysicsAggregate, PhysicsShapeType, Phys
 import { Vector3, Quaternion, Axis } from "@babylonjs/core/Maths/math";
 import { WebXRDefaultExperience } from "@babylonjs/core/XR/webXRDefaultExperience";
 //import { PhysicsImpostor } from "@babylonjs/core/Physics/physicsImpostor";
-import XRDrumKit from "./xrDrumKit";
+import XRDrumKit from "./XRDrumKit";
 
 class XRDrumstick {
 

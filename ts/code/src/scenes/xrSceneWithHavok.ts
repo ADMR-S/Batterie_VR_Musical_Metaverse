@@ -20,7 +20,7 @@ import { Mesh, MeshBuilder, PhysicsAggregate, PhysicsShapeType, PhysicsPrestepTy
 import { AbstractEngine } from "@babylonjs/core/Engines/abstractEngine";
 import HavokPhysics from "@babylonjs/havok";
 
-import XRDrumKit from "../xrDrumKit";
+import XRDrumKit from "../XRDrumKit";
 
 
 export class XRSceneWithHavok implements CreateSceneClass {

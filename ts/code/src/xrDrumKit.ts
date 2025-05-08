@@ -8,7 +8,9 @@ import { Quaternion } from "@babylonjs/core";
 //import { Observable } from "@babylonjs/core/Misc/observable";
 import { AdvancedDynamicTexture, Rectangle, TextBlock } from "@babylonjs/gui";
 
-import XRDrumstick from "./xrDrumstick";
+import XRDrumstick from "./XRDrumstick";
+import XRDrum from "./XRDrum";
+import XRCymbal from "./XRCymbal"
 
 //TODO : 
 //Retour haptique et visuel collision baguettes (vibrations, tremblement du tambour...)
@@ -41,19 +43,19 @@ class XRDrumKit {
     xr: WebXRDefaultExperience;
     drumsticks: XRDrumstick[] = [];
     drumSoundsEnabled: boolean;
-    snare: TransformNode;
+    snare: XRDrum;
     snareKey: number = 38;
-    floorTom: TransformNode;
+    floorTom: XRDrum;
     floorTomKey: number = 41;
-    midTom: TransformNode;
+    midTom: XRDrum;
     midTomKey: number = 47;
-    highTom: TransformNode;
+    highTom: XRDrum;
     highTomKey: number = 43;
-    crashCymbal: TransformNode;
+    crashCymbal: XRCymbal;
     crashCymbalKey: number = 49;
-    rideCymbal: TransformNode;
+    rideCymbal: XRCymbal;
     rideCymbalKey: number = 51;
-    hiHat: TransformNode;
+    hiHat: XRCymbal;
     closedHiHatKey: number = 42;
     openHiHatKey: number = 46;
     log = false;
@@ -74,13 +76,13 @@ class XRDrumKit {
             this.wamInstance = wamInstance;
             this.move(new Vector3(0, 0, 4)); // NEW POSITION
         });
-        this.snare = this.createSnare();
-        this.floorTom = this.createFloorTom();
-        this.midTom = this.createMidTom();
-        this.highTom = this.createHighTom();
-        this.crashCymbal = this.createCrashCymbal();
-        this.rideCymbal = this.createRideCymbal();
-        this.hiHat = this.createHiHat();
+        this.snare = new XRDrum("snare", 0.5, 0.3, this.snareKey, this, new Vector3(0, 0.3, 0)); // Create snare drum
+        this.floorTom = new XRDrum("floorTom", 0.6, 0.3, this.floorTomKey, this, new Vector3(0.8, 0.3, 0)); // Create floor tom
+        this.midTom = new XRDrum("midTom", 0.5, 0.25, this.midTomKey, this, new Vector3(0.6, 0.8, 0.3)); // Create mid tom
+        this.highTom = new XRDrum("highTom", 0.4, 0.2, this.highTomKey, this, new Vector3(0.1, 0.7, 0.3)); // Create high tom
+        this.crashCymbal = new XRCymbal("crashCymbal", 1.0, 0.07, this.crashCymbalKey, this, new Vector3(-0.4, 1.2, 0.5)); // Create crash cymbal
+        this.rideCymbal = new XRCymbal("rideCymbal", 1.0, 0.07, this.rideCymbalKey, this, new Vector3(1.2, 1.2, 0.5)); // Create ride cymbal
+        this.hiHat = new XRCymbal("hiHat", 0.4, 0.07, this.closedHiHatKey, this, new Vector3(-0.5, 0.8, 0.2)); // Create hi-hat cymbal
         this.add6dofBehavior(this.drumContainer); // Make the drumkit movable in the VR space on selection
         this.xr = xr;
         this.drumSoundsEnabled = false; // Initialize to false and set to true only when controllers are added
@@ -238,268 +240,9 @@ class XRDrumKit {
         return wamInstance;
     }
 
-    createSnare() {
-        const snare = this.createDrumComponent("snare", 0.5, 0.3, new Vector3(0, 0.3, 0));
-        this.playSoundOnTrigger("snare", this.snareKey, 0.25);
-        return snare;
-    }
-
-    createFloorTom() {
-        const floorTom = this.createDrumComponent("floorTom", 0.6, 0.3, new Vector3(0.8, 0.3, 0));
-        this.playSoundOnTrigger("floorTom", this.floorTomKey, 0.25);
-        return floorTom;
-    }
-
-    createMidTom() {
-        const floorTom = this.createDrumComponent("midTom", 0.5, 0.25, new Vector3(0.6, 0.8, 0.3));
-        this.playSoundOnTrigger("midTom", this.midTomKey, 0.25);
-        return floorTom;
-    }
-
-    createHighTom() {
-        const midTom = this.createDrumComponent("highTom", 0.4, 0.2, new Vector3(0.1, 0.7, 0.3));
-        this.playSoundOnTrigger("highTom", this.highTomKey, 0.25);
-        return midTom;
-    }
-
-    createCrashCymbal() {
-        const crashCymbal = this.createCymbalComponent("crashCymbal", 1.0, 0.07, new Vector3(-0.4, 1.2, 0.5));
-        this.playSoundOnTrigger("crashCymbal", this.crashCymbalKey, 5);
-        return crashCymbal;
-    }
-
-    createRideCymbal() {
-        const rideCymbal = this.createCymbalComponent("rideCymbal", 1.0, 0.07, new Vector3(1.2, 1.2, 0.5));
-        this.playSoundOnTrigger("rideCymbal", this.rideCymbalKey, 5);
-        return rideCymbal;
-    }
-
-    createHiHat() {
-        const hiHat = this.createCymbalComponent("hiHat", 0.4, 0.07, new Vector3(-0.5, 0.8, 0.2));
-        this.playSoundOnTrigger("hiHat", this.closedHiHatKey, 2);
-        return hiHat;
-    }
-
     move(displacementVector: Vector3) {
         this.drumContainer.position.addInPlace(displacementVector);
     }
-
-    createDrumComponentBody(name: string, diameter: number, height: number, drumComponentContainer: TransformNode) {
-        const body = MeshBuilder.CreateCylinder(name + "Body", { diameter: diameter, height: height }, this.scene);
-        body.position = new Vector3(0, height / 2, 0);
-        body.material = new StandardMaterial("wireframeMaterial", this.scene);
-        body.material.wireframe = true;
-        body.parent = drumComponentContainer;
-
-        const bodyAggregate = new PhysicsAggregate(body, PhysicsShapeType.CYLINDER, { mass: 0 }, this.scene);
-        bodyAggregate.body.setMotionType(PhysicsMotionType.STATIC);
-        bodyAggregate.body.setPrestepType(PhysicsPrestepType.TELEPORT);
-        bodyAggregate.body.setCollisionCallbackEnabled(true);
-        bodyAggregate.body.setEventMask(this.eventMask);
-    }
-
-    createDrumComponentTrigger(name: string, diameter: number, height: number, drumComponentContainer: TransformNode) { //Créer les peaux des percussions à peau (snare, tom, etc...)
-        let triggerHeight = 0.07;
-        const trigger = MeshBuilder.CreateCylinder(name + "Trigger", { diameter: diameter, height: triggerHeight }, this.scene);
-        trigger.position = new Vector3(0, height - (triggerHeight / 2), 0);
-        trigger.material = new StandardMaterial("wireframeMaterial", this.scene);
-        trigger.material.wireframe = true;
-        trigger.parent = drumComponentContainer;
-
-        const triggerAggregate = new PhysicsAggregate(trigger, PhysicsShapeType.CYLINDER, { mass: 0 }, this.scene);
-        triggerAggregate.body.setMotionType(PhysicsMotionType.STATIC);
-        triggerAggregate.body.setPrestepType(PhysicsPrestepType.TELEPORT);
-        if (triggerAggregate.body.shape) {
-            triggerAggregate.body.shape.isTrigger = true;
-        }
-    }
-
-    createDrumComponent(name: string, diameter: number, height: number, coordinates: Vector3) {
-        const drumComponentContainer = new TransformNode(name + "Container", this.scene);
-        drumComponentContainer.parent = this.drumContainer;
-
-        this.createDrumComponentBody(name, diameter, height, drumComponentContainer);
-        this.createDrumComponentTrigger(name, diameter, height, drumComponentContainer);
-
-/*
-        // Add three legs to the drum container
-        const leg1 = this.createLeg(new BABYLON.Vector3(-diameter / 2, -height / 2, 0), drumContainer);
-        const leg2 = this.createLeg(new BABYLON.Vector3(diameter / 2, -height / 2, 0), drumContainer);
-        const leg3 = this.createLeg(new BABYLON.Vector3(0, -height / 2, diameter / 2), drumContainer);
-        */
-
-        /* VERSION COLLISION ENTRE OBJETS (Pas de trigger) - Abandonné (difficile d'empêcher la batterie de bouger)
-        const cylinderObservable = cylinderAggregate.body.getCollisionObservable();
-
-        cylinderObservable.add((collisionEvent) => {
-            //console.log("Collision détectée :", collisionEvent);
-            if(collisionEvent.type !== "COLLISION_STARTED") return;
-    
-            console.log("ON JOUE : " + name);
-    
-            const noteMdiToPlay = midiKey;
-    
-            if (this.wamInstance) {
-                // Joue une note lors de la collision
-                this.wamInstance.audioNode.scheduleEvents({
-                    type: 'wam-midi',
-                    time: this.audioContext.currentTime,
-                    data: { bytes: new Uint8Array([0x90, noteMdiToPlay, 100]) } // Note ON
-                });
-                this.wamInstance.audioNode.scheduleEvents({
-                    type: 'wam-midi',
-                    time: this.audioContext.currentTime + 0.25,
-                    data: { bytes: new Uint8Array([0x80, noteMdiToPlay, 100]) } // Note OFF
-                });
-            }
-        });
-        */
-
-        drumComponentContainer.position = coordinates;
-        this.drumComponents.push(drumComponentContainer);
-        return drumComponentContainer;
-    }
-
-    playSoundOnTrigger(name: string, midiKey: number, duration: number) { //duration in seconds
-        this.hk.onTriggerCollisionObservable.add((collision: any) => {
-            if (collision.type === "TRIGGER_ENTERED" && collision.collidedAgainst.transformNode.id === name + "Trigger") {
-                if (this.log) {
-                    console.log(name + " trigger entered", collision);
-                    console.log("Collider : ");
-                    console.log(collision.collider);
-                    console.log("Collided against : ");
-                    console.log(collision.collidedAgainst);
-                }
-                if (!this.drumSoundsEnabled) {
-                    return; // Do not play sounds if drum sounds are disabled
-                }
-                var currentVelocity = 0;//Default is 64 (median)
-                for (let i = 0; i < this.drumsticks.length; i++) {
-                    if (collision.collider.transformNode.id === this.drumsticks[i].drumstickAggregate.transformNode.id) {
-                        console.log("Collision avec " + collision.collider.transformNode.id)
-                        const { linear, angular } = this.drumsticks[i].getVelocity();
-                        console.log("Linear Velocity: ", linear.length());
-                        console.log("Angular Velocity: ", angular.length());
-
-                        if (linear.y > 0 || angular.y > 0) {
-                            console.log("MOUVEMENT MONTANT");
-                            currentVelocity = 0; // Ignore upward movement
-                        } else {
-                            console.log("MOUVEMENT DESCENDANT");
-                            currentVelocity = Math.round(10 * (linear.length() + angular.length()));
-                        }
-                        console.log("Vitesse de la baguette : " + currentVelocity);
-                    }
-                }
-                console.log("Vitesse de la baguette hors boucle : " + currentVelocity);
-                //const currentVelocity = new Vector3();
-                /* We already know collided against is a trigger so we should calculate its velocity (currently 0 but if the drum starts moving for a reason we should)
-                if(collision.collidedAgainst.transformNode.physicsBody.controllerPhysicsImpostor){
-                    console.log("Collision avec une baguette !");
-                    const controllerPhysics = collision.collidedAgainst.controllerPhysicsImpostor;
-                    currentVelocity.copyFrom(controllerPhysics.getLinearVelocity());
-                    console.log("Vitesse de la baguette : " + currentVelocity);
-                    }
-                */
-                        
-                //const otherVelocity = new Vector3();
-                /*
-                if(collision.collider.transformNode.physicsBody.controllerPhysicsImpostor){
-                    const controllerPhysics = collision.collider.transformNode.controllerPhysicsImpostor;
-                    otherVelocity.copyFrom(controllerPhysics.getLinearVelocity());
-                    if(this.log){
-                        console.log("Collision avec une baguette !"); 
-                        console.log("Vitesse de la baguette : " + otherVelocity);
-                    }
-                }
-                    */
-                
-                //const relativeVelocity = currentVelocity.subtract(otherVelocity);
-                //const speed = Math.abs(relativeVelocity.length());
-                /*
-                if(this.log){
-                    console.log('Speed:', speed);
-                }
-                    
-                const intensity = Math.min(Math.max(speed * 10, 0), 127); // Scale speed to MIDI velocity range (0-127)
-
-                if (currentVelocity.y > 0) {
-                    if(this.log){
-                        console.log('Upward movement detected, ignoring collision');
-                    }
-                    return;
-                }
-                */
-                if (this.wamInstance) {
-                    console.log("On joue une note au volume : " + currentVelocity)
-                    // Joue une note lors de la collision
-                    this.wamInstance.audioNode.scheduleEvents({
-                        type: 'wam-midi',
-                        time: this.audioContext.currentTime,
-                        data: { bytes: new Uint8Array([0x90, midiKey, currentVelocity]) } // Note ON, third parameter is velocity from 0 to 127 (0 is equivalent to note OFF)
-                        //http://midi.teragonaudio.com/tech/midispec/noteon.htm
-                        //Considering wamMidiEvent follow the MIDI spec and full audio chain is compatible (it is said that each MIDI device might treat these values differently)
-                    });
-                    this.wamInstance.audioNode.scheduleEvents({
-                        type: 'wam-midi',
-                        time: this.audioContext.currentTime + duration,
-                        data: { bytes: new Uint8Array([0x80, midiKey, currentVelocity]) } // Note OFF, third parameter is velocity (how quickly the note should be released)
-                    });
-                }
-            } else {
-                if (this.log) {
-                    console.log('trigger exited', collision);
-                }
-            }
-        });
-    }
-
-    /*
-    createLeg(position, parent) {
-        const leg = BABYLON.MeshBuilder.CreateCylinder("leg", { diameter: 0.1, height: 1 }, this.scene);
-        leg.position = position;
-        leg.material = new BABYLON.StandardMaterial("wireframeMaterial", this.scene);
-        leg.material.wireframe = true;
-        leg.parent = parent;
-
-        var legAggregate = new BABYLON.PhysicsAggregate(leg, BABYLON.PhysicsShapeType.CYLINDER, { mass: 1000 }, this.scene);
-
-        legAggregate.body.setMotionType(BABYLON.PhysicsMotionType.STATIC);
-        legAggregate.body.setCollisionCallbackEnabled(true);
-        legAggregate.body.setEventMask(this.eventMask);
-
-        return leg;
-    }
-        */
-
-    createCymbalComponent(name : string, diameter : number, height : number, coordinates : Vector3){//Créer les cymbales (hi-hat, crash, ride, etc.)
-        const drumComponentContainer = new TransformNode(name + "Container", this.scene);
-        drumComponentContainer.parent = this.drumContainer;
-
-        this.createDrumComponentBody(name, diameter, height, drumComponentContainer);
-        this.createDrumComponentTrigger(name, diameter, height, drumComponentContainer);
-
-        drumComponentContainer.position = coordinates;
-        this.drumComponents.push(drumComponentContainer);
-        return drumComponentContainer;
-    }
-
-/*
-    createCymbalComponentBody(name, diameter, height, coordinates){
-            // Create the main body of the drum
-            const body = BABYLON.MeshBuilder.CreateCylinder(name + "Body", { diameter: diameter, height: height }, this.scene);
-            body.position = new BABYLON.Vector3(0, height / 2, 0);
-            body.material = new BABYLON.StandardMaterial("wireframeMaterial", this.scene);
-            body.material.wireframe = true;
-            body.parent = drumComponentContainer;
-    
-            var bodyAggregate = new BABYLON.PhysicsAggregate(body, BABYLON.PhysicsShapeType.CYLINDER, { mass: 0 }, this.scene);
-            bodyAggregate.body.setMotionType(BABYLON.PhysicsMotionType.STATIC);
-            bodyAggregate.body.setPrestepType(BABYLON.PhysicsPrestepType.TELEPORT);
-            bodyAggregate.body.setCollisionCallbackEnabled(true);
-            bodyAggregate.body.setEventMask(this.eventMask);
-    }
-            */
 
     add6dofBehavior(drumContainer: TransformNode) {
         // Add 6-DoF behavior to the drum container
