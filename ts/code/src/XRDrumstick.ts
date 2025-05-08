@@ -7,6 +7,7 @@ import { Vector3, Quaternion, Axis } from "@babylonjs/core/Maths/math";
 import { WebXRDefaultExperience } from "@babylonjs/core/XR/webXRDefaultExperience";
 //import { PhysicsImpostor } from "@babylonjs/core/Physics/physicsImpostor";
 import XRDrumKit from "./XRDrumKit";
+import XRLogger from "./XRLogger";
 
 class XRDrumstick {
 
@@ -21,13 +22,15 @@ class XRDrumstick {
     private previousRotation: Quaternion = new Quaternion();
     private angularVelocity: Vector3 = new Vector3();
     log = true;
+    xrLogger : XRLogger; //To get controller positions, consider moving this logic outside this class
 
-    constructor(xr: WebXRDefaultExperience, xrDrumKit: XRDrumKit, scene: Scene, eventMask: number, stickNumber : Number) {
+    constructor(xr: WebXRDefaultExperience, xrDrumKit: XRDrumKit, scene: Scene, eventMask: number, stickNumber : Number, xrLogger : XRLogger) {
         this.eventMask = eventMask;
         this.scene = scene;
         this.drumstickAggregate = this.createDrumstick(xr, stickNumber);
         this.xrDrumKit = xrDrumKit;
         scene.onBeforeRenderObservable.add(() => this.updateVelocity());
+        this.xrLogger = xrLogger; // Initialize the logger
     }
 
     private logToConsole(...args: any[]) {
@@ -105,7 +108,7 @@ class XRDrumstick {
                 if (controller.grip) {
                     const controllerPos = controller.grip.position;
                     const controllerRot = controller.grip.rotationQuaternion || Quaternion.Identity();
-                    this.xrDrumKit.updateControllerPositions(controllerPos, controllerRot, controller.inputSource.handedness);
+                    this.xrLogger.updateControllerPositions(controllerPos, controllerRot, controller.inputSource.handedness);
                 }
             });
         });

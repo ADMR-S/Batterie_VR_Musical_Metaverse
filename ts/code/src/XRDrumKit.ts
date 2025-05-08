@@ -1,20 +1,21 @@
 import { Scene } from "@babylonjs/core/scene";
 import { Color3 } from "@babylonjs/core";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
-import { Mesh, TransformNode, StandardMaterial, SixDofDragBehavior } from "@babylonjs/core";
+import { TransformNode, StandardMaterial, SixDofDragBehavior } from "@babylonjs/core";
 import { WebXRDefaultExperience } from "@babylonjs/core";
-import { Quaternion } from "@babylonjs/core";
 //import { WebXRControllerPhysics } from "@babylonjs/core/XR/features/WebXRControllerPhysics";
 //import { Observable } from "@babylonjs/core/Misc/observable";
-import { AdvancedDynamicTexture, Rectangle, TextBlock } from "@babylonjs/gui";
 
 import XRDrumstick from "./XRDrumstick";
 import XRDrum from "./XRDrum";
 import XRCymbal from "./XRCymbal"
 
+import XRLogger from "./XRLogger";
+
 //TODO : 
 //Retour haptique et visuel collision baguettes (vibrations, tremblement du tambour...)
 //Intégration avec Musical Metaverse (interface PedalNode3D)
+//Ajuster implémentation Drum Components (console via XRlogger, textures...)
 //Ajouter texture
 //Ajuster vélocité (voir prototype scheduleEvent)
 //Commande pour reset l'emplacement des drumSticks
@@ -59,10 +60,6 @@ class XRDrumKit {
     closedHiHatKey: number = 42;
     openHiHatKey: number = 46;
     log = false;
-    xrUI: AdvancedDynamicTexture;
-    consoleText: TextBlock;
-    controllerPositionText: TextBlock; // New text block for controller positions
-    private controllerPositions: { [handedness: string]: string } = {}; // Store positions for both controllers
 
     constructor(audioContext: AudioContext, scene: Scene, eventMask: number, xr: WebXRDefaultExperience, hk: any) {
         this.audioContext = audioContext;
@@ -86,143 +83,11 @@ class XRDrumKit {
         this.add6dofBehavior(this.drumContainer); // Make the drumkit movable in the VR space on selection
         this.xr = xr;
         this.drumSoundsEnabled = false; // Initialize to false and set to true only when controllers are added
+        let xrLogger = new XRLogger(xr, scene);
         for (var i = 0; i < 2; i++) {
-            this.drumsticks[i] = new XRDrumstick(this.xr, this, this.scene, this.eventMask, i-1);
+            this.drumsticks[i] = new XRDrumstick(this.xr, this, this.scene, this.eventMask, i-1, xrLogger);
         }
 
-        // Initialize XR console
-        this.xrUI = AdvancedDynamicTexture.CreateFullscreenUI("UI");
-
-        // Center section for controller positions
-        const controllerPositionContainer = new Rectangle();
-        controllerPositionContainer.width = "40%"; 
-        controllerPositionContainer.height = "35%"; // Increase height
-        controllerPositionContainer.background = "rgba(0, 0, 0, 0.5)";
-        controllerPositionContainer.color = "white";
-        controllerPositionContainer.thickness = 0;
-        controllerPositionContainer.verticalAlignment = TextBlock.VERTICAL_ALIGNMENT_TOP;
-        controllerPositionContainer.horizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_CENTER; // Move to the left
-        controllerPositionContainer.isVisible = false; // Initially hidden
-        this.xrUI.addControl(controllerPositionContainer);
-
-        this.controllerPositionText = new TextBlock();
-        this.controllerPositionText.color = "white";
-        this.controllerPositionText.fontSize = 18;
-        this.controllerPositionText.textWrapping = true;
-        this.controllerPositionText.resizeToFit = false; // Disable resizing to fit the text
-        this.controllerPositionText.textHorizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_LEFT; // Align text to the left
-        this.controllerPositionText.textVerticalAlignment = TextBlock.VERTICAL_ALIGNMENT_TOP; // Align text to the top
-        controllerPositionContainer.addControl(this.controllerPositionText);
-
-        // Center section for general console messages
-        const consoleContainer = new Rectangle();
-        consoleContainer.width = "40%"; 
-        consoleContainer.height = "50%"; // Increase height
-        consoleContainer.background = "rgba(0, 0, 0, 0.5)";
-        consoleContainer.color = "white";
-        consoleContainer.thickness = 0;
-        consoleContainer.verticalAlignment = TextBlock.VERTICAL_ALIGNMENT_TOP;
-        consoleContainer.horizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_CENTER; // Move to the left
-        consoleContainer.top = "40%"; // Slightly below the controller position container
-        consoleContainer.isVisible = false; // Initially hidden
-        this.xrUI.addControl(consoleContainer);
-
-        this.consoleText = new TextBlock();
-        this.consoleText.color = "white";
-        this.consoleText.fontSize = 18;
-        this.consoleText.textWrapping = true;
-        this.consoleText.resizeToFit = false; // Disable resizing to fit the text
-        this.consoleText.textHorizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_LEFT; // Align text to the left
-        this.consoleText.textVerticalAlignment = TextBlock.VERTICAL_ALIGNMENT_TOP; // Align text to the top
-        this.consoleText.clipChildren = true; // Ensure text is clipped to the container
-        this.consoleText.clipContent = true; // Clip overflowing content
-        consoleContainer.addControl(this.consoleText);
-
-        // Link the console parts to the XR headset
-        const headsetNode = xr.baseExperience.camera.parent; // Get the headset's parent node
-        const controllerPositionTransformNode = new TransformNode("controllerPositionTransformNode", this.scene);
-        controllerPositionTransformNode.parent = headsetNode; // Attach to the headset
-        controllerPositionTransformNode.position = new Vector3(0, 1.5, 1); // Position in front of the headset
-        controllerPositionTransformNode.billboardMode = Mesh.BILLBOARDMODE_ALL; // Make it always face the camera
-        controllerPositionContainer.linkWithMesh(controllerPositionTransformNode);
-
-        const consoleTransformNode = new TransformNode("consoleTransformNode", this.scene);
-        consoleTransformNode.parent = headsetNode; // Attach to the headset
-        consoleTransformNode.position = new Vector3(0, 0.5, 1); // Position below the controller positions
-        consoleTransformNode.billboardMode = Mesh.BILLBOARDMODE_ALL; // Make it always face the camera
-        consoleContainer.linkWithMesh(consoleTransformNode);
-
-        // Monitor the right controller's internal trigger
-        xr.input.onControllerAddedObservable.add((controller) => {
-            if (controller.inputSource.handedness === "right") {
-                controller.onMotionControllerInitObservable.add((motionController) => {
-                    const trigger = motionController.getComponent("xr-standard-squeeze");
-                    trigger.onButtonStateChangedObservable.add((button) => {
-                        const isPressed = button.pressed;
-
-                        // Reposition the containers dynamically in front of the camera
-                        const camera = xr.baseExperience.camera;
-                        if (isPressed) {
-                            const forward = camera.getForwardRay(1).direction; // Get the forward direction of the camera
-                            const offset = new Vector3(forward.x, forward.y, forward.z).scale(1); // Scale to desired distance
-                            const cameraPosition = camera.position;
-
-                            controllerPositionTransformNode.position = cameraPosition.add(offset).add(new Vector3(0, 0.5, 0)); // Slightly above
-                            consoleTransformNode.position = cameraPosition.add(offset).add(new Vector3(0, -0.5, 0)); // Slightly below
-                        }
-
-                        // Toggle visibility
-                        controllerPositionContainer.isVisible = isPressed;
-                        consoleContainer.isVisible = isPressed;
-                    });
-                });
-            }
-        });
-
-        this.initializeSimpleConsoleLogger(); // Replace the old logging redirection with the new method
-    }
-
-    private initializeSimpleConsoleLogger() {
-        const maxLines = 20;
-        const maxLineLength = 100; // Maximum characters per line
-        const logBuffer: string[] = [];
-        const originalConsoleLog = console.log; // Preserve the original console.log
-
-        console.log = (...args: any[]) => {
-            // Log to the browser console
-            originalConsoleLog(...args);
-
-            // Format and log to the XR UI console
-            const newText = args
-                .map(arg => {
-                    if (typeof arg === "object") {
-                        return arg ? ("Objet : " + arg.constructor.name) : "unnamed Object"; // Print object name or null
-                    }
-                    const str = String(arg);
-                    return str.length > maxLineLength ? str.slice(0, maxLineLength) + "..." : str;
-                })
-                .join(" ");
-            
-            logBuffer.unshift(newText); // Add new log at the top
-            if (logBuffer.length > maxLines) {
-                logBuffer.pop(); // Remove the oldest log if buffer exceeds maxLines
-            }
-
-            this.consoleText.text = logBuffer.join("\n"); // Update the XR UI console
-        };
-    }
-
-    updateControllerPositionText(positionText: string) {
-        this.controllerPositionText.text = positionText;
-    }
-
-    updateControllerPositions(controllerPos: Vector3, controllerRot: Quaternion, handedness: string) {
-        //get controller angular rotation :
-
-
-        this.controllerPositions[handedness] = `Controller ${handedness}:\nLinear position: ${controllerPos.toString()}\nAngular position : ${controllerRot}`;
-        const combinedText = Object.values(this.controllerPositions).join("\n"); // Combine positions for both controllers
-        this.updateControllerPositionText(combinedText);
     }
 
     async initializePlugin() {
