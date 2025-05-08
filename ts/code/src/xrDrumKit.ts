@@ -435,7 +435,7 @@ class XRDrumKit {
                     this.wamInstance.audioNode.scheduleEvents({
                         type: 'wam-midi',
                         time: this.audioContext.currentTime,
-                        data: { bytes: new Uint8Array([0x90, midiKey, 12]) } // Note ON, third parameter is velocity from 0 to 127 (0 is equivalent to note OFF)
+                        data: { bytes: new Uint8Array([0x90, midiKey, 127]) } // Note ON, third parameter is velocity from 0 to 127 (0 is equivalent to note OFF)
                         //http://midi.teragonaudio.com/tech/midispec/noteon.htm
                         //Considering wamMidiEvent follow the MIDI spec and full audio chain is compatible (it is said that each MIDI device might treat these values differently)
                     });
