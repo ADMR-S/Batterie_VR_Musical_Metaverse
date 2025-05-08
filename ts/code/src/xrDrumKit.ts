@@ -431,6 +431,7 @@ class XRDrumKit {
                 }
                 */
                 if (this.wamInstance) {
+                    console.log("On joue une note au volume : 127" )
                     // Joue une note lors de la collision
                     this.wamInstance.audioNode.scheduleEvents({
                         type: 'wam-midi',
