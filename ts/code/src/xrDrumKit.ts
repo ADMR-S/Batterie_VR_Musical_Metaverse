@@ -373,7 +373,7 @@ class XRDrumKit {
                 if (!this.drumSoundsEnabled) {
                     return; // Do not play sounds if drum sounds are disabled
                 }
-                var currentVelocity = 0;
+                var currentVelocity = 0;//Default is 64 (median)
                 for (let i = 0; i < this.drumsticks.length; i++) {
                     if (collision.collider.transformNode.id === this.drumsticks[i].drumstickAggregate.transformNode.id) {
                         console.log("Collision avec " + collision.collider.transformNode.id)
@@ -435,12 +435,14 @@ class XRDrumKit {
                     this.wamInstance.audioNode.scheduleEvents({
                         type: 'wam-midi',
                         time: this.audioContext.currentTime,
-                        data: { bytes: new Uint8Array([0x90, midiKey, currentVelocity]) } // Note ON with intensity
+                        data: { bytes: new Uint8Array([0x90, midiKey, 12]) } // Note ON, third parameter is velocity from 0 to 127 (0 is equivalent to note OFF)
+                        //http://midi.teragonaudio.com/tech/midispec/noteon.htm
+                        //Considering wamMidiEvent follow the MIDI spec and full audio chain is compatible (it is said that each MIDI device might treat these values differently)
                     });
                     this.wamInstance.audioNode.scheduleEvents({
                         type: 'wam-midi',
                         time: this.audioContext.currentTime + duration,
-                        data: { bytes: new Uint8Array([0x80, midiKey, currentVelocity]) } // Note OFF
+                        data: { bytes: new Uint8Array([0x80, midiKey, 12]) } // Note OFF, third parameter is velocity (how quickly the note should be released)
                     });
                 }
             } else {
