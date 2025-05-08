@@ -8,9 +8,7 @@ import { Quaternion } from "@babylonjs/core";
 //import { Observable } from "@babylonjs/core/Misc/observable";
 import { AdvancedDynamicTexture, Rectangle, TextBlock } from "@babylonjs/gui";
 
-//@ts-ignore
 import XRDrumstick from "./XRDrumstick";
-//@ts-ignore
 import XRDrum from "./XRDrum";
 import XRCymbal from "./XRCymbal"
 
