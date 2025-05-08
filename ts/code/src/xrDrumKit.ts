@@ -431,19 +431,19 @@ class XRDrumKit {
                 }
                 */
                 if (this.wamInstance) {
-                    console.log("On joue une note au volume : 127" )
+                    console.log("On joue une note au volume : " + currentVelocity)
                     // Joue une note lors de la collision
                     this.wamInstance.audioNode.scheduleEvents({
                         type: 'wam-midi',
                         time: this.audioContext.currentTime,
-                        data: { bytes: new Uint8Array([0x90, midiKey, 127]) } // Note ON, third parameter is velocity from 0 to 127 (0 is equivalent to note OFF)
+                        data: { bytes: new Uint8Array([0x90, midiKey, currentVelocity]) } // Note ON, third parameter is velocity from 0 to 127 (0 is equivalent to note OFF)
                         //http://midi.teragonaudio.com/tech/midispec/noteon.htm
                         //Considering wamMidiEvent follow the MIDI spec and full audio chain is compatible (it is said that each MIDI device might treat these values differently)
                     });
                     this.wamInstance.audioNode.scheduleEvents({
                         type: 'wam-midi',
                         time: this.audioContext.currentTime + duration,
-                        data: { bytes: new Uint8Array([0x80, midiKey, 12]) } // Note OFF, third parameter is velocity (how quickly the note should be released)
+                        data: { bytes: new Uint8Array([0x80, midiKey, currentVelocity]) } // Note OFF, third parameter is velocity (how quickly the note should be released)
                     });
                 }
             } else {
