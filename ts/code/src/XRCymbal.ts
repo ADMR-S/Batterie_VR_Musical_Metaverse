@@ -1,4 +1,4 @@
-import XRDrumComponent from "./xrDrumComponent";
+import XRDrumComponent from "./XRDrumComponent";
 import { MeshBuilder, StandardMaterial, TransformNode, Vector3 } from "@babylonjs/core";
 import { PhysicsAggregate, PhysicsMotionType, PhysicsPrestepType, PhysicsShapeType } from "@babylonjs/core/Physics";
 import XRDrumKit from "./XRDrumKit";
