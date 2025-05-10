@@ -80,7 +80,7 @@ class XRDrumKit {
 
 
         const assetsManager = new AssetsManager(scene);
-        const meshTask = assetsManager.addMeshTask("drum3DModel", "", this.path, `drum3Dmodel.glb`);
+        const meshTask = assetsManager.addMeshTask("drum3DModel", "", this.path, `drum3DModel.glb`);
         
 
         meshTask.onSuccess = (task) => {
