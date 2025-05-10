@@ -28,7 +28,7 @@ class XRDrum implements XRDrumComponent{
 
     createDrumComponentBody(name: string, diameter: number, height: number) {
         const assetsManager = new AssetsManager(this.xrDrumKit.scene);
-        const meshTask = assetsManager.addMeshTask(name, "", "./public/drum_3D_model/", `${name}.glb`);
+        const meshTask = assetsManager.addMeshTask(name, "", "/drum_3D_model/", `${name}.glb`);
 
         meshTask.onSuccess = (task) => {
             const body = task.loadedMeshes[0];
