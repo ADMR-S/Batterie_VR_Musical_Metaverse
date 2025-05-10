@@ -1,5 +1,5 @@
 import XRDrumComponent from "./XRDrumComponent";
-import { MeshBuilder, StandardMaterial, TransformNode, Vector3, SceneLoader, AssetsManager } from "@babylonjs/core";
+import { MeshBuilder, StandardMaterial, TransformNode, Vector3, AssetsManager } from "@babylonjs/core";
 import { PhysicsAggregate, PhysicsMotionType, PhysicsPrestepType, PhysicsShapeType } from "@babylonjs/core/Physics";
 import XRDrumKit from "./XRDrumKit";
 
@@ -42,6 +42,7 @@ class XRCymbal implements XRDrumComponent {
             bodyAggregate.body.setEventMask(this.xrDrumKit.eventMask);
         };
 
+        //@ts-ignore
         meshTask.onError = (task, message, exception) => {
             console.error(`Failed to load mesh for ${name}:`, message, exception);
         };
