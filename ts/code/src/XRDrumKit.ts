@@ -73,10 +73,10 @@ class XRDrumKit {
             this.wamInstance = wamInstance;
             this.move(new Vector3(0, 0, 4)); // NEW POSITION
         });
-        this.snare = new XRDrum("snare", 0.5, 0.3, this.snareKey, this, new Vector3(0, 0.3, 0)); // Create snare drum
-        this.floorTom = new XRDrum("floorTom", 0.6, 0.3, this.floorTomKey, this, new Vector3(0.8, 0.3, 0)); // Create floor tom
-        this.midTom = new XRDrum("midTom", 0.5, 0.25, this.midTomKey, this, new Vector3(0.6, 0.8, 0.3)); // Create mid tom
-        this.highTom = new XRDrum("highTom", 0.4, 0.2, this.highTomKey, this, new Vector3(0.1, 0.7, 0.3)); // Create high tom
+        this.snare = new XRDrum("snare", this.snareKey, this, new Vector3(0, 0.3, 0)); // Create snare drum
+        this.floorTom = new XRDrum("floorTom", this.floorTomKey, this, new Vector3(0.8, 0.3, 0)); // Create floor tom
+        this.midTom = new XRDrum("midTom", this.midTomKey, this, new Vector3(0.6, 0.8, 0.3)); // Create mid tom
+        this.highTom = new XRDrum("highTom", this.highTomKey, this, new Vector3(0.1, 0.7, 0.3)); // Create high tom
         this.crashCymbal = new XRCymbal("crashCymbal", 1.0, 0.07, this.crashCymbalKey, this, new Vector3(-0.4, 1.2, 0.5)); // Create crash cymbal
         this.rideCymbal = new XRCymbal("rideCymbal", 1.0, 0.07, this.rideCymbalKey, this, new Vector3(1.2, 1.2, 0.5)); // Create ride cymbal
         this.hiHat = new XRCymbal("hiHat", 0.4, 0.07, this.closedHiHatKey, this, new Vector3(-0.5, 0.8, 0.2)); // Create hi-hat cymbal
