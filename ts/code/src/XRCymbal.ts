@@ -1,81 +1,65 @@
 import XRDrumComponent from "./XRDrumComponent";
-import { TransformNode, Vector3, AssetsManager } from "@babylonjs/core";
+import { TransformNode } from "@babylonjs/core";
 import { PhysicsAggregate, PhysicsMotionType, PhysicsPrestepType, PhysicsShapeType } from "@babylonjs/core/Physics";
+import { AbstractMesh } from "@babylonjs/core";
+
 import XRDrumKit from "./XRDrumKit";
 
-class XRCymbal implements XRDrumComponent {
+
+class XRCymbal implements XRDrumComponent{
 
     //@ts-ignore
     private name: String;
     private drumComponentContainer: TransformNode;
     private xrDrumKit: XRDrumKit;
-    log: boolean = true;
+    log : boolean = true;
 
-    constructor(name: string, diameter: number, height: number, midiKey: number, xrDrumKit: XRDrumKit, position: Vector3) { //diameter in meters, height in meters, midiKey is the MIDI key to play when the trigger is hit
+    constructor(name: string, midiKey : number, xrDrumKit: XRDrumKit, drum3Dmodel : AbstractMesh[]) { //diameter in meters, height in meters, midiKey is the MIDI key to play when the trigger is hit
         this.name = name;
         this.xrDrumKit = xrDrumKit;
 
         this.drumComponentContainer = new TransformNode(name + "Container");
         this.drumComponentContainer.parent = xrDrumKit.drumContainer;
-        this.drumComponentContainer.position = position;
         xrDrumKit.drumComponents.push(this.drumComponentContainer);
 
-        this.createDrumComponentBody(name, diameter, height);
-        this.createDrumComponentTrigger(name);
-        this.playSoundOnTrigger(name, midiKey, 5) //5s duration for cymbals (needs refining)
+        const body = drum3Dmodel.find(mesh => mesh.name === name); // Find the main body mesh        
+        this.createDrumComponentBody(body);
 
+        if(body){
+            const trigger = body.getChildMeshes().find(mesh => mesh.name === "Trigger")
+            if(trigger){
+                this.createDrumComponentTrigger(trigger);
+            }
+        }        
+    
+        
+
+        this.playSoundOnTrigger(name, midiKey, 0.25) //0.25s duration for drums (needs refining)
     }
 
-    createDrumComponentBody(name: string, diameter: number, height: number) {
-        const assetsManager = new AssetsManager(this.xrDrumKit.scene);
-        const meshTask = assetsManager.addMeshTask(name, "", "/drum_3D_model/", `${name}.glb`);
+    createDrumComponentBody(body : AbstractMesh | undefined) {
+        if (body) {
+            body.parent = this.drumComponentContainer;
 
-        meshTask.onSuccess = (task) => {
-            const body = task.loadedMeshes.find(mesh => mesh.name === name); // Find the main body mesh
-            if (body) {
-                body.scaling = new Vector3(diameter, height, diameter); // Scale to match desired size
-                body.parent = this.drumComponentContainer;
-
-                const bodyAggregate = new PhysicsAggregate(body, PhysicsShapeType.MESH, { mass: 0 }, this.xrDrumKit.scene);
-                bodyAggregate.body.setMotionType(PhysicsMotionType.STATIC);
-                bodyAggregate.body.setPrestepType(PhysicsPrestepType.TELEPORT);
-                bodyAggregate.body.setCollisionCallbackEnabled(true);
-                bodyAggregate.body.setEventMask(this.xrDrumKit.eventMask);
-            }
-        };
-
-        //@ts-ignore
-        meshTask.onError = (task, message, exception) => {
-            console.error(`Failed to load mesh for ${name}:`, message, exception);
-        };
-
-        assetsManager.load();
+            const bodyAggregate = new PhysicsAggregate(body, PhysicsShapeType.MESH, { mass: 0 }, this.xrDrumKit.scene);
+            bodyAggregate.body.setMotionType(PhysicsMotionType.STATIC);
+            bodyAggregate.body.setPrestepType(PhysicsPrestepType.TELEPORT);
+            bodyAggregate.body.setCollisionCallbackEnabled(true);
+            bodyAggregate.body.setEventMask(this.xrDrumKit.eventMask);
+        }
     }
 
-    createDrumComponentTrigger(name: string) {
-        const assetsManager = new AssetsManager(this.xrDrumKit.scene);
-        const meshTask = assetsManager.addMeshTask(name, "", "/drum_3D_model/", `${name}.glb`);
+    createDrumComponentTrigger(trigger : AbstractMesh) {
+        if (trigger) {
+            trigger.parent = this.drumComponentContainer;
 
-        meshTask.onSuccess = (task) => {
-            const trigger = task.loadedMeshes.find(mesh => mesh.name === "Trigger"); // Find the "Trigger" object
-            if (trigger) {
-                trigger.parent = this.drumComponentContainer;
-
-                const triggerAggregate = new PhysicsAggregate(trigger, PhysicsShapeType.MESH, { mass: 0 }, this.xrDrumKit.scene);
-                triggerAggregate.body.setMotionType(PhysicsMotionType.STATIC);
-                triggerAggregate.body.setPrestepType(PhysicsPrestepType.TELEPORT);
-                if (triggerAggregate.body.shape) {
-                    triggerAggregate.body.shape.isTrigger = true;
-                }
+            const triggerAggregate = new PhysicsAggregate(trigger, PhysicsShapeType.MESH, { mass: 0 }, this.xrDrumKit.scene);
+            triggerAggregate.body.setMotionType(PhysicsMotionType.STATIC);
+            triggerAggregate.body.setPrestepType(PhysicsPrestepType.TELEPORT);
+            if (triggerAggregate.body.shape) {
+                triggerAggregate.body.shape.isTrigger = true;
             }
-        };
-
-        //@ts-ignore
-        meshTask.onError = (task, message, exception) => {
-            console.error(`Failed to load trigger for ${name}:`, message, exception);
-        };
-
-        assetsManager.load();
+        }
     }
 
     playSoundOnTrigger(name: string, midiKey: number, duration: number) { //duration in seconds
@@ -110,7 +94,44 @@ class XRCymbal implements XRDrumComponent {
                     }
                 }
                 console.log("Vitesse de la baguette hors boucle : " + currentVelocity);
+                //const currentVelocity = new Vector3();
+                /* We already know collided against is a trigger so we should calculate its velocity (currently 0 but if the drum starts moving for a reason we should)
+                if(collision.collidedAgainst.transformNode.physicsBody.controllerPhysicsImpostor){
+                    console.log("Collision avec une baguette !");
+                    const controllerPhysics = collision.collidedAgainst.controllerPhysicsImpostor;
+                    currentVelocity.copyFrom(controllerPhysics.getLinearVelocity());
+                    console.log("Vitesse de la baguette : " + currentVelocity);
+                    }
+                */
                         
+                //const otherVelocity = new Vector3();
+                /*
+                if(collision.collider.transformNode.physicsBody.controllerPhysicsImpostor){
+                    const controllerPhysics = collision.collider.transformNode.controllerPhysicsImpostor;
+                    otherVelocity.copyFrom(controllerPhysics.getLinearVelocity());
+                    if(this.log){
+                        console.log("Collision avec une baguette !"); 
+                        console.log("Vitesse de la baguette : " + otherVelocity);
+                    }
+                }
+                    */
+                
+                //const relativeVelocity = currentVelocity.subtract(otherVelocity);
+                //const speed = Math.abs(relativeVelocity.length());
+                /*
+                if(this.log){
+                    console.log('Speed:', speed);
+                }
+                    
+                const intensity = Math.min(Math.max(speed * 10, 0), 127); // Scale speed to MIDI velocity range (0-127)
+
+                if (currentVelocity.y > 0) {
+                    if(this.log){
+                        console.log('Upward movement detected, ignoring collision');
+                    }
+                    return;
+                }
+                */
                 if (this.xrDrumKit.wamInstance) {
                     console.log("On joue une note au volume : " + currentVelocity)
                     // Joue une note lors de la collision
@@ -118,7 +139,7 @@ class XRCymbal implements XRDrumComponent {
                         type: 'wam-midi',
                         time: this.xrDrumKit.audioContext.currentTime,
                         data: { bytes: new Uint8Array([0x90, midiKey, currentVelocity]) } // Note ON, third parameter is velocity from 0 to 127 (0 is equivalent to note OFF)
-//http://midi.teragonaudio.com/tech/midispec/noteon.htm
+                        //http://midi.teragonaudio.com/tech/midispec/noteon.htm
                         //Considering wamMidiEvent follow the MIDI spec and full audio chain is compatible (it is said that each MIDI device might treat these values differently)
                     });
                     this.xrDrumKit.wamInstance.audioNode.scheduleEvents({
@@ -137,3 +158,38 @@ class XRCymbal implements XRDrumComponent {
 
 }
 export default XRCymbal;
+/*
+
+/*
+        // Add three legs to the drum container
+        const leg1 = this.createLeg(new BABYLON.Vector3(-diameter / 2, -height / 2, 0), drumContainer);
+        const leg2 = this.createLeg(new BABYLON.Vector3(diameter / 2, -height / 2, 0), drumContainer);
+        const leg3 = this.createLeg(new BABYLON.Vector3(0, -height / 2, diameter / 2), drumContainer);
+        */
+
+        /* VERSION COLLISION ENTRE OBJETS (Pas de trigger) - Abandonné (difficile d'empêcher la batterie de bouger)
+        const cylinderObservable = cylinderAggregate.body.getCollisionObservable();
+
+        cylinderObservable.add((collisionEvent) => {
+            //console.log("Collision détectée :", collisionEvent);
+            if(collisionEvent.type !== "COLLISION_STARTED") return;
+    
+            console.log("ON JOUE : " + name);
+    
+            const noteMdiToPlay = midiKey;
+    
+            if (this.wamInstance) {
+                // Joue une note lors de la collision
+                this.wamInstance.audioNode.scheduleEvents({
+                    type: 'wam-midi',
+                    time: this.audioContext.currentTime,
+                    data: { bytes: new Uint8Array([0x90, noteMdiToPlay, 100]) } // Note ON
+                });
+                this.wamInstance.audioNode.scheduleEvents({
+                    type: 'wam-midi',
+                    time: this.audioContext.currentTime + 0.25,
+                    data: { bytes: new Uint8Array([0x80, noteMdiToPlay, 100]) } // Note OFF
+                });
+            }
+        });
+*/

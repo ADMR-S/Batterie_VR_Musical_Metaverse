@@ -1,5 +1,5 @@
 import XRDrumComponent from "./XRDrumComponent";
-import { TransformNode, Vector3, AssetsManager } from "@babylonjs/core";
+import { TransformNode } from "@babylonjs/core";
 import { PhysicsAggregate, PhysicsMotionType, PhysicsPrestepType, PhysicsShapeType } from "@babylonjs/core/Physics";
 import { AbstractMesh } from "@babylonjs/core";
 
@@ -12,35 +12,27 @@ class XRDrum implements XRDrumComponent{
     private name: String;
     private drumComponentContainer: TransformNode;
     private xrDrumKit: XRDrumKit;
-    private path = "/drum_3D_model/"; // Path to the 3D model folder
     log : boolean = true;
 
-    constructor(name: string, midiKey : number, xrDrumKit: XRDrumKit, position: Vector3) { //diameter in meters, height in meters, midiKey is the MIDI key to play when the trigger is hit
+    constructor(name: string, midiKey : number, xrDrumKit: XRDrumKit, drum3Dmodel : AbstractMesh[]) { //diameter in meters, height in meters, midiKey is the MIDI key to play when the trigger is hit
         this.name = name;
         this.xrDrumKit = xrDrumKit;
 
         this.drumComponentContainer = new TransformNode(name + "Container");
         this.drumComponentContainer.parent = xrDrumKit.drumContainer;
-        this.drumComponentContainer.position = position;
         xrDrumKit.drumComponents.push(this.drumComponentContainer);
 
-        const assetsManager = new AssetsManager(this.xrDrumKit.scene);
-        const meshTask = assetsManager.addMeshTask(name, "", this.path, `${name}.glb`);
+        const body = drum3Dmodel.find(mesh => mesh.name === name); // Find the main body mesh        
+        this.createDrumComponentBody(body);
 
-        meshTask.onSuccess = (task) => {
-            const body = task.loadedMeshes.find(mesh => mesh.name === name); // Find the main body mesh
-            const trigger = task.loadedMeshes.find(mesh => mesh.name === "Trigger"); // Find the "Trigger" object
-            if(body && trigger){
-                this.createDrumComponentBody(body);
+        if(body){
+            const trigger = body.getChildMeshes().find(mesh => mesh.name === "Trigger")
+            if(trigger){
                 this.createDrumComponentTrigger(trigger);
             }
-        }
-        //@ts-ignore
-        meshTask.onError = (task, message, exception) => {
-            console.error(`Failed to load mesh for ${name}:`, message, exception);
-        };
-
-        assetsManager.load();
+        }        
+    
+        
 
         this.playSoundOnTrigger(name, midiKey, 0.25) //0.25s duration for drums (needs refining)
     }

@@ -6,6 +6,8 @@ import { WebXRDefaultExperience } from "@babylonjs/core";
 //import { WebXRControllerPhysics } from "@babylonjs/core/XR/features/WebXRControllerPhysics";
 //import { Observable } from "@babylonjs/core/Misc/observable";
 
+import { AssetsManager } from "@babylonjs/core";
+
 import XRDrumstick from "./XRDrumstick";
 import XRDrum from "./XRDrum";
 import XRCymbal from "./XRCymbal"
@@ -44,26 +46,28 @@ class XRDrumKit {
     xr: WebXRDefaultExperience;
     drumsticks: XRDrumstick[] = [];
     drumSoundsEnabled: boolean;
-    snare: XRDrum;
+    snare: XRDrum | undefined;
     snareKey: number = 38;
-    floorTom: XRDrum;
+    floorTom: XRDrum | undefined;
     floorTomKey: number = 41;
-    midTom: XRDrum;
+    midTom: XRDrum | undefined;
     midTomKey: number = 47;
-    highTom: XRDrum;
+    highTom: XRDrum | undefined;
     highTomKey: number = 43;
-    crashCymbal: XRCymbal;
+    crashCymbal: XRCymbal | undefined;
     crashCymbalKey: number = 49;
-    rideCymbal: XRCymbal;
+    rideCymbal: XRCymbal | undefined;
     rideCymbalKey: number = 51;
-    hiHat: XRCymbal;
+    hiHat: XRCymbal | undefined;
     closedHiHatKey: number = 42;
     openHiHatKey: number = 46;
+    path = "/drum_3D_model/"; // Path to the 3D model folder
     log = false;
 
     constructor(audioContext: AudioContext, scene: Scene, eventMask: number, xr: WebXRDefaultExperience, hk: any) {
         this.audioContext = audioContext;
         this.hk = hk;
+        this.xr = xr;
         this.scene = scene;
         this.eventMask = eventMask;
         this.wamInstance = null;
@@ -73,15 +77,30 @@ class XRDrumKit {
             this.wamInstance = wamInstance;
             this.move(new Vector3(0, 0, 4)); // NEW POSITION
         });
-        this.snare = new XRDrum("snare", this.snareKey, this, new Vector3(0, 0.3, 0)); // Create snare drum
-        this.floorTom = new XRDrum("floorTom", this.floorTomKey, this, new Vector3(0.8, 0.3, 0)); // Create floor tom
-        this.midTom = new XRDrum("midTom", this.midTomKey, this, new Vector3(0.6, 0.8, 0.3)); // Create mid tom
-        this.highTom = new XRDrum("highTom", this.highTomKey, this, new Vector3(0.1, 0.7, 0.3)); // Create high tom
-        this.crashCymbal = new XRCymbal("crashCymbal", 1.0, 0.07, this.crashCymbalKey, this, new Vector3(-0.4, 1.2, 0.5)); // Create crash cymbal
-        this.rideCymbal = new XRCymbal("rideCymbal", 1.0, 0.07, this.rideCymbalKey, this, new Vector3(1.2, 1.2, 0.5)); // Create ride cymbal
-        this.hiHat = new XRCymbal("hiHat", 0.4, 0.07, this.closedHiHatKey, this, new Vector3(-0.5, 0.8, 0.2)); // Create hi-hat cymbal
+
+
+        const assetsManager = new AssetsManager(scene);
+        const meshTask = assetsManager.addMeshTask("drum3DModel", "", this.path, `drum3Dmodel.glb`);
+        
+
+        meshTask.onSuccess = (task) => {
+            const drumMeshes = task.loadedMeshes
+            this.snare = new XRDrum("snare", this.snareKey, this, drumMeshes); // Create snare drum
+            this.floorTom = new XRDrum("floorTom", this.floorTomKey, this, drumMeshes); // Create floor tom
+            this.midTom = new XRDrum("midTom", this.midTomKey, this, drumMeshes); // Create mid tom
+            this.highTom = new XRDrum("highTom", this.highTomKey, this, drumMeshes); // Create high tom
+            this.crashCymbal = new XRCymbal("crashCymbal", this.crashCymbalKey, this, drumMeshes); // Create crash cymbal
+            this.rideCymbal = new XRCymbal("rideCymbal", this.rideCymbalKey, this, drumMeshes); // Create ride cymbal
+            this.hiHat = new XRCymbal("hiHat", this.closedHiHatKey, this, drumMeshes); // Create hi-hat cymbal
+        }
+        //@ts-ignore
+        meshTask.onError = (task, message, exception) => {
+            console.error(`Failed to load mesh for ${name}:`, message, exception);
+        };
+
+        assetsManager.load();
+
         this.add6dofBehavior(this.drumContainer); // Make the drumkit movable in the VR space on selection
-        this.xr = xr;
         this.drumSoundsEnabled = false; // Initialize to false and set to true only when controllers are added
         let xrLogger = new XRLogger(xr, scene);
         for (var i = 0; i < 2; i++) {
