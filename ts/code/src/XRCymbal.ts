@@ -1,44 +1,52 @@
 import XRDrumComponent from "./XRDrumComponent";
-import { MeshBuilder, StandardMaterial, TransformNode, Vector3 } from "@babylonjs/core";
+import { MeshBuilder, StandardMaterial, TransformNode, Vector3, SceneLoader, AssetsManager } from "@babylonjs/core";
 import { PhysicsAggregate, PhysicsMotionType, PhysicsPrestepType, PhysicsShapeType } from "@babylonjs/core/Physics";
 import XRDrumKit from "./XRDrumKit";
 
-
-class XRCymbal implements XRDrumComponent{
+class XRCymbal implements XRDrumComponent {
 
     //@ts-ignore
     private name: String;
     private drumComponentContainer: TransformNode;
     private xrDrumKit: XRDrumKit;
-    log : boolean = true;
+    log: boolean = true;
 
-    constructor(name: string, diameter: number, height: number, midiKey : number, xrDrumKit: XRDrumKit, position: Vector3) { //diameter in meters, height in meters, midiKey is the MIDI key to play when the trigger is hit
-            this.name = name;
-            this.xrDrumKit = xrDrumKit;
+    constructor(name: string, diameter: number, height: number, midiKey: number, xrDrumKit: XRDrumKit, position: Vector3) { //diameter in meters, height in meters, midiKey is the MIDI key to play when the trigger is hit
+        this.name = name;
+        this.xrDrumKit = xrDrumKit;
 
-            this.drumComponentContainer = new TransformNode(name + "Container");
-            this.drumComponentContainer.parent = xrDrumKit.drumContainer;
-            this.drumComponentContainer.position = position;
-            xrDrumKit.drumComponents.push(this.drumComponentContainer);
+        this.drumComponentContainer = new TransformNode(name + "Container");
+        this.drumComponentContainer.parent = xrDrumKit.drumContainer;
+        this.drumComponentContainer.position = position;
+        xrDrumKit.drumComponents.push(this.drumComponentContainer);
 
-            this.createDrumComponentBody(name, diameter, height);
-            this.createDrumComponentTrigger(name, diameter, height);
-            this.playSoundOnTrigger(name, midiKey, 5) //5s duration for cymbals (needs refining)
+        this.createDrumComponentBody(name, diameter, height);
+        this.createDrumComponentTrigger(name, diameter, height);
+        this.playSoundOnTrigger(name, midiKey, 5) //5s duration for cymbals (needs refining)
 
     }
 
-    createDrumComponentBody(name: string, diameter: number, height: number) { //Créer le corps de la percussion (caisse claire, tom, etc...)
-        const body = MeshBuilder.CreateCylinder(name + "Body", { diameter: diameter, height: height });
-        body.position = new Vector3(0, height / 2, 0);
-        body.material = new StandardMaterial("wireframeMaterial", this.xrDrumKit.scene);
-        body.material.wireframe = true;
-        body.parent = this.drumComponentContainer;
+    createDrumComponentBody(name: string, diameter: number, height: number) {
+        const assetsManager = new AssetsManager(this.xrDrumKit.scene);
+        const meshTask = assetsManager.addMeshTask(name, "", "./models/", `${name}.glb`);
 
-        const bodyAggregate = new PhysicsAggregate(body, PhysicsShapeType.CYLINDER, { mass: 0 }, this.xrDrumKit.scene);
-        bodyAggregate.body.setMotionType(PhysicsMotionType.STATIC);
-        bodyAggregate.body.setPrestepType(PhysicsPrestepType.TELEPORT);
-        bodyAggregate.body.setCollisionCallbackEnabled(true);
-        bodyAggregate.body.setEventMask(this.xrDrumKit.eventMask);
+        meshTask.onSuccess = (task) => {
+            const body = task.loadedMeshes[0];
+            body.scaling = new Vector3(diameter, height, diameter); // Scale to match desired size
+            body.parent = this.drumComponentContainer;
+
+            const bodyAggregate = new PhysicsAggregate(body, PhysicsShapeType.MESH, { mass: 0 }, this.xrDrumKit.scene);
+            bodyAggregate.body.setMotionType(PhysicsMotionType.STATIC);
+            bodyAggregate.body.setPrestepType(PhysicsPrestepType.TELEPORT);
+            bodyAggregate.body.setCollisionCallbackEnabled(true);
+            bodyAggregate.body.setEventMask(this.xrDrumKit.eventMask);
+        };
+
+        meshTask.onError = (task, message, exception) => {
+            console.error(`Failed to load mesh for ${name}:`, message, exception);
+        };
+
+        assetsManager.load();
     }
 
     createDrumComponentTrigger(name: string, diameter: number, height: number) { //Créer les peaux des percussions à peau (snare, tom, etc...)
