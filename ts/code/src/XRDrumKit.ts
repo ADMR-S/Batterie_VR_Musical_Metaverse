@@ -13,6 +13,7 @@ import XRCymbal from "./XRCymbal"
 import XRLogger from "./XRLogger";
 
 //TODO : 
+    //Gérer AssetManager proprement
     //Retour haptique et visuel collision baguettes (vibrations, tremblement du tambour, oscillation des cymbales...)
     //Ajouter option pour sortir un enregistrement sous forme de piano roll / liste d'évènements MIDI
     //Ajouter textures drumComponents

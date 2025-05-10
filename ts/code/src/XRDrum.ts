@@ -1,5 +1,5 @@
 import XRDrumComponent from "./XRDrumComponent";
-import { MeshBuilder, StandardMaterial, TransformNode, Vector3, AssetsManager } from "@babylonjs/core";
+import { TransformNode, Vector3, AssetsManager } from "@babylonjs/core";
 import { PhysicsAggregate, PhysicsMotionType, PhysicsPrestepType, PhysicsShapeType } from "@babylonjs/core/Physics";
 import XRDrumKit from "./XRDrumKit";
 
@@ -21,7 +21,7 @@ class XRDrum implements XRDrumComponent{
             xrDrumKit.drumComponents.push(this.drumComponentContainer);
 
             this.createDrumComponentBody(name, diameter, height);
-            this.createDrumComponentTrigger(name, diameter, height);
+            this.createDrumComponentTrigger(name);
             this.playSoundOnTrigger(name, midiKey, 0.25) //0.25s duration for drums (needs refining)
 
     }
@@ -31,16 +31,19 @@ class XRDrum implements XRDrumComponent{
         const meshTask = assetsManager.addMeshTask(name, "", "/drum_3D_model/", `${name}.glb`);
 
         meshTask.onSuccess = (task) => {
-            const body = task.loadedMeshes[0];
-            body.scaling = new Vector3(diameter, height, diameter); // Scale to match desired size
-            body.parent = this.drumComponentContainer;
+            const body = task.loadedMeshes.find(mesh => mesh.name === name); // Find the main body mesh
+            if (body) {
+                body.scaling = new Vector3(diameter, height, diameter); // Scale to match desired size
+                body.parent = this.drumComponentContainer;
 
-            const bodyAggregate = new PhysicsAggregate(body, PhysicsShapeType.MESH, { mass: 0 }, this.xrDrumKit.scene);
-            bodyAggregate.body.setMotionType(PhysicsMotionType.STATIC);
-            bodyAggregate.body.setPrestepType(PhysicsPrestepType.TELEPORT);
-            bodyAggregate.body.setCollisionCallbackEnabled(true);
-            bodyAggregate.body.setEventMask(this.xrDrumKit.eventMask);
+                const bodyAggregate = new PhysicsAggregate(body, PhysicsShapeType.MESH, { mass: 0 }, this.xrDrumKit.scene);
+                bodyAggregate.body.setMotionType(PhysicsMotionType.STATIC);
+                bodyAggregate.body.setPrestepType(PhysicsPrestepType.TELEPORT);
+                bodyAggregate.body.setCollisionCallbackEnabled(true);
+                bodyAggregate.body.setEventMask(this.xrDrumKit.eventMask);
+            }
         };
+
         //@ts-ignore
         meshTask.onError = (task, message, exception) => {
             console.error(`Failed to load mesh for ${name}:`, message, exception);
@@ -49,20 +52,30 @@ class XRDrum implements XRDrumComponent{
         assetsManager.load();
     }
 
-    createDrumComponentTrigger(name: string, diameter: number, height: number) { //Créer les peaux des percussions à peau (snare, tom, etc...)
-        let triggerHeight = 0.07;
-        const trigger = MeshBuilder.CreateCylinder(name + "Trigger", { diameter: diameter, height: triggerHeight }, this.xrDrumKit.scene);
-        trigger.position = new Vector3(0, height - (triggerHeight / 2), 0);
-        trigger.material = new StandardMaterial("wireframeMaterial", this.xrDrumKit.scene);
-        trigger.material.wireframe = true;
-        trigger.parent = this.drumComponentContainer;
+    createDrumComponentTrigger(name: string) {
+        const assetsManager = new AssetsManager(this.xrDrumKit.scene);
+        const meshTask = assetsManager.addMeshTask(name, "", "/drum_3D_model/", `${name}.glb`);
 
-        const triggerAggregate = new PhysicsAggregate(trigger, PhysicsShapeType.CYLINDER, { mass: 0 }, this.xrDrumKit.scene);
-        triggerAggregate.body.setMotionType(PhysicsMotionType.STATIC);
-        triggerAggregate.body.setPrestepType(PhysicsPrestepType.TELEPORT);
-        if (triggerAggregate.body.shape) {
-            triggerAggregate.body.shape.isTrigger = true;
-        }
+        meshTask.onSuccess = (task) => {
+            const trigger = task.loadedMeshes.find(mesh => mesh.name === "Trigger"); // Find the "Trigger" object
+            if (trigger) {
+                trigger.parent = this.drumComponentContainer;
+
+                const triggerAggregate = new PhysicsAggregate(trigger, PhysicsShapeType.MESH, { mass: 0 }, this.xrDrumKit.scene);
+                triggerAggregate.body.setMotionType(PhysicsMotionType.STATIC);
+                triggerAggregate.body.setPrestepType(PhysicsPrestepType.TELEPORT);
+                if (triggerAggregate.body.shape) {
+                    triggerAggregate.body.shape.isTrigger = true;
+                }
+            }
+        };
+
+        //@ts-ignore
+        meshTask.onError = (task, message, exception) => {
+            console.error(`Failed to load trigger for ${name}:`, message, exception);
+        };
+
+        assetsManager.load();
     }
 
     playSoundOnTrigger(name: string, midiKey: number, duration: number) { //duration in seconds
