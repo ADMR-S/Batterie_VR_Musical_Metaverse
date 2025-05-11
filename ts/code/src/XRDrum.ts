@@ -29,7 +29,7 @@ class XRDrum implements XRDrumComponent {
         }
         //Merge all body primitives into a single mesh
         const body = new TransformNode(name + "_Body", this.xrDrumKit.scene); // Create a parent node for the primitives
-        bodyPrimitives.forEach(primitive => primitive.parent = body); // Attach primitives to the parent node
+        bodyPrimitives.forEach(primitive => primitive.setParent(body)); // Attach primitives to the parent node
 
         this.createDrumComponentBody(body);
 
