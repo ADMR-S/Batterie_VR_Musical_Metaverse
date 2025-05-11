@@ -35,9 +35,6 @@ export const babylonInit = async (): Promise<void> => {
   window.addEventListener("resize", function () {
       engine.resize();
   });
-
-  // Start the render loop
-  startRenderLoop(engine, canvas);
 };
 
 window.onload = () => {
