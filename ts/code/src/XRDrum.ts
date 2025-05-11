@@ -44,12 +44,13 @@ class XRDrum implements XRDrumComponent {
     }
 
     createDrumComponentBody(body: TransformNode) {
-
-            const bodyAggregate = new PhysicsAggregate(body, PhysicsShapeType.MESH, { mass: 0 }, this.xrDrumKit.scene);
+        body.getChildMeshes().forEach(primitive => {
+            const bodyAggregate = new PhysicsAggregate(primitive, PhysicsShapeType.MESH, { mass: 0 }, this.xrDrumKit.scene);
             bodyAggregate.body.setMotionType(PhysicsMotionType.STATIC);
             bodyAggregate.body.setPrestepType(PhysicsPrestepType.TELEPORT);
             bodyAggregate.body.setCollisionCallbackEnabled(true);
             bodyAggregate.body.setEventMask(this.xrDrumKit.eventMask);
+        });
     }
 
     createDrumComponentTrigger(trigger: AbstractMesh) {
