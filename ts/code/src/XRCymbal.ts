@@ -22,15 +22,21 @@ class XRCymbal implements XRDrumComponent{
         this.drumComponentContainer.parent = xrDrumKit.drumContainer;
         xrDrumKit.drumComponents.push(this.drumComponentContainer);
 
-        const body = drum3Dmodel.find(mesh => mesh.name === name); // Find the main body mesh        
+        const body = drum3Dmodel.find(mesh => mesh.name === name); // Find the main body mesh
+        if (!body) {
+            console.error(`Failed to find the main body mesh with name '${name}' in the provided drum3Dmodel.`);
+            console.log("Available meshes:", drum3Dmodel.map(mesh => mesh.name)); // Log available meshes for debugging
+            return;
+        }
         this.createDrumComponentBody(body);
 
-        if(body){
-            const trigger = body.getChildMeshes().find(mesh => mesh.name === "Trigger")
-            if(trigger){
-                this.createDrumComponentTrigger(trigger);
-            }
-        }        
+        const trigger = body.getChildMeshes().find(mesh => mesh.name === "Trigger"); // Find the trigger mesh
+        if (!trigger) {
+            console.error(`Failed to find the trigger mesh inside the body '${name}'.`);
+            console.log("Available child meshes:", body.getChildMeshes().map(mesh => mesh.name)); // Log child meshes for debugging
+            return;
+        }
+        this.createDrumComponentTrigger(trigger);
     
         
 
