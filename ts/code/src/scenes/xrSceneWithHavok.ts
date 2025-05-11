@@ -72,6 +72,11 @@ export class XRSceneWithHavok implements CreateSceneClass {
         assetsManager.onProgress = function (remainingCount, totalCount, lastFinishedTask) {
             engine.loadingUIText = "We are loading the scene. " + remainingCount + " out of " + totalCount + " items still need to be loaded.";
         };
+
+                //@ts-ignore
+        assetsManager.onFinish = function (tasks) {
+            return scene;
+        };
             
         // @ts-ignore
         const drum = new XRDrumKit(audioContext, scene, eventMask, xr, hk, assetsManager);
@@ -103,13 +108,6 @@ export class XRSceneWithHavok implements CreateSceneClass {
                 collidedBody.setAngularVelocity(Vector3.Zero());
             }
         });
-
-        //@ts-ignore
-        assetsManager.onFinish = function (tasks) {
-            return scene;
-        };
-
-        assetsManager.load();
     };
 }
 

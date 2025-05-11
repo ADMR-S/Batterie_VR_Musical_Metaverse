@@ -85,6 +85,13 @@ class XRDrumKit {
 
         const meshTask = assetsManager.addMeshTask("drum3DModel", "", this.path, `drum3DModel.glb`);
         
+                //@ts-ignore
+        meshTask.onError = (task, message, exception) => {
+            console.error(`Failed to load mesh for ${name}:`, message, exception);
+        };
+
+        assetsManager.load();
+        
         meshTask.onSuccess = (task) => {
             const drumMeshes = task.loadedMeshes
             this.snare = new XRDrum("snare", this.snareKey, this, drumMeshes); // Create snare drum
@@ -95,12 +102,7 @@ class XRDrumKit {
             this.rideCymbal = new XRCymbal("rideCymbal", this.rideCymbalKey, this, drumMeshes); // Create ride cymbal
             this.hiHat = new XRCymbal("hiHat", this.closedHiHatKey, this, drumMeshes); // Create hi-hat cymbal
         }
-        //@ts-ignore
-        meshTask.onError = (task, message, exception) => {
-            console.error(`Failed to load mesh for ${name}:`, message, exception);
-        };
 
-        assetsManager.load();
 
         this.add6dofBehavior(this.drumContainer); // Make the drumkit movable in the VR space on selection
         this.drumSoundsEnabled = false; // Initialize to false and set to true only when controllers are added
