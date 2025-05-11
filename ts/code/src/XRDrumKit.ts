@@ -78,7 +78,7 @@ class XRDrumKit {
             this.move(new Vector3(0, 0, 4)); // NEW POSITION
         });
 
-        const meshTask = assetsManager.addMeshTask("drum3DModel", "floorTom", this.path, `drum3DModel.glb`);
+        const meshTask = assetsManager.addMeshTask("drum3DModel", "", this.path, `drum3DModel.glb`);
         
         meshTask.onSuccess = (task) => {
             const drumMeshes = task.loadedMeshes
