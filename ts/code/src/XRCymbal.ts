@@ -5,16 +5,15 @@ import { AbstractMesh } from "@babylonjs/core";
 
 import XRDrumKit from "./XRDrumKit";
 
-
-class XRCymbal implements XRDrumComponent{
+class XRCymbal implements XRDrumComponent {
 
     //@ts-ignore
     private name: String;
     private drumComponentContainer: TransformNode;
     private xrDrumKit: XRDrumKit;
-    log : boolean = true;
+    log: boolean = true;
 
-    constructor(name: string, midiKey : number, xrDrumKit: XRDrumKit, drum3Dmodel : AbstractMesh[]) { //diameter in meters, height in meters, midiKey is the MIDI key to play when the trigger is hit
+    constructor(name: string, midiKey: number, xrDrumKit: XRDrumKit, drum3Dmodel: AbstractMesh[]) { //diameter in meters, height in meters, midiKey is the MIDI key to play when the trigger is hit
         this.name = name;
         this.xrDrumKit = xrDrumKit;
 
@@ -22,40 +21,38 @@ class XRCymbal implements XRDrumComponent{
         this.drumComponentContainer.parent = xrDrumKit.drumContainer;
         xrDrumKit.drumComponents.push(this.drumComponentContainer);
 
-        const body = drum3Dmodel.find(mesh => mesh.name === name); // Find the main body mesh
-        if (!body) {
-            console.error(`Failed to find the main body mesh with name '${name}' in the provided drum3Dmodel.`);
+        const bodyPrimitives = drum3Dmodel.filter(mesh => mesh.name.startsWith(name + "_primitive")); // Find all primitives
+        if (bodyPrimitives.length === 0) {
+            console.error(`Failed to find the main body mesh with name '${name}' or its primitives in the provided drum3Dmodel.`);
             console.log("Available meshes:", drum3Dmodel.map(mesh => mesh.name)); // Log available meshes for debugging
             return;
         }
+        //Merge all body primitives into a single mesh
+        const body = new TransformNode(name + "_Body", this.xrDrumKit.scene); // Create a parent node for the primitives
+        bodyPrimitives.forEach(primitive => primitive.parent = body); // Attach primitives to the parent node
+
         this.createDrumComponentBody(body);
 
-        const trigger = body.getChildMeshes().find(mesh => mesh.name === "Trigger"); // Find the trigger mesh
+        const trigger = drum3Dmodel.find(mesh => mesh.name === this.name + "Trigger"); // Find the trigger mesh
         if (!trigger) {
             console.error(`Failed to find the trigger mesh inside the body '${name}'.`);
-            console.log("Available child meshes:", body.getChildMeshes().map(mesh => mesh.name)); // Log child meshes for debugging
             return;
         }
         this.createDrumComponentTrigger(trigger);
-    
-        
 
         this.playSoundOnTrigger(name, midiKey, 0.25) //0.25s duration for drums (needs refining)
     }
 
-    createDrumComponentBody(body : AbstractMesh | undefined) {
-        if (body) {
-            body.parent = this.drumComponentContainer;
+    createDrumComponentBody(body: TransformNode) {
 
             const bodyAggregate = new PhysicsAggregate(body, PhysicsShapeType.MESH, { mass: 0 }, this.xrDrumKit.scene);
             bodyAggregate.body.setMotionType(PhysicsMotionType.STATIC);
             bodyAggregate.body.setPrestepType(PhysicsPrestepType.TELEPORT);
             bodyAggregate.body.setCollisionCallbackEnabled(true);
             bodyAggregate.body.setEventMask(this.xrDrumKit.eventMask);
-        }
     }
 
-    createDrumComponentTrigger(trigger : AbstractMesh) {
+    createDrumComponentTrigger(trigger: AbstractMesh) {
         if (trigger) {
             trigger.parent = this.drumComponentContainer;
 
