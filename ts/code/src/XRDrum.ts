@@ -91,6 +91,7 @@ class XRDrum implements XRDrumComponent {
                 )?.controllerAttached;
 
                 if (controller?.motionController?.gamepadObject?.hapticActuators?.[0]) {
+                    console.log("On fait vibrer la manette !");
                     controller.motionController.gamepadObject.hapticActuators[0].pulse(1.0, 100); // Vibrate at full intensity for 100ms
                 }
 
