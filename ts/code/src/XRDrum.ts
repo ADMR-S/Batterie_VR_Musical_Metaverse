@@ -27,11 +27,10 @@ class XRDrum implements XRDrumComponent {
             console.log("Available meshes:", drum3Dmodel.map(mesh => mesh.name)); // Log available meshes for debugging
             return;
         }
-        //Merge all body primitives into a single mesh
-        const body = new TransformNode(name + "_Body", this.xrDrumKit.scene); // Create a parent node for the primitives
-        bodyPrimitives.forEach(primitive => body.addChild(primitive)); // Attach primitives to the parent node
+        
+        bodyPrimitives.forEach(primitive => this.drumComponentContainer.addChild(primitive)); // Attach primitives to the parent node
 
-        this.createDrumComponentBody(body);
+        this.createDrumComponentBody(this.drumComponentContainer); // Create the body of the drum component
 
         const trigger = drum3Dmodel.find(mesh => mesh.name === this.name + "Trigger"); // Find the trigger mesh
         if (!trigger) {
@@ -43,13 +42,19 @@ class XRDrum implements XRDrumComponent {
         this.playSoundOnTrigger(name, midiKey, 0.25) //0.25s duration for drums (needs refining)
     }
 
-    createDrumComponentBody(body: TransformNode) {
+    createDrumComponentBody(body: TransformNode | TransformNode[]) {
+        if (Array.isArray(body)) {
+            body.forEach(primitive => {
+                this.createDrumComponentBody(primitive);
+            });
+            return;
+        }
         body.getChildMeshes().forEach(primitive => {
             const bodyAggregate = new PhysicsAggregate(primitive, PhysicsShapeType.MESH, { mass: 0 }, this.xrDrumKit.scene);
             bodyAggregate.body.setMotionType(PhysicsMotionType.STATIC);
             bodyAggregate.body.setPrestepType(PhysicsPrestepType.TELEPORT);
-            bodyAggregate.body.setCollisionCallbackEnabled(true);
-            bodyAggregate.body.setEventMask(this.xrDrumKit.eventMask);
+            //bodyAggregate.body.setCollisionCallbackEnabled(true);
+            //bodyAggregate.body.setEventMask(this.xrDrumKit.eventMask);
         });
     }
 
