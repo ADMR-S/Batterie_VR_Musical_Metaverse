@@ -22,6 +22,8 @@ import HavokPhysics from "@babylonjs/havok";
 
 import XRDrumKit from "../XRDrumKit";
 
+import { AssetsManager } from "@babylonjs/core";
+
 
 export class XRSceneWithHavok implements CreateSceneClass {
     preTasks = [havokModule];
@@ -59,9 +61,29 @@ export class XRSceneWithHavok implements CreateSceneClass {
 
     const eventMask = started | continued | finished;
     
-    // @ts-ignore
-    const drum = new XRDrumKit(audioContext, scene, eventMask, xr, hk);
+    
+    const assetsManager = new AssetsManager(scene);
 
+    assetsManager.onTaskErrorObservable.add(function (task) {
+    console.log("task failed", task.errorObject.message, task.errorObject.exception);
+    });
+
+    //@ts-ignore
+    assetsManager.onProgress = function (remainingCount, totalCount, lastFinishedTask) {
+        engine.loadingUIText = "We are loading the scene. " + remainingCount + " out of " + totalCount + " items still need to be loaded.";
+    };
+        
+    // @ts-ignore
+    const drum = new XRDrumKit(audioContext, scene, eventMask, xr, hk, assetsManager);
+
+    //@ts-ignore
+    assetsManager.onFinish = function (tasks) {
+    // Register a render loop to repeatedly render the scene
+    engine.runRenderLoop(function () {
+        scene.render();
+    });
+    };
+    
     //addScaleRoutineToSphere(sphereObservable);
 
     addXRControllersRoutine(scene, xr, eventMask); //eventMask est-il indispensable ?

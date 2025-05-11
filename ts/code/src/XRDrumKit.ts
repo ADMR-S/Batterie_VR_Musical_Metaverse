@@ -64,7 +64,7 @@ class XRDrumKit {
     path = "/drum_3D_model/"; // Path to the 3D model folder
     log = false;
 
-    constructor(audioContext: AudioContext, scene: Scene, eventMask: number, xr: WebXRDefaultExperience, hk: any) {
+    constructor(audioContext: AudioContext, scene: Scene, eventMask: number, xr: WebXRDefaultExperience, hk: any, assetsManager: AssetsManager) {
         this.audioContext = audioContext;
         this.hk = hk;
         this.xr = xr;
@@ -78,11 +78,8 @@ class XRDrumKit {
             this.move(new Vector3(0, 0, 4)); // NEW POSITION
         });
 
-
-        const assetsManager = new AssetsManager(scene);
         const meshTask = assetsManager.addMeshTask("drum3DModel", "floorTom", this.path, `drum3DModel.glb`);
         
-
         meshTask.onSuccess = (task) => {
             const drumMeshes = task.loadedMeshes
             this.snare = new XRDrum("snare", this.snareKey, this, drumMeshes); // Create snare drum

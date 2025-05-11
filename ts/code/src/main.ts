@@ -5,7 +5,6 @@ import { getSceneModule } from "./createScene";
 import { AbstractEngine } from "@babylonjs/core/Engines/abstractEngine";
 import { Utility } from "./Utility";
 
-
 // ----- AUDIO INIT ------
 const audioContext: AudioContext = new AudioContext();
 // ----- END OF AUDIO INIT ------
@@ -31,13 +30,6 @@ export const babylonInit = async (): Promise<void> => {
 
   // JUST FOR TESTING. Not needed for anything else
   (window as any).scene = scene;
-
-  // Register a render loop to repeatedly render the scene
-  startRenderLoop(engine, canvas);
-
-  engine.runRenderLoop(() => {
-        scene.render();
-    });
 
   // Watch for browser/canvas resize events
   window.addEventListener("resize", function () {
