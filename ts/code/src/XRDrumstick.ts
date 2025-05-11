@@ -126,9 +126,14 @@ class XRDrumstick {
         }
         if (meshUnderPointer === this.drumstickAggregate.transformNode) {
             if (controller.grip) {
-                this.controllerAttached = controller; // Attach the controller
+                this.drumstickAggregate.body.setMotionType(PhysicsMotionType.ANIMATED);
+                this.drumstickAggregate.body.setPrestepType(PhysicsPrestepType.TELEPORT);
+                this.drumstickAggregate.body.setCollisionCallbackEnabled(true);
+                this.drumstickAggregate.body.setEventMask(this.eventMask);
                 this.drumstickAggregate.transformNode.setParent(controller.grip);
-                this.drumstickAggregate.transformNode.position = new Vector3(0, 0, stickLength / 4); // Adjust position
+                this.controllerAttached = controller;
+
+                this.drumstickAggregate.transformNode.position = new Vector3(0, 0, stickLength / 4); // Adjust position to remove offset
                 this.drumstickAggregate.transformNode.rotationQuaternion = Quaternion.RotationAxis(Axis.X, Math.PI / 2); // Align with the hand
             }
             /*
