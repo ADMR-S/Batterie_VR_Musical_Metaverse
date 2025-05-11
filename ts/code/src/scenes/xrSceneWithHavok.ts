@@ -30,89 +30,86 @@ export class XRSceneWithHavok implements CreateSceneClass {
 
     // @ts-ignore
     createScene = async (engine: AbstractEngine, canvas : HTMLCanvasElement, audioContext : AudioContext): Promise<Scene> => {
-    
-    const scene: Scene = new Scene(engine);
-
-    const light: HemisphericLight = new HemisphericLight("light", new Vector3(0, 1, 0), scene);
-    light.intensity = 0.7;
-
-    // Our built-in 'ground' shape.
-    const ground: Mesh = MeshBuilder.CreateGround("ground", { width: 100, height: 100 }, scene);
-
-    const xr = await scene.createDefaultXRExperienceAsync({
-        floorMeshes: [ground],
-    });
-    console.log("BASE EXPERIENCE")
-    console.log(xr.baseExperience)
-  
-    //Good way of initializing Havok
-    // initialize plugin
-    const havokInstance = await HavokPhysics();
-    // pass the engine to the plugin
-    const hk = new HavokPlugin(true, havokInstance);
-    // enable physics in the scene with a gravity
-    scene.enablePhysics(new Vector3(0, -9.8, 0), hk);
-
-    var groundAggregate = new PhysicsAggregate(ground, PhysicsShapeType.BOX, { mass: 0 }, scene);
-  
-    const started = hk._hknp.EventType.COLLISION_STARTED.value;
-    const continued = hk._hknp.EventType.COLLISION_CONTINUED.value;
-    const finished = hk._hknp.EventType.COLLISION_FINISHED.value;
-
-    const eventMask = started | continued | finished;
-    
-    
-    const assetsManager = new AssetsManager(scene);
-
-    assetsManager.onTaskErrorObservable.add(function (task) {
-    console.log("task failed", task.errorObject.message, task.errorObject.exception);
-    });
-
-    //@ts-ignore
-    assetsManager.onProgress = function (remainingCount, totalCount, lastFinishedTask) {
-        engine.loadingUIText = "We are loading the scene. " + remainingCount + " out of " + totalCount + " items still need to be loaded.";
-    };
         
-    // @ts-ignore
-    const drum = new XRDrumKit(audioContext, scene, eventMask, xr, hk, assetsManager);
+        const scene: Scene = new Scene(engine);
 
-    //@ts-ignore
-    assetsManager.onFinish = function (tasks) {
-    // Register a render loop to repeatedly render the scene
-    engine.runRenderLoop(function () {
-        scene.render();
-    });
-    };
+        const light: HemisphericLight = new HemisphericLight("light", new Vector3(0, 1, 0), scene);
+        light.intensity = 0.7;
+
+        // Our built-in 'ground' shape.
+        const ground: Mesh = MeshBuilder.CreateGround("ground", { width: 100, height: 100 }, scene);
+
+        const xr = await scene.createDefaultXRExperienceAsync({
+            floorMeshes: [ground],
+        });
+        console.log("BASE EXPERIENCE")
+        console.log(xr.baseExperience)
     
-    //addScaleRoutineToSphere(sphereObservable);
+        //Good way of initializing Havok
+        // initialize plugin
+        const havokInstance = await HavokPhysics();
+        // pass the engine to the plugin
+        const hk = new HavokPlugin(true, havokInstance);
+        // enable physics in the scene with a gravity
+        scene.enablePhysics(new Vector3(0, -9.8, 0), hk);
 
-    addXRControllersRoutine(scene, xr, eventMask); //eventMask est-il indispensable ?
+        var groundAggregate = new PhysicsAggregate(ground, PhysicsShapeType.BOX, { mass: 0 }, scene);
+    
+        const started = hk._hknp.EventType.COLLISION_STARTED.value;
+        const continued = hk._hknp.EventType.COLLISION_CONTINUED.value;
+        const finished = hk._hknp.EventType.COLLISION_FINISHED.value;
 
-    // Add keyboard controls for movement
-    const moveSpeed = 0.1;
-    addKeyboardControls(xr, moveSpeed);
+        const eventMask = started | continued | finished;
+        
+        
+        const assetsManager = new AssetsManager(scene);
 
-    // Add collision detection for the ground
-    groundAggregate.body.getCollisionObservable().add((collisionEvent: any) => {
-      if (collisionEvent.type === "COLLISION_STARTED") {
-            var collidedBody = null;
-            if(collisionEvent.collider != groundAggregate.body){
-                console.log("OUI")
-                collidedBody = collisionEvent.collider;
+        assetsManager.onTaskErrorObservable.add(function (task) {
+        console.log("task failed", task.errorObject.message, task.errorObject.exception);
+        });
+
+        //@ts-ignore
+        assetsManager.onProgress = function (remainingCount, totalCount, lastFinishedTask) {
+            engine.loadingUIText = "We are loading the scene. " + remainingCount + " out of " + totalCount + " items still need to be loaded.";
+        };
+            
+        // @ts-ignore
+        const drum = new XRDrumKit(audioContext, scene, eventMask, xr, hk, assetsManager);
+        
+        //addScaleRoutineToSphere(sphereObservable);
+
+        addXRControllersRoutine(scene, xr, eventMask); //eventMask est-il indispensable ?
+
+        // Add keyboard controls for movement
+        const moveSpeed = 0.1;
+        addKeyboardControls(xr, moveSpeed);
+
+        // Add collision detection for the ground
+        groundAggregate.body.getCollisionObservable().add((collisionEvent: any) => {
+        if (collisionEvent.type === "COLLISION_STARTED") {
+                var collidedBody = null;
+                if(collisionEvent.collider != groundAggregate.body){
+                    console.log("OUI")
+                    collidedBody = collisionEvent.collider;
+                }
+                else{
+                    console.log("NON")
+                    collidedBody = collisionEvent.collidedAgainst;
+                }
+                const position = collidedBody.transformNode.position;
+                console.log("Position du sol : " + ground.position.y);
+                collidedBody.transformNode.position = new Vector3(position.x, ground.position.y + 5, position.z); // Adjust the y-coordinate to be just above the ground
+                collidedBody.setLinearVelocity(Vector3.Zero());
+                collidedBody.setAngularVelocity(Vector3.Zero());
             }
-            else{
-                console.log("NON")
-                collidedBody = collisionEvent.collidedAgainst;
-            }
-            const position = collidedBody.transformNode.position;
-            console.log("Position du sol : " + ground.position.y);
-            collidedBody.transformNode.position = new Vector3(position.x, ground.position.y + 5, position.z); // Adjust the y-coordinate to be just above the ground
-            collidedBody.setLinearVelocity(Vector3.Zero());
-            collidedBody.setAngularVelocity(Vector3.Zero());
-        }
-    });
+        });
 
-    return scene;
+        //@ts-ignore
+        assetsManager.onFinish = function (tasks) {
+            return scene;
+        };
+
+        assetsManager.load();
     };
 }
 
