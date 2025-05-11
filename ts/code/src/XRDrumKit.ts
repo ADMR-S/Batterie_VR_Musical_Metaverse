@@ -45,8 +45,10 @@ class XRDrumKit {
     xr: WebXRDefaultExperience;
     drumsticks: XRDrumstick[] = [];
     drumSoundsEnabled: boolean;
+    kickKey: number = 36;
     snare: XRDrum | undefined;
     snareKey: number = 38;
+    rimshotKey: number = 37;
     floorTom: XRDrum | undefined;
     floorTomKey: number = 41;
     midTom: XRDrum | undefined;
