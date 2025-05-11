@@ -15,7 +15,9 @@ import XRCymbal from "./XRCymbal"
 import XRLogger from "./XRLogger";
 
 //TODO : 
+    //Remplacer les triggers havok par de réelles collisions avec les meshs appropriés. Voir pour collision entre baguettes et objets statiques
     //Implementer autres drumComponents avec blender
+    //Pourquoi le paramètre de vélocité sur scheduleEvent ne fonctionne pas ? (même avec valeurs manuelles)
     //Retour haptique et visuel collision baguettes (vibrations, tremblement du tambour, oscillation des cymbales...)
     //Ajouter option pour sortir un enregistrement sous forme de piano roll / liste d'évènements MIDI
     //Ajuster vélocité IHM
