@@ -55,7 +55,7 @@ class XRDrum implements XRDrumComponent {
 
     createDrumComponentTrigger(trigger: AbstractMesh) {
         if (trigger) {
-            trigger.parent = this.drumComponentContainer;
+            this.drumComponentContainer.addChild(trigger); // Attach the trigger to the drum component container
 
             const triggerAggregate = new PhysicsAggregate(trigger, PhysicsShapeType.MESH, { mass: 0 }, this.xrDrumKit.scene);
             triggerAggregate.body.setMotionType(PhysicsMotionType.STATIC);
