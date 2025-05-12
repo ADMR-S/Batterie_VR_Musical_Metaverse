@@ -96,6 +96,7 @@ class XRDrumKit {
         
         meshTask.onSuccess = (task) => {
             const drumMeshes = task.loadedMeshes
+            console.log("Available meshes:", drumMeshes.map(mesh => mesh.name)); // Log available meshes for debugging
             this.kick = new XRDrum("kick", this.kickKey, this, drumMeshes); //Create kick
             this.snare = new XRDrum("snare", this.snareKey, this, drumMeshes); // Create snare drum
             this.floorTom = new XRDrum("floorTom", this.floorTomKey, this, drumMeshes); // Create floor tom

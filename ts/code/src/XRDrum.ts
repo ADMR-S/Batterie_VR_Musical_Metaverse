@@ -49,8 +49,9 @@ class XRDrum implements XRDrumComponent {
             });
             return;
         }
-        body.getChildMeshes().forEach(primitive => {
-            const bodyAggregate = new PhysicsAggregate(primitive, PhysicsShapeType.MESH, { mass: 0 }, this.xrDrumKit.scene);
+        body.getChildMeshes().forEach(mesh => {
+            console.log("Creating body for mesh/submesh: ", mesh.name);
+            const bodyAggregate = new PhysicsAggregate(mesh, PhysicsShapeType.MESH, { mass: 0 }, this.xrDrumKit.scene);
             bodyAggregate.body.setMotionType(PhysicsMotionType.STATIC);
             bodyAggregate.body.setPrestepType(PhysicsPrestepType.TELEPORT);
             //bodyAggregate.body.setCollisionCallbackEnabled(true);

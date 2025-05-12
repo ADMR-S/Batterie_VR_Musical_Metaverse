@@ -21,23 +21,18 @@ class XRCymbal implements XRDrumComponent {
         this.drumComponentContainer.parent = xrDrumKit.drumContainer;
         xrDrumKit.drumComponents.push(this.drumComponentContainer);
 
-        const bodyPrimitives = drum3Dmodel.filter(mesh => (mesh.name === name || mesh.name.startsWith(name + "_primitive"))); // Find all primitives
-        if (bodyPrimitives.length === 0) {
-            console.error(`Failed to find the main body mesh with name '${name}' or its primitives in the provided drum3Dmodel.`);
+        const cymbal3DMesh = drum3Dmodel.find(mesh => mesh.name === name); // Find all primitives
+        if (cymbal3DMesh === undefined) {
+            console.error(`Failed to find the main body mesh with name '${name}'`);
             console.log("Available meshes:", drum3Dmodel.map(mesh => mesh.name)); // Log available meshes for debugging
             return;
         }
         
-        bodyPrimitives.forEach(primitive => this.drumComponentContainer.addChild(primitive)); // Attach primitives to the parent node
+        this.drumComponentContainer.addChild(cymbal3DMesh); // Attach primitives to the parent node
 
         this.createDrumComponentBody(this.drumComponentContainer); // Create the body of the drum component
 
-        const trigger = drum3Dmodel.find(mesh => mesh.name === this.name + "Trigger"); // Find the trigger mesh
-        if (!trigger) {
-            console.error(`Failed to find the trigger mesh inside the body '${name}'.`);
-            return;
-        }
-        this.createDrumComponentTrigger(trigger);
+        this.createDrumComponentTrigger(cymbal3DMesh);
 
         this.playSoundOnTrigger(name, midiKey, 0.25) //0.25s duration for drums (needs refining)
     }
@@ -49,8 +44,9 @@ class XRCymbal implements XRDrumComponent {
             });
             return;
         }
-        body.getChildMeshes().forEach(primitive => {
-            const bodyAggregate = new PhysicsAggregate(primitive, PhysicsShapeType.MESH, { mass: 0 }, this.xrDrumKit.scene);
+        body.getChildMeshes().forEach(mesh => {
+            console.log("Creating body for mesh/submesh: ", mesh.name);
+            const bodyAggregate = new PhysicsAggregate(mesh, PhysicsShapeType.MESH, { mass: 0 }, this.xrDrumKit.scene);
             bodyAggregate.body.setMotionType(PhysicsMotionType.STATIC);
             bodyAggregate.body.setPrestepType(PhysicsPrestepType.TELEPORT);
             //bodyAggregate.body.setCollisionCallbackEnabled(true);
