@@ -103,6 +103,17 @@ class XRDrumKit {
             this.crashCymbal2 = new XRCymbal("crashCymbal2", this.crashCymbalKey, this, drumMeshes); // Create crash cymbal
             this.rideCymbal = new XRCymbal("rideCymbal", this.rideCymbalKey, this, drumMeshes); // Create ride cymbal
             this.hiHat = new XRCymbal("hiHat", this.closedHiHatKey, this, drumMeshes); // Create hi-hat cymbal
+        
+            //Stands
+            const stands = drumMeshes.filter(mesh => mesh.name.startsWith("stand")); // Find all primitives
+            if (stands.length === 0) {
+                console.error(`Failed to find a mesh with name starting with 'stand'`);
+                console.log("Available meshes:", drumMeshes.map(mesh => mesh.name)); // Log available meshes for debugging
+                return;
+            }
+        
+            stands.forEach(stand => this.drumContainer.addChild(stand)); // Attach primitives to the parent node
+
         }
 
 
