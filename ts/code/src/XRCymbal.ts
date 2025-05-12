@@ -44,6 +44,7 @@ class XRCymbal implements XRDrumComponent {
             });
             return;
         }
+        /* REMOVED TO SEE PERFORMANCE DIFFERENCE
         body.getChildMeshes().forEach(mesh => {
             console.log("Creating body for mesh/submesh: ", mesh.name);
             const bodyAggregate = new PhysicsAggregate(mesh, PhysicsShapeType.MESH, { mass: 0 }, this.xrDrumKit.scene);
@@ -52,6 +53,7 @@ class XRCymbal implements XRDrumComponent {
             //bodyAggregate.body.setCollisionCallbackEnabled(true);
             //bodyAggregate.body.setEventMask(this.xrDrumKit.eventMask);
         });
+        */
     }
 
     createDrumComponentTrigger(trigger: AbstractMesh) {
