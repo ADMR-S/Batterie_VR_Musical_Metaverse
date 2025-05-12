@@ -7,7 +7,6 @@ import { WebXRDefaultExperience } from "@babylonjs/core";
 //import { Observable } from "@babylonjs/core/Misc/observable";
 
 import { AssetsManager } from "@babylonjs/core";
-import { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 
 import XRDrumstick from "./XRDrumstick";
 import XRDrum from "./XRDrum";
@@ -69,7 +68,7 @@ class XRDrumKit {
     hiHat: XRCymbal | undefined;
     closedHiHatKey: number = 42;
     openHiHatKey: number = 46;
-    throne : AbstractMesh | undefined;
+    throne : TransformNode | undefined;
     path = "/drum_3D_model/"; // Path to the 3D model folder
     log = false;
 
@@ -120,14 +119,16 @@ class XRDrumKit {
             stands.forEach(stand => this.drumContainer.addChild(stand)); // Attach primitives to the parent node
 
             //Throne
-            const throneMesh = drumMeshes.find(mesh => mesh.name === "throne");
-            if (throneMesh) {
-                this.throne = throneMesh;
-                this.drumContainer.addChild(throneMesh); // Attach the throne mesh to the drum container
-            } else {
-                console.error(`Failed to find a mesh with name 'throne'`);
+            const thronePrimitives = drumMeshes.filter(mesh => (mesh.name === "throne" || mesh.name.startsWith("throne_primitive"))); // Find all primitives
+            if (thronePrimitives.length === 0) {
+                console.error(`Failed to find the main body mesh with name 'throne' or its primitives in the provided drum3Dmodel.`);
                 console.log("Available meshes:", drumMeshes.map(mesh => mesh.name)); // Log available meshes for debugging
+                return;
             }
+            const throneContainer = new TransformNode("throneContainer", this.scene);
+            thronePrimitives.forEach(primitive => throneContainer.addChild(primitive)); // Attach primitives to the parent node
+            
+            this.throne = throneContainer; // Store the throne container
         }
 
 
