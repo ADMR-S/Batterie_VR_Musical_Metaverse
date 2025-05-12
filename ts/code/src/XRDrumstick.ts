@@ -8,6 +8,7 @@ import { WebXRDefaultExperience } from "@babylonjs/core/XR/webXRDefaultExperienc
 //import { PhysicsImpostor } from "@babylonjs/core/Physics/physicsImpostor";
 import XRDrumKit from "./XRDrumKit";
 import XRLogger from "./XRLogger";
+import { Mesh } from "@babylonjs/core/Meshes/mesh";
 
 class XRDrumstick {
 
@@ -27,6 +28,7 @@ class XRDrumstick {
     constructor(xr: WebXRDefaultExperience, xrDrumKit: XRDrumKit, scene: Scene, eventMask: number, stickNumber : Number, xrLogger : XRLogger) {
         this.eventMask = eventMask;
         this.scene = scene;
+        //@ts-ignore
         this.drumstickAggregate = this.createDrumstick(xr, stickNumber);
         this.xrDrumKit = xrDrumKit;
         scene.onBeforeRenderObservable.add(() => this.updateVelocity());
@@ -63,12 +65,22 @@ class XRDrumstick {
         const stick = MeshBuilder.CreateCylinder("stick" + stickNumber, { height: stickLength, diameter: stickDiameter }, this.scene);
         const ball = MeshBuilder.CreateSphere("ball" + stickNumber, { diameter: ballDiameter }, this.scene);
 
-        ball.parent = stick;
         ball.position = new Vector3(0, stickLength / 2, 0);
 
-    stick.position = new Vector3(0, 0, 0);
+        stick.position = new Vector3(0, 0, 0);
         stick.material = new StandardMaterial("stickMaterial", this.scene);
         ball.material = new StandardMaterial("ballMaterial", this.scene);
+
+            // Merge the stick and ball into a single mesh
+        const mergedStick = Mesh.MergeMeshes([stick, ball], true, false, undefined, false, true);
+        if (!mergedStick) {
+        console.error("Failed to merge drumstick meshes");
+        return;
+        }
+
+            
+        mergedStick.name = "drumstick" + stickNumber;
+        mergedStick.material = new StandardMaterial("stickMaterial", this.scene);
 
         /*
         
@@ -85,7 +97,7 @@ class XRDrumstick {
         console.log("Merged stick 1 : " + mergedStick1.name);
         console.log("Merged stick 2 : " + mergedStick2.name);
         */
-        var drumstickAggregate = new PhysicsAggregate(stick, PhysicsShapeType.CONVEX_HULL, { mass: 1 }, this.scene);
+        var drumstickAggregate = new PhysicsAggregate(mergedStick, PhysicsShapeType.CONVEX_HULL, { mass: 1 }, this.scene);
         drumstickAggregate.body.setCollisionCallbackEnabled(true);
         drumstickAggregate.body.setEventMask(this.eventMask);
 

@@ -88,7 +88,7 @@ class XRDrum implements XRDrumComponent {
                     return; // Do not play sounds if drum sounds are disabled
                 }
 
-                /*
+                
                 // Vibrate the controller
                 const controller = this.xrDrumKit.drumsticks.find(stick =>
                     stick.drumstickAggregate.transformNode.id === collision.collider.transformNode.id
@@ -98,7 +98,7 @@ class XRDrum implements XRDrumComponent {
                     console.log("On fait vibrer la manette !");
                     controller.motionController.gamepadObject.hapticActuators[0].pulse(1.0, 100); // Vibrate at full intensity for 100ms
                 }
-                    */
+                    
 
                 var currentVelocity = 64;//Default is 64 (median)
                 for (let i = 0; i < this.xrDrumKit.drumsticks.length; i++) {
