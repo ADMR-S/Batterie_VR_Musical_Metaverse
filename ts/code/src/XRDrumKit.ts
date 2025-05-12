@@ -59,7 +59,8 @@ class XRDrumKit {
     midTomKey: number = 47;
     highTom: XRDrum | undefined;
     highTomKey: number = 43;
-    crashCymbal: XRCymbal | undefined;
+    crashCymbal1: XRCymbal | undefined;
+    crashCymbal2: XRCymbal | undefined;
     crashCymbalKey: number = 49;
     rideCymbal: XRCymbal | undefined;
     rideCymbalKey: number = 51;
@@ -98,7 +99,8 @@ class XRDrumKit {
             this.floorTom = new XRDrum("floorTom", this.floorTomKey, this, drumMeshes); // Create floor tom
             this.midTom = new XRDrum("midTom", this.midTomKey, this, drumMeshes); // Create mid tom
             this.highTom = new XRDrum("highTom", this.highTomKey, this, drumMeshes); // Create high tom
-            this.crashCymbal = new XRCymbal("crashCymbal", this.crashCymbalKey, this, drumMeshes); // Create crash cymbal
+            this.crashCymbal1 = new XRCymbal("crashCymbal1", this.crashCymbalKey, this, drumMeshes); // Create crash cymbal
+            this.crashCymbal2 = new XRCymbal("crashCymbal2", this.crashCymbalKey, this, drumMeshes); // Create crash cymbal
             this.rideCymbal = new XRCymbal("rideCymbal", this.rideCymbalKey, this, drumMeshes); // Create ride cymbal
             this.hiHat = new XRCymbal("hiHat", this.closedHiHatKey, this, drumMeshes); // Create hi-hat cymbal
         }
