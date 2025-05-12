@@ -1,12 +1,10 @@
 import { Scene } from "@babylonjs/core/scene";
 import { Color3 } from "@babylonjs/core";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
-import { TransformNode, StandardMaterial, SixDofDragBehavior } from "@babylonjs/core";
+import { TransformNode, StandardMaterial, SixDofDragBehavior, Mesh } from "@babylonjs/core";
 import { WebXRDefaultExperience } from "@babylonjs/core";
-//import { WebXRControllerPhysics } from "@babylonjs/core/XR/features/WebXRControllerPhysics";
-//import { Observable } from "@babylonjs/core/Misc/observable";
-
 import { AssetsManager } from "@babylonjs/core";
+import { SimplificationQueue, SimplificationType } from "@babylonjs/core";
 
 import XRDrumstick from "./XRDrumstick";
 import XRDrum from "./XRDrum";
@@ -17,8 +15,6 @@ import XRLogger from "./XRLogger";
 //TODO : 
     //Rapport
     //Remplacer les triggers havok par de réelles collisions avec les meshs appropriés. Voir pour collision entre baguettes et objets statiques
-    //importer stands, trône, fusionner XRDrum et XRCymbal
-    //Implementer autres drumComponents avec blender
     //Pourquoi le paramètre de vélocité sur scheduleEvent ne fonctionne pas ? (même avec valeurs manuelles)
     //Retour haptique et visuel collision baguettes (vibrations, tremblement du tambour, oscillation des cymbales...)
     //Ajouter option pour sortir un enregistrement sous forme de piano roll / liste d'évènements MIDI
@@ -96,42 +92,66 @@ class XRDrumKit {
         assetsManager.load();
         
         meshTask.onSuccess = (task) => {
-            const drumMeshes = task.loadedMeshes
+            const drumMeshes = task.loadedMeshes;
             console.log("Available meshes:", drumMeshes.map(mesh => mesh.name)); // Log available meshes for debugging
-            this.kick = new XRDrum("kick", this.kickKey, this, drumMeshes); //Create kick
-            this.snare = new XRDrum("snare", this.snareKey, this, drumMeshes); // Create snare drum
-            this.floorTom = new XRDrum("floorTom", this.floorTomKey, this, drumMeshes); // Create floor tom
-            this.midTom = new XRDrum("midTom", this.midTomKey, this, drumMeshes); // Create mid tom
-            this.highTom = new XRDrum("highTom", this.highTomKey, this, drumMeshes); // Create high tom
-            this.crashCymbal1 = new XRCymbal("crashCymbal1", this.crashCymbalKey, this, drumMeshes); // Create crash cymbal
-            this.crashCymbal2 = new XRCymbal("crashCymbal2", this.crashCymbalKey, this, drumMeshes); // Create crash cymbal
-            this.rideCymbal = new XRCymbal("rideCymbal", this.rideCymbalKey, this, drumMeshes); // Create ride cymbal
-            this.hiHat = new XRCymbal("hiHat", this.closedHiHatKey, this, drumMeshes); // Create hi-hat cymbal
-        
-            //Stands
-            const stands = drumMeshes.filter(mesh => mesh.name.startsWith("stand") || mesh.name.startsWith("kickPedal") || mesh.name.startsWith("hiHatPedal")); // Find all primitives
-            if (stands.length === 0) {
-                console.error(`Failed to find a mesh with name starting with 'stand'`);
-                console.log("Available meshes:", drumMeshes.map(mesh => mesh.name)); // Log available meshes for debugging
-                return;
-            }
-        
-            stands.forEach(stand => this.drumContainer.addChild(stand)); // Attach primitives to the parent node
+
+            // Optimize each mesh
+            drumMeshes.forEach(mesh => {
+                if (mesh instanceof Mesh) { // Ensure the object is a Mesh
+                    // Reduce topology using SimplificationQueue
+                    const simplificationQueue = new SimplificationQueue();
+                    simplificationQueue.addTask({
+                        mesh: mesh,
+                        simplificationType: SimplificationType.QUADRATIC, // Use the SimplificationType enum
+                        settings: [{ quality: 0.5, distance: 1 }], // Add both quality and distance
+                        parallelProcessing: true, // Enable parallel processing
+                    });
+
+                    // Freeze world matrix and material for static meshes
+                    mesh.freezeWorldMatrix();
+                    if (mesh.material) {
+                        mesh.material.freeze();
+                    }
+
+                    // Disable shadows for non-essential meshes
+                    mesh.receiveShadows = false;
+                } else {
+                    console.warn(`Skipping optimization for non-Mesh object: ${mesh.name}`);
+                }
+            });
+
+            // Create drum components
+            this.kick = new XRDrum("kick", this.kickKey, this, drumMeshes);
+            this.snare = new XRDrum("snare", this.snareKey, this, drumMeshes);
+            this.floorTom = new XRDrum("floorTom", this.floorTomKey, this, drumMeshes);
+            this.midTom = new XRDrum("midTom", this.midTomKey, this, drumMeshes);
+            this.highTom = new XRDrum("highTom", this.highTomKey, this, drumMeshes);
+            this.crashCymbal1 = new XRCymbal("crashCymbal1", this.crashCymbalKey, this, drumMeshes);
+            this.crashCymbal2 = new XRCymbal("crashCymbal2", this.crashCymbalKey, this, drumMeshes);
+            this.rideCymbal = new XRCymbal("rideCymbal", this.rideCymbalKey, this, drumMeshes);
+            this.hiHat = new XRCymbal("hiHat", this.closedHiHatKey, this, drumMeshes);
+
+            // Optimize stands with hardware instancing
+            const stands = drumMeshes.filter(mesh => mesh.name.startsWith("stand") || mesh.name.startsWith("kickPedal") || mesh.name.startsWith("hiHatPedal"));
+            stands.forEach(stand => {
+                if (stand instanceof Mesh) { // Ensure the object is a Mesh
+                    const instance = stand.createInstance(`${stand.name}_instance`);
+                    this.drumContainer.addChild(instance); // Attach instances to the parent node
+                } else {
+                    console.warn(`Skipping instancing for non-Mesh object: ${stand.name}`);
+                }
+            });
 
             //Throne
-            const thronePrimitives = drumMeshes.filter(mesh => (mesh.name === "throne" || mesh.name.startsWith("throne_primitive"))); // Find all primitives
-            if (thronePrimitives.length === 0) {
-                console.error(`Failed to find the main body mesh with name 'throne' or its primitives in the provided drum3Dmodel.`);
-                console.log("Available meshes:", drumMeshes.map(mesh => mesh.name)); // Log available meshes for debugging
-                return;
-            }
+            const thronePrimitives = drumMeshes.filter(mesh => mesh.name === "throne" || mesh.name.startsWith("throne_primitive"));
             const throneContainer = new TransformNode("throneContainer", this.scene);
-            thronePrimitives.forEach(primitive => throneContainer.addChild(primitive)); // Attach primitives to the parent node
-            
-            this.drumContainer.addChild(throneContainer); // Attach the throne container to the drum container
-            this.throne = throneContainer; // Store the throne container
+            thronePrimitives.forEach(primitive => {
+                primitive.freezeWorldMatrix();
+                throneContainer.addChild(primitive);
+            });
+            this.drumContainer.addChild(throneContainer);
+            this.throne = throneContainer;
         }
-
 
         this.add6dofBehavior(this.drumContainer); // Make the drumkit movable in the VR space on selection
         this.drumSoundsEnabled = false; // Initialize to false and set to true only when controllers are added
