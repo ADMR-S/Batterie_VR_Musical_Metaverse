@@ -21,7 +21,7 @@ class XRDrum implements XRDrumComponent {
         this.drumComponentContainer.parent = xrDrumKit.drumContainer;
         xrDrumKit.drumComponents.push(this.drumComponentContainer);
 
-        const bodyPrimitives = drum3Dmodel.filter(mesh => mesh.name.startsWith(name + "_primitive")); // Find all primitives
+        const bodyPrimitives = drum3Dmodel.filter(mesh => (mesh.name === name || mesh.name.startsWith(name + "_primitive"))); // Find all primitives
         if (bodyPrimitives.length === 0) {
             console.error(`Failed to find the main body mesh with name '${name}' or its primitives in the provided drum3Dmodel.`);
             console.log("Available meshes:", drum3Dmodel.map(mesh => mesh.name)); // Log available meshes for debugging
