@@ -128,6 +128,7 @@ class XRDrumKit {
             const throneContainer = new TransformNode("throneContainer", this.scene);
             thronePrimitives.forEach(primitive => throneContainer.addChild(primitive)); // Attach primitives to the parent node
             
+            this.drumContainer.addChild(throneContainer); // Attach the throne container to the drum container
             this.throne = throneContainer; // Store the throne container
         }
 
