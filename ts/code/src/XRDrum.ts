@@ -173,9 +173,10 @@ class XRDrum implements XRDrumComponent {
                         data: { bytes: new Uint8Array([0x80, midiKey, currentVelocity]) } // Note OFF, third parameter is velocity (how quickly the note should be released)
                     });
                 }
-            } else {
+            } 
+            else {
                 if (this.log) {
-                    console.log('trigger exited', collision);
+                    console.log('collision entre ' + collision.collider.transformNode.id + ' et ' + collision.collidedAgainst.transformNode.id);
                 }
             }
         });
