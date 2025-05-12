@@ -49,6 +49,7 @@ class XRDrumKit {
     xr: WebXRDefaultExperience;
     drumsticks: XRDrumstick[] = [];
     drumSoundsEnabled: boolean;
+    kick : XRDrum | undefined;
     kickKey: number = 36;
     snare: XRDrum | undefined;
     snareKey: number = 38;
@@ -95,6 +96,7 @@ class XRDrumKit {
         
         meshTask.onSuccess = (task) => {
             const drumMeshes = task.loadedMeshes
+            this.kick = new XRDrum("kick", this.kickKey, this, drumMeshes); //Create kick
             this.snare = new XRDrum("snare", this.snareKey, this, drumMeshes); // Create snare drum
             this.floorTom = new XRDrum("floorTom", this.floorTomKey, this, drumMeshes); // Create floor tom
             this.midTom = new XRDrum("midTom", this.midTomKey, this, drumMeshes); // Create mid tom
