@@ -34,7 +34,7 @@ class XRCymbal implements XRDrumComponent {
 
         this.createDrumComponentTrigger(cymbal3DMesh);
 
-        this.playSoundOnTrigger(name, midiKey, 0.25) //0.25s duration for drums (needs refining)
+        this.playSoundOnTrigger(name, midiKey, 5) //0.25s duration for drums (needs refining)
     }
 
     createDrumComponentBody(body: TransformNode | TransformNode[]) {
@@ -93,7 +93,7 @@ class XRCymbal implements XRDrumComponent {
                 }
                     */
 
-                var currentVelocity = 0;//Default is 64 (median)
+                var currentVelocity = 64;//Default is 64 (median)
                 for (let i = 0; i < this.xrDrumKit.drumsticks.length; i++) {
                     if (collision.collider.transformNode.id === this.xrDrumKit.drumsticks[i].drumstickAggregate.transformNode.id) {
                         console.log("Collision avec " + collision.collider.transformNode.id)
@@ -103,7 +103,8 @@ class XRCymbal implements XRDrumComponent {
 
                         if (linear.y > 0 || angular.y > 0) {
                             console.log("MOUVEMENT MONTANT");
-                            currentVelocity = 0; // Ignore upward movement
+                            //We don't set velocity to 0 for cymbals upward hits
+                            currentVelocity = Math.round(10 * (linear.length() + angular.length()));
                         } else {
                             console.log("MOUVEMENT DESCENDANT");
                             currentVelocity = Math.round(10 * (linear.length() + angular.length()));
@@ -111,7 +112,6 @@ class XRCymbal implements XRDrumComponent {
                         console.log("Vitesse de la baguette : " + currentVelocity);
                     }
                 }
-                console.log("Vitesse de la baguette hors boucle : " + currentVelocity);
                 //const currentVelocity = new Vector3();
                 /* We already know collided against is a trigger so we should calculate its velocity (currently 0 but if the drum starts moving for a reason we should)
                 if(collision.collidedAgainst.transformNode.physicsBody.controllerPhysicsImpostor){

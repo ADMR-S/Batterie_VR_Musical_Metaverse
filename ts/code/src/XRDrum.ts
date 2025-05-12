@@ -98,7 +98,7 @@ class XRDrum implements XRDrumComponent {
                 }
                     */
 
-                var currentVelocity = 0;//Default is 64 (median)
+                var currentVelocity = 64;//Default is 64 (median)
                 for (let i = 0; i < this.xrDrumKit.drumsticks.length; i++) {
                     if (collision.collider.transformNode.id === this.xrDrumKit.drumsticks[i].drumstickAggregate.transformNode.id) {
                         console.log("Collision avec " + collision.collider.transformNode.id)
