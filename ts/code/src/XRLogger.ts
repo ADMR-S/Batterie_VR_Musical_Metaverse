@@ -7,6 +7,7 @@ class XRLogger {
     controllerPositionText: TextBlock; // New text block for controller positions
     controllerVelocityText: TextBlock; // New text block for controller velocity
     private controllerPositions: { [handedness: string]: string } = {}; // Store positions for both controllers
+    private drumsticks: { [stickId: string]: string } = {}; // Store positions for both controllers
 
     constructor(xr: WebXRDefaultExperience, scene: Scene) {
         // Initialize XR console
@@ -156,6 +157,13 @@ class XRLogger {
                 this.controllerPositions[handedness] = `Controller ${handedness}:\nLinear position: ${controllerPos.toString()}\nAngular position : ${controllerRot}`;
                 const combinedText = Object.values(this.controllerPositions).join("\n"); // Combine positions for both controllers
                 this.updateControllerPositionText(combinedText);
+            }
+            updateControllerVelocity(linearVelocity: Vector3, angularVelocity : Vector3, stickId : string){
+                //get controller angular rotation :
+                
+                this.drumsticks[stickId] = `Drumstick ${stickId} Velocity:\nLinear: ${linearVelocity.toString()} \nLength : ${linearVelocity.length}\n\nAngular: ${angularVelocity.toString()} \nLength: ${angularVelocity.length()}\n`
+                const combinedText = Object.values(this.drumsticks).join("\n"); // Combine positions for both controllers
+                this.updateControllerVelocityText(combinedText);
             }
 }
 

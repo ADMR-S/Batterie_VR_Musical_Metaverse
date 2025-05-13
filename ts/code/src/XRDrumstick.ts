@@ -18,7 +18,7 @@ class XRDrumstick {
     eventMask: number;
     controllerAttached: WebXRInputSource | null = null;
     private previousPosition: Vector3 = new Vector3();
-    private velocity: Vector3 = new Vector3();
+    private linearVelocity: Vector3 = new Vector3();
     private lastUpdateTime: number = performance.now();
     private previousRotation: Quaternion = new Quaternion();
     private angularVelocity: Vector3 = new Vector3();
@@ -122,6 +122,7 @@ class XRDrumstick {
                     const controllerPos = controller.grip.position;
                     const controllerRot = controller.grip.rotationQuaternion || Quaternion.Identity();
                     this.xrLogger.updateControllerPositions(controllerPos, controllerRot, controller.inputSource.handedness);
+                    this.xrLogger.updateControllerVelocity(this.linearVelocity, this.angularVelocity, this.drumstickAggregate.transformNode.id);
                 }
             });
         });
@@ -228,7 +229,7 @@ class XRDrumstick {
 
         // Update linear velocity
         const currentPosition = this.drumstickAggregate.transformNode.getAbsolutePosition();
-        this.velocity = currentPosition.subtract(this.previousPosition).scale(1 / deltaTime);
+        this.linearVelocity = currentPosition.subtract(this.previousPosition).scale(1 / deltaTime);
         this.previousPosition.copyFrom(currentPosition);
 
         // Update angular velocity and position
@@ -238,15 +239,11 @@ class XRDrumstick {
         this.angularVelocity.scaleInPlace(1 / deltaTime);
         this.previousRotation.copyFrom(currentRotation);
             // Log velocity and length of vector to the XR console
-        this.xrLogger.updateControllerVelocityText(
-            `Drumstick Velocity:\nLinear: ${this.velocity.toString()}\nAngular: ${this.angularVelocity.toString()} \nLength: ${this.velocity.length()}\n`
-        );
-
         
     }
 
     getVelocity(): { linear: Vector3; angular: Vector3 } {
-        return { linear: this.velocity, angular: this.angularVelocity };
+        return { linear: this.linearVelocity, angular: this.angularVelocity };
     }
 }
 export default XRDrumstick;
