@@ -16,6 +16,7 @@ import XRLogger from "./XRLogger";
 
 //TODO : 
     //Rapport
+    //Switch_to_static() / Switch_to_dynamic() ?
     //Ajuster vibrations collision controllers
     //Ajuster échelle de la batterie (trop grande)
     //Optimiser scène et modèle 3D pour éviter les ralentissements

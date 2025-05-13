@@ -67,7 +67,7 @@ class XRDrumstick {
 
         ball.position = new Vector3(0, stickLength / 2, 0);
 
-        stick.position = new Vector3(0, 1, 1);
+        stick.position = new Vector3(0, 0, 0);
         stick.material = new StandardMaterial("stickMaterial", this.scene);
         ball.material = new StandardMaterial("ballMaterial", this.scene);
 
@@ -82,6 +82,7 @@ class XRDrumstick {
         mergedStick.name = "drumstick" + stickNumber;
         mergedStick.material = new StandardMaterial("stickMaterial", this.scene);
 
+        mergedStick.position = new Vector3(0, 1, 1);
         /*
         
         TRY TO USE MERGED MESHES INSTEAD OF CONVEX_HULL to not distinguish between ball or stick
