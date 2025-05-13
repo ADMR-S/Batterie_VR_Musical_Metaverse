@@ -16,7 +16,7 @@ import XRLogger from "./XRLogger";
 
 //TODO : 
     //Rapport
-    //Tester vibrations collision controllers
+    //Ajuster vibrations collision controllers
     //Ajuster échelle de la batterie (trop grande)
     //Optimiser scène et modèle 3D pour éviter les ralentissements
     //Remplacer les triggers havok par de réelles collisions avec les meshs appropriés ? (utile si les cymbales doivent bouger) -> Voir pour collision entre baguettes et objets statiques

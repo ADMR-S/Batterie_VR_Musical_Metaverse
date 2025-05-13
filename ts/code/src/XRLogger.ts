@@ -33,6 +33,7 @@ class XRLogger {
         this.controllerVelocityText.textVerticalAlignment = TextBlock.VERTICAL_ALIGNMENT_TOP; // Align text to the top
         this.controllerVelocityText.clipChildren = true; // Ensure text is clipped to the container
         this.controllerVelocityText.clipContent = true; // Clip overflowing content
+        this.controllerVelocityText.top = "50px"; // Position below the position text
         controllerPositionContainer.addControl(this.controllerVelocityText);
 
         this.controllerPositionText = new TextBlock();
