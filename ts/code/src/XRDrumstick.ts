@@ -67,7 +67,7 @@ class XRDrumstick {
 
         ball.position = new Vector3(0, stickLength / 2, 0);
 
-        stick.position = new Vector3(0, 0, 0);
+        stick.position = new Vector3(0, 0, 1);
         stick.material = new StandardMaterial("stickMaterial", this.scene);
         ball.material = new StandardMaterial("ballMaterial", this.scene);
 
@@ -236,10 +236,11 @@ class XRDrumstick {
         deltaRotation.toEulerAnglesToRef(this.angularVelocity);
         this.angularVelocity.scaleInPlace(1 / deltaTime);
         this.previousRotation.copyFrom(currentRotation);
-            // Log velocity to the XR console
+            // Log velocity and length of vector to the XR console
         this.xrLogger.updateControllerVelocityText(
-            `Drumstick Velocity:\nLinear: ${this.velocity.toString()}\nAngular: ${this.angularVelocity.toString()}`
+            `Drumstick Velocity:\nLinear: ${this.velocity.toString()}\nAngular: ${this.angularVelocity.toString()} \nLength: ${this.velocity.length()}\n`
         );
+
         
     }
 
