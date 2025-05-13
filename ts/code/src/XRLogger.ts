@@ -5,6 +5,7 @@ class XRLogger {
     xrUI: AdvancedDynamicTexture;
     consoleText: TextBlock;
     controllerPositionText: TextBlock; // New text block for controller positions
+    controllerVelocityText: TextBlock; // New text block for controller velocity
     private controllerPositions: { [handedness: string]: string } = {}; // Store positions for both controllers
 
     constructor(xr: WebXRDefaultExperience, scene: Scene) {
@@ -22,6 +23,17 @@ class XRLogger {
         controllerPositionContainer.horizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_CENTER; // Move to the left
         controllerPositionContainer.isVisible = false; // Initially hidden
         this.xrUI.addControl(controllerPositionContainer);
+
+        this.controllerVelocityText = new TextBlock();
+        this.controllerVelocityText.color = "white";
+        this.controllerVelocityText.fontSize = 18;
+        this.controllerVelocityText.textWrapping = true;
+        this.controllerVelocityText.resizeToFit = false; // Disable resizing to fit the text
+        this.controllerVelocityText.textHorizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_LEFT; // Align text to the left
+        this.controllerVelocityText.textVerticalAlignment = TextBlock.VERTICAL_ALIGNMENT_TOP; // Align text to the top
+        this.controllerVelocityText.clipChildren = true; // Ensure text is clipped to the container
+        this.controllerVelocityText.clipContent = true; // Clip overflowing content
+        controllerPositionContainer.addControl(this.controllerVelocityText);
 
         this.controllerPositionText = new TextBlock();
         this.controllerPositionText.color = "white";
@@ -132,6 +144,9 @@ class XRLogger {
         
             updateControllerPositionText(positionText: string) {
                 this.controllerPositionText.text = positionText;
+            }
+            updateControllerVelocityText(velocityText : string){
+                this.controllerVelocityText.text = velocityText;
             }
         
             updateControllerPositions(controllerPos: Vector3, controllerRot: Quaternion, handedness: string) {

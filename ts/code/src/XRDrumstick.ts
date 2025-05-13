@@ -236,6 +236,10 @@ class XRDrumstick {
         deltaRotation.toEulerAnglesToRef(this.angularVelocity);
         this.angularVelocity.scaleInPlace(1 / deltaTime);
         this.previousRotation.copyFrom(currentRotation);
+            // Log velocity to the XR console
+        this.xrLogger.updateControllerVelocityText(
+            `Drumstick Velocity:\nLinear: ${this.velocity.toString()}\nAngular: ${this.angularVelocity.toString()}`
+        );
         
     }
 
