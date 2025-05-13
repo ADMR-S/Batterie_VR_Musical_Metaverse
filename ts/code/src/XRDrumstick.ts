@@ -67,7 +67,7 @@ class XRDrumstick {
 
         ball.position = new Vector3(0, stickLength / 2, 0);
 
-        stick.position = new Vector3(0, 0, 1);
+        stick.position = new Vector3(0, 1, 1);
         stick.material = new StandardMaterial("stickMaterial", this.scene);
         ball.material = new StandardMaterial("ballMaterial", this.scene);
 
