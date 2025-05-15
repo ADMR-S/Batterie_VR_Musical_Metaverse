@@ -4,11 +4,11 @@ import { WebXRInputSource } from "@babylonjs/core/XR/webXRInputSource";
 import { Scene } from "@babylonjs/core/scene";
 import { MeshBuilder, StandardMaterial, PhysicsAggregate, PhysicsShapeType, PhysicsMotionType, PhysicsPrestepType } from "@babylonjs/core";
 import { Vector3, Quaternion, Axis } from "@babylonjs/core/Maths/math";
-import { WebXRDefaultExperience } from "@babylonjs/core/XR/webXRDefaultExperience";
 //import { PhysicsImpostor } from "@babylonjs/core/Physics/physicsImpostor";
 import XRDrumKit from "./XRDrumKit";
 import XRLogger from "./XRLogger";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
+import { WebXRDefaultExperience } from "@babylonjs/core/XR/webXRDefaultExperience";
 
 class XRDrumstick {
 
@@ -26,7 +26,8 @@ class XRDrumstick {
     log = true;
     xrLogger : XRLogger; //To get controller positions, consider moving this logic outside this class
 
-    constructor(xr: WebXRDefaultExperience, xrDrumKit: XRDrumKit, scene: Scene, eventMask: number, stickNumber : Number, xrLogger : XRLogger) {
+    constructor(xr : WebXRDefaultExperience, xrDrumKit: XRDrumKit, scene: Scene, eventMask: number, stickNumber : Number, xrLogger : XRLogger) {
+        
         this.eventMask = eventMask;
         this.scene = scene;
         this.name = "drumstick" + stickNumber;
@@ -59,7 +60,7 @@ class XRDrumstick {
         }
     }
 
-    createDrumstick(stickNumber : Number) {
+    createDrumstick(xr: WebXRDefaultExperience, stickNumber : Number) {
         const stickLength = 0.4;
         const stickDiameter = 0.02;
         const ballDiameter = 0.03;
@@ -104,7 +105,7 @@ class XRDrumstick {
         drumstickAggregate.body.setCollisionCallbackEnabled(true);
         drumstickAggregate.body.setEventMask(this.eventMask);
 
-        this.xrDrumKit.xr.input.onControllerAddedObservable.add((controller: WebXRInputSource) => {
+        xr.input.onControllerAddedObservable.add((controller: WebXRInputSource) => {
             controller.onMotionControllerInitObservable.add((motionController: any) => {
                 this.xrDrumKit.drumSoundsEnabled = true;
                 // @ts-ignore
@@ -240,8 +241,6 @@ class XRDrumstick {
         deltaRotation.toEulerAnglesToRef(this.angularVelocity);
         this.angularVelocity.scaleInPlace(1 / deltaTime);
         this.previousRotation.copyFrom(currentRotation);
-            // Log velocity and length of vector to the XR console
-        
     }
 
     getVelocity(): { linear: Vector3; angular: Vector3 } {
