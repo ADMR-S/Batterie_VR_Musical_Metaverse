@@ -144,24 +144,39 @@ class XRLogger {
                 };
             }
         
-            updateControllerPositionText(positionText: string) {
-                this.controllerPositionText.text = positionText;
+            updateControllerPositionText(text: string) {
+                this.controllerPositionText.text = text;
             }
-            updateControllerVelocityText(velocityText : string){
-                this.controllerVelocityText.text = velocityText;
+            updateControllerVelocityText(text: string) {
+                this.controllerVelocityText.text = text;
             }
-        
             updateControllerPositions(controllerPos: Vector3, controllerRot: Quaternion, handedness: string) {
                 //get controller angular rotation :
                 
-                this.controllerPositions[handedness] = `Controller ${handedness}:\nLinear position: ${controllerPos.toString()}\nAngular position : ${controllerRot}`;
+                const positionText = `Position (${handedness}): X: ${controllerPos.x.toFixed(2)}, Y: ${controllerPos.y.toFixed(2)}, Z: ${controllerPos.z.toFixed(2)}`;
+                const rotationText = `Rotation (${handedness}): X: ${controllerRot.x.toFixed(2)}, Y: ${controllerRot.y.toFixed(2)}, Z: ${controllerRot.z.toFixed(2)}, W: ${controllerRot.w.toFixed(2)}`;
+                
+                
+                this.controllerPositions[handedness] = `${positionText}\n${rotationText}`;
                 const combinedText = Object.values(this.controllerPositions).join("\n"); // Combine positions for both controllers
                 this.updateControllerPositionText(combinedText);
+
             }
             updateControllerVelocity(linearVelocity: Vector3, angularVelocity : Vector3, stickId : string){
                 //get controller angular rotation :
                 
-                this.drumsticks[stickId] = `Drumstick ${stickId} Velocity:\nLinear: ${linearVelocity.toString()} \nLength : ${linearVelocity.length}\n\nAngular: ${angularVelocity.toString()} \nLength: ${angularVelocity.length()}\n`
+                // Calculate lengths of the velocity vectors
+                const linearLength = linearVelocity.length().toFixed(2);
+                const angularLength = angularVelocity.length().toFixed(2);
+
+                const velocityText = `Drumstick (${stickId}) Velocity:
+                Linear: X: ${linearVelocity.x.toFixed(2)}, Y: ${linearVelocity.y.toFixed(2)}, Z: ${linearVelocity.z.toFixed(2)}, Length: ${linearLength}
+                Angular: X: ${angularVelocity.x.toFixed(2)}, Y: ${angularVelocity.y.toFixed(2)}, Z: ${angularVelocity.z.toFixed(2)}, Length: ${angularLength}`;
+
+                // Update the velocity text in the XR console
+                this.controllerVelocityText.text = velocityText;
+
+                this.drumsticks[stickId] = velocityText
                 const combinedText = Object.values(this.drumsticks).join("\n"); // Combine positions for both controllers
                 this.updateControllerVelocityText(combinedText);
             }
