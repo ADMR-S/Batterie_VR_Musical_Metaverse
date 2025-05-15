@@ -8,9 +8,9 @@ import XRDrumKit from "./XRDrumKit";
 class XRDrum implements XRDrumComponent {
 
     //@ts-ignore
-    private name: String;
-    private drumComponentContainer: TransformNode;
-    private xrDrumKit: XRDrumKit;
+    name: String;
+    drumComponentContainer: TransformNode;
+    xrDrumKit: XRDrumKit;
     log: boolean = true;
 
     constructor(name: string, midiKey: number, xrDrumKit: XRDrumKit, drum3Dmodel: AbstractMesh[]) { //diameter in meters, height in meters, midiKey is the MIDI key to play when the trigger is hit

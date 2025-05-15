@@ -111,10 +111,10 @@ class XRLogger {
             }
         });
 
-        this.initializeSimpleConsoleLogger(); // Replace the old logging redirection with the new method
+        this.initializeXRLogger(); // Replace the old logging redirection with the new method
         }
         
-            private initializeSimpleConsoleLogger() {
+            private initializeXRLogger() {
                 const maxLines = 20;
                 const maxLineLength = 100; // Maximum characters per line
                 const logBuffer: string[] = [];

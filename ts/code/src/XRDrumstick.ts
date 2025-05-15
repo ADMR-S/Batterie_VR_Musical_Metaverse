@@ -16,6 +16,7 @@ class XRDrumstick {
     drumstickAggregate: PhysicsAggregate;
     scene: Scene;
     eventMask: number;
+    name : string;
     controllerAttached: WebXRInputSource | null = null;
     private previousPosition: Vector3 = new Vector3();
     private linearVelocity: Vector3 = new Vector3();
@@ -28,6 +29,7 @@ class XRDrumstick {
     constructor(xr: WebXRDefaultExperience, xrDrumKit: XRDrumKit, scene: Scene, eventMask: number, stickNumber : Number, xrLogger : XRLogger) {
         this.eventMask = eventMask;
         this.scene = scene;
+        this.name = "drumstick" + stickNumber;
         //@ts-ignore
         this.drumstickAggregate = this.createDrumstick(xr, stickNumber);
         this.xrDrumKit = xrDrumKit;
@@ -57,7 +59,7 @@ class XRDrumstick {
         }
     }
 
-    createDrumstick(xr: WebXRDefaultExperience, stickNumber : Number) {
+    createDrumstick(stickNumber : Number) {
         const stickLength = 0.4;
         const stickDiameter = 0.02;
         const ballDiameter = 0.03;
@@ -79,7 +81,7 @@ class XRDrumstick {
         }
 
             
-        mergedStick.name = "drumstick" + stickNumber;
+        mergedStick.name = this.name;
         mergedStick.material = new StandardMaterial("stickMaterial", this.scene);
 
         mergedStick.position = new Vector3(0, 1, 1);
@@ -102,7 +104,7 @@ class XRDrumstick {
         drumstickAggregate.body.setCollisionCallbackEnabled(true);
         drumstickAggregate.body.setEventMask(this.eventMask);
 
-        xr.input.onControllerAddedObservable.add((controller: WebXRInputSource) => {
+        this.xrDrumKit.xr.input.onControllerAddedObservable.add((controller: WebXRInputSource) => {
             controller.onMotionControllerInitObservable.add((motionController: any) => {
                 this.xrDrumKit.drumSoundsEnabled = true;
                 // @ts-ignore
@@ -110,7 +112,7 @@ class XRDrumstick {
 
                 motionController.getComponent("xr-standard-trigger").onButtonStateChangedObservable.add((button: any) => {
                     if (button.pressed) {
-                        pickedStick = this.pickStick(controller, stickLength, xr);
+                        pickedStick = this.pickStick(controller, stickLength);
                     } else {
                         this.releaseStick(motionController.heldStick);
                     }
@@ -130,9 +132,9 @@ class XRDrumstick {
         return drumstickAggregate;
     }
 
-    pickStick(controller: WebXRInputSource, stickLength: number, xr: WebXRDefaultExperience) {
+    pickStick(controller: WebXRInputSource, stickLength : number) {
         this.logToConsole("Déclenchement de pickStick");
-        const meshUnderPointer = xr.pointerSelection.getMeshUnderPointer(controller.uniqueId);
+        const meshUnderPointer = this.xrDrumKit.xr.pointerSelection.getMeshUnderPointer(controller.uniqueId);
         if (meshUnderPointer) {
             this.logToConsole("Mesh under pointer : " + meshUnderPointer.name);
         } else {

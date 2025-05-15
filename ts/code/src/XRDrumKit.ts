@@ -15,6 +15,8 @@ import XRCymbal from "./XRCymbal"
 import XRLogger from "./XRLogger";
 
 //TODO : 
+    //Respecter UML (drumComponents est un tableau de transformNode)
+    //Améliorer releaseStick  
     //Rapport
     //Switch_to_static() / Switch_to_dynamic() ?
     //Ajuster vibrations collision controllers
@@ -83,7 +85,7 @@ class XRDrumKit {
         this.wamInstance = null;
         this.drumComponents = [];
         this.drumContainer = new TransformNode("drumContainer", this.scene);
-        this.initializePlugin().then((wamInstance) => {
+        this.initializeWAMPlugin().then((wamInstance) => {
             this.wamInstance = wamInstance;
             this.move(new Vector3(0, 0, 4)); // NEW POSITION
         });
@@ -135,7 +137,7 @@ class XRDrumKit {
         }
 
 
-        this.add6dofBehavior(this.drumContainer); // Make the drumkit movable in the VR space on selection
+        this.add6DofBehavior(this.drumContainer); // Make the drumkit movable in the VR space on selection
         this.drumSoundsEnabled = false; // Initialize to false and set to true only when controllers are added
         let xrLogger = new XRLogger(xr, scene);
         for (var i = 0; i < 2; i++) {
@@ -144,7 +146,7 @@ class XRDrumKit {
 
     }
 
-    async initializePlugin() {
+    async initializeWAMPlugin() {
         const hostGroupId = await setupWamHost(this.audioContext);
         const wamURIDrumSampler = 'https://www.webaudiomodules.com/community/plugins/burns-audio/drumsampler/index.js';
         const wamInstance = await loadDynamicComponent(wamURIDrumSampler, hostGroupId, this.audioContext);
@@ -163,7 +165,7 @@ class XRDrumKit {
         this.drumContainer.position.addInPlace(displacementVector);
     }
 
-    add6dofBehavior(drumContainer: TransformNode) {
+    add6DofBehavior(drumContainer: TransformNode) {
         // Add 6-DoF behavior to the drum container
         const sixDofBehavior = new SixDofDragBehavior();
         drumContainer.addBehavior(sixDofBehavior);
