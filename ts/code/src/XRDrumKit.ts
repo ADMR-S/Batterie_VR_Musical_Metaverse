@@ -15,6 +15,7 @@ import XRCymbal from "./XRCymbal"
 import XRLogger from "./XRLogger";
 
 //TODO : 
+    //Baguettes qui s'entrechoquent = son ? ("1,2,3,4 !"...)
     //Respecter UML (drumComponents est un tableau de transformNode)
     //Améliorer releaseStick  
     //Rapport

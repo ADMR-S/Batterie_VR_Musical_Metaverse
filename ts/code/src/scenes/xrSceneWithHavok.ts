@@ -23,6 +23,7 @@ import HavokPhysics from "@babylonjs/havok";
 import XRDrumKit from "../XRDrumKit";
 
 import { AssetsManager } from "@babylonjs/core";
+import { SceneOptimizer, SceneOptimizerOptions, HardwareScalingOptimization } from "@babylonjs/core";
 
 
 export class XRSceneWithHavok implements CreateSceneClass {
@@ -61,6 +62,15 @@ export class XRSceneWithHavok implements CreateSceneClass {
 
     const eventMask = started | continued | finished;
     
+    //SCENE OPTIMIZER
+    /*
+    var options = new SceneOptimizerOptions();
+    options.addOptimization(new HardwareScalingOptimization(0, 1));
+
+    // Optimizer
+    var optimizer = new SceneOptimizer(scene, options);
+    */
+    SceneOptimizer.OptimizeAsync(scene);
     
     const assetsManager = new AssetsManager(scene);
 
