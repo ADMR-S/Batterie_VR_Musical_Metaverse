@@ -108,12 +108,12 @@ class XRDrum implements XRDrumComponent {
                         console.log("Linear Velocity: ", linear.length());
                         console.log("Angular Velocity: ", angular.length());
 
-                        if (linear.y > 0 || angular.y > 0) {
+                        if (linear.y > 0) {
                             console.log("MOUVEMENT MONTANT");
                             currentVelocity = 0; // Ignore upward movement
                         } else {
                             console.log("MOUVEMENT DESCENDANT");
-                            currentVelocity = Math.round(10 * (linear.length() + angular.length()));
+                            //currentVelocity = Math.round(10 * (linear.length() + angular.length()));
                         }
                         console.log("Vitesse de la baguette : " + currentVelocity);
                     }
@@ -163,14 +163,14 @@ class XRDrum implements XRDrumComponent {
                     this.xrDrumKit.wamInstance.audioNode.scheduleEvents({
                         type: 'wam-midi',
                         time: this.xrDrumKit.audioContext.currentTime,
-                        data: { bytes: new Uint8Array([0x90, midiKey, 100]) } // Note ON, third parameter is velocity from 0 to 127 (0 is equivalent to note OFF)
+                        data: { bytes: new Uint8Array([0x90, midiKey, currentVelocity]) } // Note ON, third parameter is velocity from 0 to 127 (0 is equivalent to note OFF)
                         //http://midi.teragonaudio.com/tech/midispec/noteon.htm
                         //Considering wamMidiEvent follow the MIDI spec and full audio chain is compatible (it is said that each MIDI device might treat these values differently)
                     });
                     this.xrDrumKit.wamInstance.audioNode.scheduleEvents({
                         type: 'wam-midi',
                         time: this.xrDrumKit.audioContext.currentTime + duration,
-                        data: { bytes: new Uint8Array([0x80, midiKey, 100]) } // Note OFF, third parameter is velocity (how quickly the note should be released)
+                        data: { bytes: new Uint8Array([0x80, midiKey, currentVelocity]) } // Note OFF, third parameter is velocity (how quickly the note should be released)
                     });
                 }
             } 
