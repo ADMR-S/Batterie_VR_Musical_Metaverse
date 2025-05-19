@@ -135,6 +135,9 @@ class XRDrumKit {
             
             this.drumContainer.addChild(throneContainer); // Attach the throne container to the drum container
             this.throne = throneContainer; // Store the throne container
+        
+            //RESCALE: 
+            this.drumContainer.scaling = new Vector3(0.7, 0.7, 0.7); // Rescale the drum container
         }
 
 

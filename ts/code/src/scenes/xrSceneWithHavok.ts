@@ -1,13 +1,12 @@
 // IMPLEMENTATION D'ADAM INSPIREE DES EXEMPLES DE BABYLONJS
 
 import { Scene } from "@babylonjs/core/scene";
-import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight";
 //import "@babylonjs/core/Physics/physicsEngineComponent";
 
 // If you don't need the standard material you will still need to import it since the scene requires it.
 //import "@babylonjs/core/Materials/standardMaterial";
-import { PhysicsMotionType } from "@babylonjs/core/Physics/v2/IPhysicsEnginePlugin";
 import { HavokPlugin } from "@babylonjs/core/Physics/v2/Plugins/havokPlugin";
 import { havokModule } from "../externals/havok";
 import { CreateSceneClass } from "../createScene";
@@ -174,6 +173,7 @@ function addXRControllersRoutine(scene: Scene, xr: any, eventMask: number) {
         }
     });
 
+    /*
     // Add physics to controllers when the mesh is loaded
     xr.input.onControllerAddedObservable.add((controller: any) => {
       controller.onMotionControllerInitObservable.add((motionController: any) => {
@@ -202,16 +202,17 @@ function addXRControllersRoutine(scene: Scene, xr: any, eventMask: number) {
                 // Attach WebXRControllerPhysics to the controller
                 console.log("CONTROLLER")
                 console.log(controller)
-                /*
-                const controllerPhysics = xr.baseExperience.featuresManager.enableFeature(WebXRControllerPhysics.Name, 'latest')
-                controller.physics = controllerPhysics
-                    console.log("ICI")
-                    console.log(controllerPhysics)
-                    console.log("Imposteur : ")
-                    console.log(controllerPhysics.getImpostorForController(controller))
-                    */
+                
+                //const controllerPhysics = xr.baseExperience.featuresManager.enableFeature(WebXRControllerPhysics.Name, 'latest')
+                //controller.physics = controllerPhysics
+                //    console.log("ICI")
+                //    console.log(controllerPhysics)
+                //    console.log("Imposteur : ")
+                //    console.log(controllerPhysics.getImpostorForController(controller))
+                    
             });
         });
     });
+    */
 }
 
