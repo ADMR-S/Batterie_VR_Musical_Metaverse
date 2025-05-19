@@ -15,7 +15,7 @@ import { CreateSceneClass } from "../createScene";
 import "@babylonjs/core/Debug/debugLayer";
 import "@babylonjs/inspector";
 import "@babylonjs/loaders/glTF";
-import { Mesh, MeshBuilder, PhysicsAggregate, PhysicsShapeType, PhysicsPrestepType } from "@babylonjs/core";
+import { Mesh, MeshBuilder, PhysicsAggregate, PhysicsShapeType} from "@babylonjs/core";
 import { AbstractEngine } from "@babylonjs/core/Engines/abstractEngine";
 import HavokPhysics from "@babylonjs/havok";
 
@@ -214,5 +214,7 @@ function addXRControllersRoutine(scene: Scene, xr: any, eventMask: number) {
         });
     });
     */
+   console.log(scene);
+   console.log(eventMask)
 }
 
