@@ -60,6 +60,10 @@ class XRCymbal implements XRDrumComponent {
         if (trigger) {
             this.drumComponentContainer.addChild(trigger); // Attach the trigger to the drum component container
 
+            //Add trigger to trigger mesh name for cymbals
+            trigger.name = trigger.name + "Trigger";
+
+
             const triggerAggregate = new PhysicsAggregate(trigger, PhysicsShapeType.MESH, { mass: 0 }, this.xrDrumKit.scene);
             triggerAggregate.body.setMotionType(PhysicsMotionType.STATIC);
             triggerAggregate.body.setPrestepType(PhysicsPrestepType.TELEPORT);
