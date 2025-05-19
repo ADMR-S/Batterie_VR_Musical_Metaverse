@@ -108,7 +108,7 @@ class XRDrum implements XRDrumComponent {
                         console.log("Linear Velocity: ", linear.length());
                         console.log("Angular Velocity: ", angular.length());
 
-                        if (linear.y >= 0 && angular.y >= 0) {
+                        if (linear.y >= 0 && angular.x >= 0) {
                             console.log("MOUVEMENT MONTANT");
                             currentVelocity = 0; // Ignore upward movement
                         } else {
