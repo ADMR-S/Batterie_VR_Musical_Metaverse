@@ -102,6 +102,7 @@ class XRCymbal implements XRDrumComponent {
                         const { linear, angular } = this.xrDrumKit.drumsticks[i].getVelocity();
                         console.log("Linear Velocity: ", linear.length());
                         console.log("Angular Velocity: ", angular.length());
+                        console.log("Angular X: ", angular.x, "Angular Y: ", angular.y, "Angular Z: ", angular.z);
 
                         if (linear.y >= 0 && angular.x >= 0) {
                             console.log("MOUVEMENT MONTANT");
