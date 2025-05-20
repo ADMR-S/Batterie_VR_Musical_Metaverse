@@ -102,7 +102,9 @@ class XRDrumKit {
         
         meshTask.onSuccess = (task) => {
             const drumMeshes = task.loadedMeshes
-            console.log("Available meshes:", drumMeshes.map(mesh => mesh.name)); // Log available meshes for debugging
+            if(this.log){
+                console.log("Available meshes:", drumMeshes.map(mesh => mesh.name)); // Log available meshes for debugging
+            }
             this.kick = new XRDrum("kick", this.kickKey, this, drumMeshes); //Create kick
             this.snare = new XRDrum("snare", this.snareKey, this, drumMeshes); // Create snare drum
             this.floorTom = new XRDrum("floorTom", this.floorTomKey, this, drumMeshes); // Create floor tom
@@ -117,7 +119,9 @@ class XRDrumKit {
             const stands = drumMeshes.filter(mesh => mesh.name.startsWith("stand") || mesh.name.startsWith("kickPedal") || mesh.name.startsWith("hiHatPedal")); // Find all primitives
             if (stands.length === 0) {
                 console.error(`Failed to find a mesh with name starting with 'stand'`);
-                console.log("Available meshes:", drumMeshes.map(mesh => mesh.name)); // Log available meshes for debugging
+                if(this.log){
+                    console.log("Available meshes:", drumMeshes.map(mesh => mesh.name)); // Log available meshes for debugging
+                }
                 return;
             }
         
@@ -127,7 +131,9 @@ class XRDrumKit {
             const thronePrimitives = drumMeshes.filter(mesh => (mesh.name === "throne" || mesh.name.startsWith("throne_primitive"))); // Find all primitives
             if (thronePrimitives.length === 0) {
                 console.error(`Failed to find the main body mesh with name 'throne' or its primitives in the provided drum3Dmodel.`);
-                console.log("Available meshes:", drumMeshes.map(mesh => mesh.name)); // Log available meshes for debugging
+                if(this.log){
+                    console.log("Available meshes:", drumMeshes.map(mesh => mesh.name)); // Log available meshes for debugging
+                }
                 return;
             }
             const throneContainer = new TransformNode("throneContainer", this.scene);

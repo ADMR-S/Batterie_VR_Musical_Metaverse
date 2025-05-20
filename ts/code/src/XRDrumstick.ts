@@ -38,28 +38,6 @@ class XRDrumstick {
         this.xrLogger = xrLogger; // Initialize the logger
     }
 
-    private logToConsole(...args: any[]) {
-        try {
-            const seen = new WeakSet();
-            const sanitizedArgs = args.map(arg => {
-                if (typeof arg === "object") {
-                    //@ts-ignore
-                    return JSON.stringify(arg, (key, value) => {
-                        if (value && typeof value === "object" && seen.has(value)) {
-                            return "[Circular]";
-                        }
-                        seen.add(value);
-                        return value;
-                    });
-                }
-                return arg;
-            });
-            console.log(...sanitizedArgs); // Logs to the shared XR console in XRDrumKit
-        } catch (error) {
-            console.error("Error logging to console:", error);
-        }
-    }
-
     createDrumstick(xr: WebXRDefaultExperience, stickNumber : Number) {
         const stickLength = 0.4;
         const stickDiameter = 0.02;
@@ -134,12 +112,12 @@ class XRDrumstick {
     }
 
     pickStick(controller: WebXRInputSource, stickLength : number) {
-        this.logToConsole("Déclenchement de pickStick");
+        console.log("Déclenchement de pickStick");
         const meshUnderPointer = this.xrDrumKit.xr.pointerSelection.getMeshUnderPointer(controller.uniqueId);
         if (meshUnderPointer) {
-            this.logToConsole("Mesh under pointer : " + meshUnderPointer.name);
+            console.log("Mesh under pointer : " + meshUnderPointer.name);
         } else {
-            this.logToConsole("Aucun mesh sous le pointeur");
+            console.log("Aucun mesh sous le pointeur");
         }
         if (meshUnderPointer === this.drumstickAggregate.transformNode) {
             if (controller.grip) {

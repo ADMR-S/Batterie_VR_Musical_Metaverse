@@ -24,7 +24,9 @@ class XRDrum implements XRDrumComponent {
         const bodyPrimitives = drum3Dmodel.filter(mesh => (mesh.name === name || mesh.name.startsWith(name + "_primitive"))); // Find all primitives
         if (bodyPrimitives.length === 0) {
             console.error(`Failed to find the main body mesh with name '${name}' or its primitives in the provided drum3Dmodel.`);
-            console.log("Available meshes:", drum3Dmodel.map(mesh => mesh.name)); // Log available meshes for debugging
+            if (this.log) {
+                console.log("Available meshes:", drum3Dmodel.map(mesh => mesh.name)); // Log available meshes for debugging
+            }
             return;
         }
         
@@ -50,7 +52,9 @@ class XRDrum implements XRDrumComponent {
             return;
         }
         body.getChildMeshes().forEach(mesh => {
-            console.log("Creating body for mesh/submesh: ", mesh.name);
+            if (this.log) {
+                console.log("Creating body for mesh/submesh: ", mesh.name);
+            }
             /* REMOVED TO SEE PERFORMANCE DIFFERENCE
             const bodyAggregate = new PhysicsAggregate(mesh, PhysicsShapeType.MESH, { mass: 0 }, this.xrDrumKit.scene);
             bodyAggregate.body.setMotionType(PhysicsMotionType.STATIC);
@@ -79,10 +83,8 @@ class XRDrum implements XRDrumComponent {
             if (collision.type === "TRIGGER_ENTERED" && collision.collidedAgainst.transformNode.id === name + "Trigger") {
                 if (this.log) {
                     console.log(name + " trigger entered", collision);
-                    console.log("Collider : ");
-                    console.log(collision.collider);
-                    console.log("Collided against : ");
-                    console.log(collision.collidedAgainst);
+                    console.log('collision TRIGGERED entre ' + collision.collider.transformNode.id + ' et ' + collision.collidedAgainst.transformNode.id);
+
                 }
                 if (!this.xrDrumKit.drumSoundsEnabled) {
                     return; // Do not play sounds if drum sounds are disabled
@@ -95,7 +97,7 @@ class XRDrum implements XRDrumComponent {
                 )?.controllerAttached;
 
                 if (controller?.motionController?.gamepadObject?.hapticActuators?.[0]) {
-                    console.log("On fait vibrer la manette !");
+                    //console.log("On fait vibrer la manette !");
                     controller.motionController.gamepadObject.hapticActuators[0].pulse(1.0, 100); // Vibrate at full intensity for 100ms
                 }
                     
@@ -103,23 +105,28 @@ class XRDrum implements XRDrumComponent {
                 var currentVelocity = 64;//Default is 64 (median)
                 for (let i = 0; i < this.xrDrumKit.drumsticks.length; i++) {
                     if (collision.collider.transformNode.id === this.xrDrumKit.drumsticks[i].drumstickAggregate.transformNode.id) {
-                        console.log("Collision avec " + collision.collider.transformNode.id)
                         const { linear, angular } = this.xrDrumKit.drumsticks[i].getVelocity();
-                        console.log("Linear Velocity: ", linear.length());
-                        console.log("Angular Velocity: ", angular.length());
-                        console.log("Angular X: ", angular.x, "Angular Y: ", angular.y, "Angular Z: ", angular.z);
-
-                        if (linear.y >= 0 && angular.x >= 0) {
-                            console.log("MOUVEMENT MONTANT");
+                        if(this.log){
+                            console.log("Linear Velocity length : ", linear.length());
+                            console.log("Angular Velocity length : ", angular.length());
+                            console.log("Angular X: ", angular.x, "Angular Y: ", angular.y, "Angular Z: ", angular.z);
+                        }
+                        if (linear.y >= 0 && angular.y >= 0) {
+                            if(this.log){
+                                console.log("MOUVEMENT MONTANT");
+                            }
                             currentVelocity = 0; // Ignore upward movement
                         } else {
-                            console.log("MOUVEMENT DESCENDANT");
+                            if(this.log){
+                                console.log("MOUVEMENT DESCENDANT");
+                            }
                             //currentVelocity = Math.round(10 * (linear.length() + angular.length()));
                         }
-                        console.log("Vitesse de la baguette : " + currentVelocity);
+                        if(this.log){
+                            console.log("Vitesse calculée de la baguette : " + Math.round(10 * (linear.length() + (10^6)*angular.length())));
+                        }
                     }
                 }
-                console.log("Vitesse de la baguette hors boucle : " + currentVelocity);
                 //const currentVelocity = new Vector3();
                 /* We already know collided against is a trigger so we should calculate its velocity (currently 0 but if the drum starts moving for a reason we should)
                 if(collision.collidedAgainst.transformNode.physicsBody.controllerPhysicsImpostor){
@@ -159,7 +166,7 @@ class XRDrum implements XRDrumComponent {
                 }
                 */
                 if (this.xrDrumKit.wamInstance) {
-                    console.log("On joue une note au volume : " + currentVelocity)
+                    //console.log("On joue une note au volume : " + currentVelocity)
                     // Joue une note lors de la collision
                     this.xrDrumKit.wamInstance.audioNode.scheduleEvents({
                         type: 'wam-midi',
