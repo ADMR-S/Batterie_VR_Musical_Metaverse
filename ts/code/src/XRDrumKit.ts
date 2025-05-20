@@ -151,7 +151,7 @@ class XRDrumKit {
         this.drumSoundsEnabled = false; // Initialize to false and set to true only when controllers are added
         let xrLogger = new XRLogger(xr, scene);
         for (var i = 0; i < 2; i++) {
-            this.drumsticks[i] = new XRDrumstick(xr, this, this.scene, this.eventMask, i-1, xrLogger);
+            this.drumsticks[i] = new XRDrumstick(xr, this, this.scene, this.eventMask, i+1, xrLogger);
         }
 
     }
