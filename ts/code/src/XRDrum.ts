@@ -89,17 +89,6 @@ class XRDrum implements XRDrumComponent {
                 if (!this.xrDrumKit.drumSoundsEnabled) {
                     return; // Do not play sounds if drum sounds are disabled
                 }
-
-                
-                // Vibrate the controller
-                const controller = this.xrDrumKit.drumsticks.find(stick =>
-                    stick.drumstickAggregate.transformNode.id === collision.collider.transformNode.id
-                )?.controllerAttached;
-
-                if (controller?.motionController?.gamepadObject?.hapticActuators?.[0]) {
-                    //console.log("On fait vibrer la manette !");
-                    controller.motionController.gamepadObject.hapticActuators[0].pulse(1.0, 100); // Vibrate at full intensity for 100ms
-                }
                     
 
                 var currentVelocity = 64;//Default is 64 (median)
@@ -116,7 +105,19 @@ class XRDrum implements XRDrumComponent {
                                 console.log("MOUVEMENT MONTANT");
                             }
                             currentVelocity = 0; // Ignore upward movement
-                        } else {
+                        } 
+                        else {
+                            // Vibrate the controller
+                            const controller = this.xrDrumKit.drumsticks.find(stick =>
+                                stick.drumstickAggregate.transformNode.id === collision.collider.transformNode.id
+                            )?.controllerAttached;
+
+                            if (controller?.motionController?.gamepadObject?.hapticActuators?.[0]) {
+                                //console.log("On fait vibrer la manette !");
+                                controller.motionController.gamepadObject.hapticActuators[0].pulse(1.0, 100); // Vibrate at full intensity for 100ms
+                            }
+
+
                             if(this.log){
                                 console.log("MOUVEMENT DESCENDANT");
                             }

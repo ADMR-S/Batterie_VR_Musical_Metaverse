@@ -85,15 +85,7 @@ class XRCymbal implements XRDrumComponent {
                 }
 
                 
-                // Vibrate the controller
-                const controller = this.xrDrumKit.drumsticks.find(stick =>
-                    stick.drumstickAggregate.transformNode.id === collision.collider.transformNode.id
-                )?.controllerAttached;
-
-                if (controller?.motionController?.gamepadObject?.hapticActuators?.[0]) {
-                    console.log("On fait vibrer la manette !");
-                    controller.motionController.gamepadObject.hapticActuators[0].pulse(1.0, 100); // Vibrate at full intensity for 100ms
-                }
+                
 
                 var currentVelocity = 64;//Default is 64 (median)
                 for (let i = 0; i < this.xrDrumKit.drumsticks.length; i++) {
@@ -108,7 +100,20 @@ class XRCymbal implements XRDrumComponent {
                             console.log("MOUVEMENT MONTANT");
                             currentVelocity = 0
                             //currentVelocity = Math.round(10 * (linear.length() + angular.length()));
-                        } else {
+                        } 
+                        else {
+
+                            // Vibrate the controller
+                            const controller = this.xrDrumKit.drumsticks.find(stick =>
+                                stick.drumstickAggregate.transformNode.id === collision.collider.transformNode.id
+                            )?.controllerAttached;
+
+                            if (controller?.motionController?.gamepadObject?.hapticActuators?.[0]) {
+                                console.log("On fait vibrer la manette !");
+                                controller.motionController.gamepadObject.hapticActuators[0].pulse(1.0, 100); // Vibrate at full intensity for 100ms
+                            }
+
+
                             console.log("MOUVEMENT DESCENDANT");
                             //currentVelocity = Math.round(10 * (linear.length() + angular.length()));
                         }

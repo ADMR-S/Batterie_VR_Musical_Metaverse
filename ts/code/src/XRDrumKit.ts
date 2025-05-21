@@ -21,7 +21,7 @@ import XRLogger from "./XRLogger";
     //Rapport
     //Switch_to_static() / Switch_to_dynamic() ?
     //Ajuster vibrations collision controllers
-    //Ajuster échelle de la batterie (trop grande)
+    //Ajuster échelle de la batterie (sur blender)
     //Optimiser scène et modèle 3D pour éviter les ralentissements
     //Remplacer les triggers havok par de réelles collisions avec les meshs appropriés ? (utile si les cymbales doivent bouger) -> Voir pour collision entre baguettes et objets statiques
     //Pourquoi le paramètre de vélocité sur scheduleEvent ne fonctionne pas ? (même avec valeurs manuelles)
