@@ -11,5 +11,5 @@ Version TS (à jour)
   Ou build avec vite via (dossier ts -> code)
     npm run dev
 
-Modèle 3D drumkit :
+Base Modèle 3D drumkit :
   https://free3d.com/3d-model/drum-set-41081.html
