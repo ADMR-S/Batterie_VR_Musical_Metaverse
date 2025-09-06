@@ -1,5 +1,5 @@
 
-Version JS :
+Version JS (depuis js_old):
   Lancer index.html depuis Live Server (VSCode)
   
   Saisir dans le terminal (pour servir en https, sinon WebXR ne fonctionne pas) : 
@@ -8,7 +8,7 @@ Version JS :
 Version TS (à jour)
   Hébergée sur render :
     https://batterie-vr-musical-metaverse.onrender.com/
-  Ou build avec vite via (dossier ts -> code)
+  Ou build avec vite via (dossier ts/)
     npm run dev
 
 Base Modèle 3D drumkit :
