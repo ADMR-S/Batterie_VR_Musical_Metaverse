@@ -41,7 +41,7 @@ class XRDrum implements XRDrumComponent {
         }
         this.createDrumComponentTrigger(trigger);
 
-        this.playSoundOnTrigger(name, midiKey, 0.25) //0.25s duration for drums (needs refining)
+        //this.playSoundOnTrigger(name, midiKey, 0.25) //0.25s duration for drums (needs refining)
     }
 
     createDrumComponentBody(body: TransformNode | TransformNode[]) {
