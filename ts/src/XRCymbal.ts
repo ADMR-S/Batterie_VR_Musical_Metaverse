@@ -34,7 +34,7 @@ class XRCymbal implements XRDrumComponent {
 
         this.createDrumComponentTrigger(cymbal3DMesh);
 
-        this.playSoundOnTrigger(name, midiKey, 5) //0.25s duration for drums (needs refining)
+        //this.playSoundOnTrigger(name, midiKey, 5) //0.25s duration for drums (needs refining)
     }
 
     createDrumComponentBody(body: TransformNode | TransformNode[]) {
