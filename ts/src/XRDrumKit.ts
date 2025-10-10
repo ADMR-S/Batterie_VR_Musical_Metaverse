@@ -154,6 +154,8 @@ class XRDrumKit {
             this.drumsticks[i] = new XRDrumstick(xr, this, this.scene, this.eventMask, i+1, xrLogger);
         }
 
+        //TEST FOR COLLISIONS
+        this.drumContainer.getChildMeshes().forEach(mesh => mesh.isVisible = false);
     }
 
     async initializeWAMPlugin() {

@@ -44,7 +44,8 @@ export class XRSceneWithHavok implements CreateSceneClass {
     const xr = await scene.createDefaultXRExperienceAsync({
         floorMeshes: [ground],
     });
-    xr.baseExperience.featuresManager.disableFeature(WebXRNearInteraction.name)
+    //OPTIMIZE BY DISABLING NEAR INTERACTIONS :
+    //xr.baseExperience.featuresManager.disableFeature(WebXRNearInteraction.name)
     console.log("BASE EXPERIENCE")
     console.log(xr.baseExperience)
   
