@@ -15,6 +15,7 @@ import { CreateSceneClass } from "../createScene";
 import "@babylonjs/core/Debug/debugLayer";
 import "@babylonjs/inspector";
 import "@babylonjs/loaders/glTF";
+//@ts-ignore
 import { Mesh, MeshBuilder, PhysicsAggregate, PhysicsShapeType, WebXRNearInteraction} from "@babylonjs/core";
 import { AbstractEngine } from "@babylonjs/core/Engines/abstractEngine";
 import HavokPhysics from "@babylonjs/havok";
