@@ -145,9 +145,11 @@ class XRDrumKit {
             //RESCALE: 
             this.drumContainer.scaling = new Vector3(0.7, 0.7, 0.7); // Rescale the drum container
         
+            /*
             //TEST FOR COLLISIONS
             console.log(this.drumContainer.getChildMeshes());
             this.drumContainer.getChildMeshes().forEach(mesh => mesh.isVisible = false);
+            */
         }
 
 
