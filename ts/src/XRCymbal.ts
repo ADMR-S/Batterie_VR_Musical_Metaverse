@@ -13,6 +13,7 @@ class XRCymbal implements XRDrumComponent {
     xrDrumKit: XRDrumKit;
     log: boolean = true;
 
+    //@ts-ignore
     constructor(name: string, midiKey: number, xrDrumKit: XRDrumKit, drum3Dmodel: AbstractMesh[]) { //diameter in meters, height in meters, midiKey is the MIDI key to play when the trigger is hit
         this.name = name;
         this.xrDrumKit = xrDrumKit;
