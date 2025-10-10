@@ -15,7 +15,7 @@ import { CreateSceneClass } from "../createScene";
 import "@babylonjs/core/Debug/debugLayer";
 import "@babylonjs/inspector";
 import "@babylonjs/loaders/glTF";
-import { Mesh, MeshBuilder, PhysicsAggregate, PhysicsShapeType} from "@babylonjs/core";
+import { Mesh, MeshBuilder, PhysicsAggregate, PhysicsShapeType, WebXRNearInteraction} from "@babylonjs/core";
 import { AbstractEngine } from "@babylonjs/core/Engines/abstractEngine";
 import HavokPhysics from "@babylonjs/havok";
 
@@ -33,6 +33,8 @@ export class XRSceneWithHavok implements CreateSceneClass {
     
     const scene: Scene = new Scene(engine);
 
+    //scene.collisionsEnabled = false; // Désactive TOUTES les collisions Babylon natives
+
     const light: HemisphericLight = new HemisphericLight("light", new Vector3(0, 1, 0), scene);
     light.intensity = 0.7;
 
@@ -42,6 +44,7 @@ export class XRSceneWithHavok implements CreateSceneClass {
     const xr = await scene.createDefaultXRExperienceAsync({
         floorMeshes: [ground],
     });
+    xr.baseExperience.featuresManager.disableFeature(WebXRNearInteraction.name)
     console.log("BASE EXPERIENCE")
     console.log(xr.baseExperience)
   
