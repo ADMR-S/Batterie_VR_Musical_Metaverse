@@ -163,7 +163,8 @@ class XRDrumKit {
 
     async initializeWAMPlugin() {
         const hostGroupId = await setupWamHost(this.audioContext);
-        const wamURIDrumSampler = 'https://www.webaudiomodules.com/community/plugins/burns-audio/drumsampler/index.js';
+        //const wamURIDrumSampler = 'https://www.webaudiomodules.com/community/plugins/burns-audio/drumsampler/index.js';
+        const wamURIDrumSampler = 'https://mainline.i3s.unice.fr/WAMDrumSamplerVel/index.js';
         const wamInstance = await loadDynamicComponent(wamURIDrumSampler, hostGroupId, this.audioContext);
 
         // Exemple de selection d'un autre son

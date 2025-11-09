@@ -22,6 +22,7 @@ class XRDrum implements XRDrumComponent {
         this.drumComponentContainer.parent = xrDrumKit.drumContainer;
         xrDrumKit.drumComponents.push(this.drumComponentContainer);
 
+        
         const bodyPrimitives = drum3Dmodel.filter(mesh => (mesh.name === name || mesh.name.startsWith(name + "_primitive"))); // Find all primitives
         if (bodyPrimitives.length === 0) {
             console.error(`Failed to find the main body mesh with name '${name}' or its primitives in the provided drum3Dmodel.`);
@@ -40,6 +41,8 @@ class XRDrum implements XRDrumComponent {
             console.error(`Failed to find the trigger mesh inside the body '${name}'.`);
             return;
         }
+
+        
         this.createDrumComponentTrigger(trigger);
 
         this.playSoundOnTrigger(name, midiKey, 0.25) //0.25s duration for drums (needs refining)

@@ -13,3 +13,19 @@ Version TS (à jour)
 
 Base Modèle 3D drumkit :
   https://free3d.com/3d-model/drum-set-41081.html
+
+---------------------------------------------------------------
+
+Dev : 
+
+BabylonJS Sandbox :
+  https://sandbox.babylonjs.com/
+
++ extension Spector.js
+
+Check connection casque : 
+  adb devices
+
+Devtools : 
+chrome://inspect/#devices
+
