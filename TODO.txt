@@ -1,6 +1,8 @@
+Refactor méthodes + clean
 Animer cymbales
 Double hit (comme s'il y avait 2 triggers ? Mesh + trigger et bug via détection par nom "trigger" ?)
 Taille des triggers trop grande vis à vis du mesh (pb de rescale ?)
+
 
 Intégrer à WamJam
 

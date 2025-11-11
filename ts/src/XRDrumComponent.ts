@@ -6,7 +6,8 @@ interface XRDrumComponent {
     name: String;
     drumComponentContainer: TransformNode;
 
-    playSoundOnTrigger(name: string, midiKey: number, duration: number) : void;
+    playSoundOnTrigger(midiKey: number, duration: number) : void;
+    animateOnHit() : void;
     createDrumComponentBody(body : AbstractMesh) : void;
     createDrumComponentTrigger(trigger : AbstractMesh) : void;
 }

@@ -47,7 +47,7 @@ class XRDrum implements XRDrumComponent {
         
         this.createDrumComponentTrigger(trigger);
 
-        this.playSoundOnTrigger(name, midiKey, 0.25) //0.25s duration for drums (needs refining)
+        this.playSoundOnTrigger(midiKey, 0.25) //0.25s duration for drums (needs refining)
     }
 
     createDrumComponentBody(body: TransformNode | TransformNode[]) {
@@ -84,17 +84,17 @@ class XRDrum implements XRDrumComponent {
         }
     }
 
-    playSoundOnTrigger(name: string, midiKey: number, duration: number) { //duration in seconds
+    playSoundOnTrigger(midiKey: number, duration: number) { //duration in seconds
         this.xrDrumKit.hk.onTriggerCollisionObservable.add((collision: any) => {
             // Check if this collision involves THIS drum's trigger (could be either collider or collidedAgainst)
-            const triggerName = name + "Trigger";
+            const triggerName = this.name + "Trigger";
             const isThisDrumTrigger = 
                 collision.collidedAgainst.transformNode.id === triggerName ||
                 collision.collider.transformNode.id === triggerName;
             
             if (collision.type === "TRIGGER_ENTERED" && isThisDrumTrigger) {
                 if (this.log) {
-                    console.log(name + " trigger entered", collision);
+                    console.log(this.name + " trigger entered", collision);
                     console.log('collision TRIGGERED entre ' + collision.collider.transformNode.id + ' et ' + collision.collidedAgainst.transformNode.id);
 
                 }
@@ -252,9 +252,12 @@ class XRDrum implements XRDrumComponent {
         });
     }
 
+    animateOnHit(): void {
+        
+    }
+
 }
 export default XRDrum;
-/*
 
 /*
         // Add three legs to the drum container

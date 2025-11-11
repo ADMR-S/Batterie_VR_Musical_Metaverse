@@ -37,7 +37,7 @@ class XRCymbal implements XRDrumComponent {
 
         this.createDrumComponentTrigger(cymbal3DMesh);
 
-        this.playSoundOnTrigger(name, midiKey, 5) //0.25s duration for drums (needs refining)
+        this.playSoundOnTrigger(midiKey, 5) //0.25s duration for drums (needs refining)
     }
 
     createDrumComponentBody(body: TransformNode | TransformNode[]) {
@@ -74,10 +74,10 @@ class XRCymbal implements XRDrumComponent {
         }
     }
 
-    playSoundOnTrigger(name: string, midiKey: number, duration: number) { //duration in seconds
+    playSoundOnTrigger(midiKey: number, duration: number) { //duration in seconds
         this.xrDrumKit.hk.onTriggerCollisionObservable.add((collision: any) => {
             // Check if this collision involves THIS cymbal's trigger (could be either collider or collidedAgainst)
-            const triggerName = name + "Trigger";
+            const triggerName = this.name + "Trigger";
             const isThisCymbalTrigger = 
                 collision.collidedAgainst.transformNode.id === triggerName ||
                 collision.collider.transformNode.id === triggerName;
@@ -239,9 +239,12 @@ class XRCymbal implements XRDrumComponent {
         });
     }
 
+    animateOnHit(): void {
+        
+    }
+
 }
 export default XRCymbal;
-/*
 
 /*
         // Add three legs to the drum container
