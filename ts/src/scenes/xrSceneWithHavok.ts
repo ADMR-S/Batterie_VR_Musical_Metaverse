@@ -23,7 +23,7 @@ import HavokPhysics from "@babylonjs/havok";
 import XRDrumKit from "../XRDrumKit";
 
 import { AssetsManager } from "@babylonjs/core";
-
+import XRHandler from "../XRHandler";
 
 export class XRSceneWithHavok implements CreateSceneClass {
     preTasks = [havokModule];
@@ -121,8 +121,15 @@ export class XRSceneWithHavok implements CreateSceneClass {
     
     //addScaleRoutineToSphere(sphereObservable);
 
-    addXRControllersRoutine(scene, xr, eventMask); //eventMask est-il indispensable ?
-
+    //addXRControllersRoutine(scene, xr, eventMask); //eventMask est-il indispensable ?
+    
+    // Initialize XR Handler for centralized movement controls
+    const xrHandler = new XRHandler(scene, xr);
+    
+    // Use XRHandler's movement in render loop
+    scene.onBeforeRenderObservable.add(() => {
+        xrHandler.updateCameraMovement(0.05, 0.02);
+    });
     // Add collision detection for the ground to prevent objects from falling through
     groundAggregate.body.getCollisionObservable().add((collisionEvent: any) => {
       if (collisionEvent.type === "COLLISION_STARTED") {
@@ -188,7 +195,9 @@ function addKeyboardControls(xr: any, moveSpeed: number) {
     });
 }
 
-    // Add movement with left joystick
+
+/*
+// Add movement with left joystick
 function addXRControllersRoutine(scene: Scene, xr: any, eventMask: number) {
   xr.input.onControllerAddedObservable.add((controller: any) => {
         console.log(`[XR DEBUG] Controller added - handedness: ${controller.inputSource.handedness}`);
@@ -209,7 +218,7 @@ function addXRControllersRoutine(scene: Scene, xr: any, eventMask: number) {
         }
     });
 
-    /*
+    
     // Add physics to controllers when the mesh is loaded
     xr.input.onControllerAddedObservable.add((controller: any) => {
       controller.onMotionControllerInitObservable.add((motionController: any) => {
@@ -249,8 +258,8 @@ function addXRControllersRoutine(scene: Scene, xr: any, eventMask: number) {
             });
         });
     });
-    */
+    
    console.log(scene);
    console.log(eventMask)
 }
-
+*/

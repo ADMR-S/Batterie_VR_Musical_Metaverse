@@ -3,6 +3,7 @@ Intégrer à WamJam
 Near interactions disabled for perf (vérifier compatibilité avec WamJam)
 +
 Bug initialisation : doit sortir et rerentrer pour que les manettes fonctionnent ? 
+--> A priori fixed, à vérifier sur le long terme
 
 Ajuster vélocité 
 
