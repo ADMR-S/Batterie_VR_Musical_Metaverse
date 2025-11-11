@@ -13,23 +13,23 @@ https://batterie-vr-musical-metaverse.onrender.com/
 
 ### Ou build local avec vite (depuis dossier ts/) :
   
-Installer les dépendances :
+Installer les dépendances :  
   `npm i`
 
-Générer clés SSL pour servir en https : 
+Générer clés SSL pour servir en https :  
   `openssl req -x509 -newkey rsa:4096 -keyout localhost.key -out localhost.crt -days 365 -nodes -subj "/CN=localhost"`
 
-Déployer localement :
+Déployer localement :  
   `npm run dev`
 
 Accéder à l'URL depuis un casque connecté au même réseau Wi-Fi
 
-Debug : 
+Debug :
 
-  (Via adb) Check connection casque : 
+  (Via adb) Check connection casque :  
     `adb devices`
 
-  Devtools : 
+  Devtools :  
     chrome://inspect/#devices
 
 
@@ -40,7 +40,7 @@ Debug :
 
 Outils de dev : 
 
-BabylonJS Sandbox :
+BabylonJS Sandbox :  
   https://sandbox.babylonjs.com/
 
 + extension Spector.js
