@@ -99,11 +99,15 @@ class XRCymbal implements XRDrumComponent {
 
                 var currentVelocity = 64;//Default is 64 (median)
                 for (let i = 0; i < this.xrDrumKit.drumsticks.length; i++) {
-                    if (collision.collider.transformNode.id === this.xrDrumKit.drumsticks[i].drumstickAggregate.transformNode.id) {
+                    const drumstickId = this.xrDrumKit.drumsticks[i].drumstickAggregate.transformNode.id;
+                    const isThisDrumstick = 
+                        collision.collider.transformNode.id === drumstickId ||
+                        collision.collidedAgainst.transformNode.id === drumstickId;
+                    
+                    if (isThisDrumstick) {
                         // DEBOUNCE: Prevent multiple triggers from same hit
-                        const stickId = collision.collider.transformNode.id;
                         const now = performance.now();
-                        const lastHit = this.lastHitTime.get(stickId) || 0;
+                        const lastHit = this.lastHitTime.get(drumstickId) || 0;
                         
                         if (now - lastHit < this.HIT_DEBOUNCE_MS) {
                             if(this.log){
@@ -112,7 +116,7 @@ class XRCymbal implements XRDrumComponent {
                             return; // Ignore this collision, it's part of the same hit
                         }
                         
-                        this.lastHitTime.set(stickId, now);
+                        this.lastHitTime.set(drumstickId, now);
                         
                         const { linear, angular } = this.xrDrumKit.drumsticks[i].getVelocity();
                         if(this.log){

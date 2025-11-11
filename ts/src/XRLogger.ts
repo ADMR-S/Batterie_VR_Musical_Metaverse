@@ -151,10 +151,9 @@ class XRLogger {
                 this.controllerVelocityText.text = text;
             }
             updateControllerPositions(controllerPos: Vector3, controllerRot: Quaternion, handedness: string) {
-                //get controller angular rotation :
-                
-                const positionText = `Position (${handedness}): X: ${controllerPos.x.toFixed(2)}, Y: ${controllerPos.y.toFixed(2)}, Z: ${controllerPos.z.toFixed(2)}`;
-                const rotationText = `Rotation (${handedness}): X: ${controllerRot.x.toFixed(2)}, Y: ${controllerRot.y.toFixed(2)}, Z: ${controllerRot.z.toFixed(2)}, W: ${controllerRot.w.toFixed(2)}`;
+                // Fixed-width formatting to prevent flickering
+                const positionText = `Position (${handedness.padEnd(5)}): X:${controllerPos.x.toFixed(2).padStart(6)}, Y:${controllerPos.y.toFixed(2).padStart(6)}, Z:${controllerPos.z.toFixed(2).padStart(6)}`;
+                const rotationText = `Rotation (${handedness.padEnd(5)}): X:${controllerRot.x.toFixed(2).padStart(6)}, Y:${controllerRot.y.toFixed(2).padStart(6)}, Z:${controllerRot.z.toFixed(2).padStart(6)}, W:${controllerRot.w.toFixed(2).padStart(6)}`;
                 
                 
                 this.controllerPositions[handedness] = `${positionText}\n${rotationText}`;
@@ -163,15 +162,15 @@ class XRLogger {
 
             }
             updateControllerVelocity(linearVelocity: Vector3, angularVelocity : Vector3, stickId : string){
-                //get controller angular rotation :
+                // Fixed-width formatting to prevent flickering
                 
                 // Calculate lengths of the velocity vectors
-                const linearLength = linearVelocity.length().toFixed(2);
-                const angularLength = angularVelocity.length().toFixed(2);
+                const linearLength = linearVelocity.length().toFixed(2).padStart(6);
+                const angularLength = angularVelocity.length().toFixed(2).padStart(6);
 
                 const velocityText = `Drumstick (${stickId}) Velocity:
-                Linear: X: ${linearVelocity.x.toFixed(2)}, Y: ${linearVelocity.y.toFixed(2)}, Z: ${linearVelocity.z.toFixed(2)}, Length: ${linearLength}
-                Angular: X: ${angularVelocity.x.toFixed(2)}, Y: ${angularVelocity.y.toFixed(2)}, Z: ${angularVelocity.z.toFixed(2)}, Length: ${angularLength}`;
+Linear:  X:${linearVelocity.x.toFixed(2).padStart(6)}, Y:${linearVelocity.y.toFixed(2).padStart(6)}, Z:${linearVelocity.z.toFixed(2).padStart(6)}, Len:${linearLength}
+Angular: X:${angularVelocity.x.toFixed(2).padStart(6)}, Y:${angularVelocity.y.toFixed(2).padStart(6)}, Z:${angularVelocity.z.toFixed(2).padStart(6)}, Len:${angularLength}`;
 
                 // Update the velocity text in the XR console
                 this.controllerVelocityText.text = velocityText;

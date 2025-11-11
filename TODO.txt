@@ -1,0 +1,14 @@
+Intégrer à WamJam
+
+Animer cymbales
+Double hit (comme s'il y avait 2 triggers ? Mesh + trigger et bug via détection par nom "trigger" ?)
+Ajuster durée du son en fonction de la force de frappe ?
+
+Hi-Hat trop sensible (fusionner les deux triggers ? Attention à la zone intermédiaire vide entre les deux parties, il faudrait remplir le trigger)
+
+Near interactions disabled for perf (vérifier compatibilité avec WamJam)
+
+Si la batterie n'est pas orientée vers le sol, détecter un mouvement descendant ou ascendant ne suffit pas
+
+Le kick est frappé depuis le côté (secondaire si pédale ajoutée plus tard)
+

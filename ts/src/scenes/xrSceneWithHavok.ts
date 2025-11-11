@@ -53,30 +53,29 @@ export class XRSceneWithHavok implements CreateSceneClass {
         disableTeleportation: true
     });
     
-    console.log("[XR DEBUG] XR experience created, waiting for controllers...");
+    console.log("[XR DEBUG] XR experience created");
     
-    // PERFORMANCE OPTIMIZATION: Disable near interactions AFTER controllers are initialized
-    // Wait for BOTH controllers to be added before disabling to ensure they work properly
-    let controllersAdded = 0;
-    const onControllerAdded = () => {
-        controllersAdded++;
-        console.log(`[XR DEBUG] Controller ${controllersAdded} added`);
-        
-        if (controllersAdded >= 2) {
-            // Both controllers initialized, safe to disable near interactions
+    // PERFORMANCE OPTIMIZATION: Disable near interactions to prevent controller issues
+    // Must be done early to avoid race conditions with controller initialization
+    if (xr.baseExperience.featuresManager) {
+        try {
+            // Small delay to ensure feature manager is fully initialized
             setTimeout(() => {
                 try {
                     xr.baseExperience.featuresManager.disableFeature(WebXRNearInteraction.Name);
                     console.log("[XR DEBUG] Near interactions disabled for better performance");
                 } catch (e) {
-                    console.log("[XR DEBUG] Near interactions feature not available:", e);
+                    console.log("[XR DEBUG] Could not disable near interactions:", e);
                 }
-            }, 500); // Small delay to ensure full initialization
+            }, 100);
+        } catch (e) {
+            console.log("[XR DEBUG] Feature manager not ready:", e);
         }
-    };
+    }
     
-    xr.input.onControllerAddedObservable.add(() => {
-        onControllerAdded();
+    // Monitor XR session state for debugging
+    xr.baseExperience.onStateChangedObservable.add((state) => {
+        console.log("[XR DEBUG] XR State changed to:", state);
     });
   
     //Good way of initializing Havok
