@@ -1,3 +1,7 @@
+Animer cymbales
+Double hit (comme s'il y avait 2 triggers ? Mesh + trigger et bug via détection par nom "trigger" ?)
+Taille des triggers trop grande vis à vis du mesh (pb de rescale ?)
+
 Intégrer à WamJam
 
 Near interactions disabled for perf (vérifier compatibilité avec WamJam)
@@ -7,11 +11,8 @@ Bug initialisation : doit sortir et rerentrer pour que les manettes fonctionnent
 
 Ajuster vélocité 
 
-Animer cymbales
-
-Double hit (comme s'il y avait 2 triggers ? Mesh + trigger et bug via détection par nom "trigger" ?)
-
 Ajuster durée du son en fonction de la force de frappe ?
+
 Changer enveloppe en fonction du lieu de la frappe (centre =/= bords drums)
 
 Hi-Hat trop sensible (fusionner les deux triggers ? Attention à la zone intermédiaire vide entre les deux parties, il faudrait remplir le trigger)
