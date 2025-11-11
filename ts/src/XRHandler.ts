@@ -224,9 +224,9 @@ export class XRHandler {
         const camera = this.xr.baseExperience.camera;
         
         
-        const rotationValue = Math.abs(this.rotationInput) ;
-        const xValue = Math.abs(this.xPositionInput) ;
-        const yValue = Math.abs(this.yPositionInput);
+        const rotationValue = this.rotationInput;
+        const xValue = this.xPositionInput;
+        const yValue = this.yPositionInput;
         
         // Rotation continue proportionnelle à l'input du stick (instantanée, pas de lissage)
         camera.cameraRotation.y += rotationValue * rotationSpeed;
