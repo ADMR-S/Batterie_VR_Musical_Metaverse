@@ -112,11 +112,13 @@ class XRDrumstick {
     }
 
     pickStick(controller: WebXRInputSource, stickLength : number) {
-        console.log("Déclenchement de pickStick");
+        if (this.log) {
+            console.log("Déclenchement de pickStick");
+        }
         const meshUnderPointer = this.xrDrumKit.xr.pointerSelection.getMeshUnderPointer(controller.uniqueId);
-        if (meshUnderPointer) {
+        if (this.log && meshUnderPointer) {
             console.log("Mesh under pointer : " + meshUnderPointer.name);
-        } else {
+        } else if (this.log) {
             console.log("Aucun mesh sous le pointeur");
         }
         if (meshUnderPointer === this.drumstickAggregate.transformNode) {

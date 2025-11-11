@@ -145,6 +145,24 @@ class XRDrumKit {
             //RESCALE: 
             this.drumContainer.scaling = new Vector3(0.7, 0.7, 0.7); // Rescale the drum container
         
+            // PERFORMANCE OPTIMIZATIONS for rendering
+            // 1. Freeze materials to prevent unnecessary shader recompilations
+            this.drumContainer.getChildMeshes().forEach(mesh => {
+                if (mesh.material) {
+                    mesh.material.freeze();
+                }
+                
+                // 2. Disable frustum culling - drumkit is always in view when playing
+                // This prevents meshes from disappearing when user gets close
+                mesh.alwaysSelectAsActiveMesh = true;
+                
+                // 3. Disable unnecessary features for static meshes
+                mesh.doNotSyncBoundingInfo = true; // Static meshes don't need bounding updates
+            });
+            
+            // Note: World matrix freezing is done AFTER initial positioning in add6DofBehavior
+            // to prevent the "jump" issue when unfreezing
+        
             /*
             //TEST FOR COLLISIONS
             console.log(this.drumContainer.getChildMeshes());
@@ -186,18 +204,42 @@ class XRDrumKit {
         const sixDofBehavior = new SixDofDragBehavior();
         drumContainer.addBehavior(sixDofBehavior);
 
+        // Freeze world matrices AFTER initial setup to avoid jump on first unfreeze
+        drumContainer.getChildMeshes().forEach(mesh => {
+            mesh.freezeWorldMatrix();
+        });
+
         // Highlight the drum container in green when selected
         sixDofBehavior.onDragStartObservable.add(() => {
             drumContainer.getChildMeshes().forEach(mesh => {
-                (mesh.material as StandardMaterial).emissiveColor = new Color3(0, 1, 0); // Green color
+                // Unfreeze world matrix to allow movement
+                mesh.unfreezeWorldMatrix();
+                
+                if (mesh.material) {
+                    // Unfreeze material temporarily to allow color changes
+                    mesh.material.unfreeze();
+                    (mesh.material as StandardMaterial).emissiveColor = new Color3(0, 1, 0); // Green color
+                }
             });
             this.drumSoundsEnabled = false; // Disable drum sounds when moving
         });
 
         sixDofBehavior.onDragEndObservable.add(() => {
             drumContainer.getChildMeshes().forEach(mesh => {
-                (mesh.material as StandardMaterial).emissiveColor = Color3.Black(); // Reset to default color
+                if (mesh.material) {
+                    (mesh.material as StandardMaterial).emissiveColor = Color3.Black(); // Reset to default color
+                }
+                // Refreeze world matrix after movement
+                mesh.freezeWorldMatrix();
             });
+            // Small delay before refreezing materials to ensure color change applies
+            setTimeout(() => {
+                drumContainer.getChildMeshes().forEach(mesh => {
+                    if (mesh.material) {
+                        mesh.material.freeze();
+                    }
+                });
+            }, 100);
             this.drumSoundsEnabled = true; // Enable drum sounds after moving
         });
     }

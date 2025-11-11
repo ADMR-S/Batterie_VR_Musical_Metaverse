@@ -11,7 +11,9 @@ class XRDrum implements XRDrumComponent {
     name: String;
     drumComponentContainer: TransformNode;
     xrDrumKit: XRDrumKit;
-    log: boolean = true;
+    log: boolean = true; // Set to true for debugging
+    private lastHitTime: Map<string, number> = new Map(); // Track last hit time per drumstick
+    private readonly HIT_DEBOUNCE_MS = 50; // Minimum time between hits (50ms = 20 hits/second max)
 
     //@ts-ignore
     constructor(name: string, midiKey: number, xrDrumKit: XRDrumKit, drum3Dmodel: AbstractMesh[]) { //diameter in meters, height in meters, midiKey is the MIDI key to play when the trigger is hit
@@ -59,7 +61,7 @@ class XRDrum implements XRDrumComponent {
             if (this.log) {
                 console.log("Creating body for mesh/submesh: ", mesh.name);
             }
-            /* REMOVED TO SEE PERFORMANCE DIFFERENCE
+            /* REMOVED TO ENHANCE PERFORMANCE, ACTIVATE IF COLLISIONS NEEDED
             const bodyAggregate = new PhysicsAggregate(mesh, PhysicsShapeType.MESH, { mass: 0 }, this.xrDrumKit.scene);
             bodyAggregate.body.setMotionType(PhysicsMotionType.STATIC);
             bodyAggregate.body.setPrestepType(PhysicsPrestepType.TELEPORT);
@@ -84,7 +86,13 @@ class XRDrum implements XRDrumComponent {
 
     playSoundOnTrigger(name: string, midiKey: number, duration: number) { //duration in seconds
         this.xrDrumKit.hk.onTriggerCollisionObservable.add((collision: any) => {
-            if (collision.type === "TRIGGER_ENTERED" && collision.collidedAgainst.transformNode.id === name + "Trigger") {
+            // Check if this collision involves THIS drum's trigger (could be either collider or collidedAgainst)
+            const triggerName = name + "Trigger";
+            const isThisDrumTrigger = 
+                collision.collidedAgainst.transformNode.id === triggerName ||
+                collision.collider.transformNode.id === triggerName;
+            
+            if (collision.type === "TRIGGER_ENTERED" && isThisDrumTrigger) {
                 if (this.log) {
                     console.log(name + " trigger entered", collision);
                     console.log('collision TRIGGERED entre ' + collision.collider.transformNode.id + ' et ' + collision.collidedAgainst.transformNode.id);
@@ -98,37 +106,79 @@ class XRDrum implements XRDrumComponent {
                 var currentVelocity = 64;//Default is 64 (median)
                 for (let i = 0; i < this.xrDrumKit.drumsticks.length; i++) {
                     if (collision.collider.transformNode.id === this.xrDrumKit.drumsticks[i].drumstickAggregate.transformNode.id) {
+                        // DEBOUNCE: Prevent multiple triggers from same hit
+                        const stickId = collision.collider.transformNode.id;
+                        const now = performance.now();
+                        const lastHit = this.lastHitTime.get(stickId) || 0;
+                        
+                        if (now - lastHit < this.HIT_DEBOUNCE_MS) {
+                            if(this.log){
+                                console.log("DEBOUNCED - Too soon after last hit");
+                            }
+                            return; // Ignore this collision, it's part of the same hit
+                        }
+                        
+                        this.lastHitTime.set(stickId, now);
+                        
                         const { linear, angular } = this.xrDrumKit.drumsticks[i].getVelocity();
                         if(this.log){
                             console.log("Linear Velocity length : ", linear.length());
                             console.log("Angular Velocity length : ", angular.length());
                             console.log("Angular X: ", angular.x, "Angular Y: ", angular.y, "Angular Z: ", angular.z);
                         }
-                        if (linear.y >= 0) {
+                        
+                        // Drums should only respond to downward hits (hitting the drum head)
+                        // Upward movement means stick is rebounding - ignore it
+                        const isDownwardHit = linear.y < 0;
+                        
+                        if (!isDownwardHit) {
                             if(this.log){
-                                console.log("MOUVEMENT MONTANT");
+                                console.log("UPWARD MOVEMENT - Ignored for drum");
                             }
-                            currentVelocity = 0; // Ignore upward movement
-                        } 
-                        else {
-                            // Vibrate the controller
-                            const controller = this.xrDrumKit.drumsticks.find(stick =>
-                                stick.drumstickAggregate.transformNode.id === collision.collider.transformNode.id
-                            )?.controllerAttached;
-
-                            if (controller?.motionController?.gamepadObject?.hapticActuators?.[0]) {
-                                //console.log("On fait vibrer la manette !");
-                                controller.motionController.gamepadObject.hapticActuators[0].pulse(1.0, 100); // Vibrate at full intensity for 100ms
-                            }
-
-
-                            if(this.log){
-                                console.log("MOUVEMENT DESCENDANT");
-                            }
-                            //currentVelocity = Math.round(10 * (linear.length() + angular.length()));
+                            return; // Skip upward hits for drums
                         }
+
+                        
+
+                        // Calculate velocity using improved formula
+                        // Linear velocity typically ranges from 0 to ~3 m/s for drumming
+                        // Angular velocity can be quite high but contributes less to the hit
+                        const linearSpeed = linear.length();
+                        const angularSpeed = angular.length();
+                        
+                        // Weighted combination: linear is primary, angular is secondary
+                        // Scale to 0-127 MIDI range with proper calibration
+                        const MIN_VELOCITY = 0.05; // Minimum detectable hit (m/s)
+                        const MAX_VELOCITY = 3.0;  // Maximum expected hit speed (m/s)
+                        
+                        const combinedSpeed = linearSpeed + angularSpeed;
+                        
+                        const normalizedSpeed = Math.max(0, Math.min(1, 
+                            (combinedSpeed - MIN_VELOCITY) / (MAX_VELOCITY - MIN_VELOCITY)
+                        ));
+                        
+                        // Apply a power curve for better feel (lower = more sensitive to soft hits)
+                        // 0.5 = very sensitive, 1.0 = linear, we use 0.85 for balanced response
+                        const curvedSpeed = Math.pow(normalizedSpeed, 0.85);
+                        
+                        // Scale from 1 to 127
+                        currentVelocity = Math.max(1, Math.min(127, Math.round(curvedSpeed * 127)));
+
+                        // Vibrate the controller
+                        const controller = this.xrDrumKit.drumsticks.find(stick =>
+                            stick.drumstickAggregate.transformNode.id === collision.collider.transformNode.id
+                        )?.controllerAttached;
+                        
+                        if (controller?.motionController?.gamepadObject?.hapticActuators?.[0]) {
+                            // Scale haptic feedback with velocity (0.3-1.0 intensity)
+                            const hapticIntensity = 0.3 + (currentVelocity / 127) * 0.7;
+                            controller.motionController.gamepadObject.hapticActuators[0].pulse(hapticIntensity, 100);
+                        }
+
                         if(this.log){
-                            console.log("Vitesse calculée de la baguette : " + Math.round(10 * (linear.length() + (10^6)*angular.length())));
+                            console.log(isDownwardHit ? "MOUVEMENT DESCENDANT" : "MOUVEMENT MONTANT");
+                            console.log("Vitesse calculée de la baguette (MIDI 0-127): " + currentVelocity);
+                            console.log("Combined speed (m/s): " + combinedSpeed.toFixed(3));
                         }
                     }
                 }
@@ -186,12 +236,15 @@ class XRDrum implements XRDrumComponent {
                         data: { bytes: new Uint8Array([0x80, midiKey, currentVelocity]) } // Note OFF, third parameter is velocity (how quickly the note should be released)
                     });
                 }
-            } 
-            else {
-                if (this.log) {
-                    console.log('collision entre ' + collision.collider.transformNode.id + ' et ' + collision.collidedAgainst.transformNode.id);
+            } else if (isThisDrumTrigger) {
+                // Only log collisions that involve THIS drum's trigger (for debugging)
+                if(this.log){
+                    const otherName = collision.collider.transformNode.name;
+                    const collisionType = collision.type || "UNKNOWN";
+                    console.log(`[${performance.now().toFixed(2)}ms] ${this.name} trigger collision (${collisionType}): with ${otherName}`);
                 }
             }
+            // Ignore all collisions that don't involve this drum's trigger
         });
     }
 

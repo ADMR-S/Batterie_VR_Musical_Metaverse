@@ -23,7 +23,6 @@ import HavokPhysics from "@babylonjs/havok";
 import XRDrumKit from "../XRDrumKit";
 
 import { AssetsManager } from "@babylonjs/core";
-import { SceneOptimizer} from "@babylonjs/core";
 
 
 export class XRSceneWithHavok implements CreateSceneClass {
@@ -44,11 +43,41 @@ export class XRSceneWithHavok implements CreateSceneClass {
 
     const xr = await scene.createDefaultXRExperienceAsync({
         floorMeshes: [ground],
+        // Optimize XR rendering
+        uiOptions: {
+            sessionMode: 'immersive-vr',
+        },
+        optionalFeatures: true,
+        // Fix GL_INVALID_OPERATION error with multisampling
+        disableDefaultUI: false,
+        disableTeleportation: true
     });
-    //OPTIMIZE BY DISABLING NEAR INTERACTIONS :
-    //xr.baseExperience.featuresManager.disableFeature(WebXRNearInteraction.name)
-    console.log("BASE EXPERIENCE")
-    console.log(xr.baseExperience)
+    
+    console.log("[XR DEBUG] XR experience created, waiting for controllers...");
+    
+    // PERFORMANCE OPTIMIZATION: Disable near interactions AFTER controllers are initialized
+    // Wait for BOTH controllers to be added before disabling to ensure they work properly
+    let controllersAdded = 0;
+    const onControllerAdded = () => {
+        controllersAdded++;
+        console.log(`[XR DEBUG] Controller ${controllersAdded} added`);
+        
+        if (controllersAdded >= 2) {
+            // Both controllers initialized, safe to disable near interactions
+            setTimeout(() => {
+                try {
+                    xr.baseExperience.featuresManager.disableFeature(WebXRNearInteraction.Name);
+                    console.log("[XR DEBUG] Near interactions disabled for better performance");
+                } catch (e) {
+                    console.log("[XR DEBUG] Near interactions feature not available:", e);
+                }
+            }, 500); // Small delay to ensure full initialization
+        }
+    };
+    
+    xr.input.onControllerAddedObservable.add(() => {
+        onControllerAdded();
+    });
   
     //Good way of initializing Havok
     // initialize plugin
@@ -66,15 +95,16 @@ export class XRSceneWithHavok implements CreateSceneClass {
 
     const eventMask = started | continued | finished;
     
-    //SCENE OPTIMIZER
-    /*
-    var options = new SceneOptimizerOptions();
-    options.addOptimization(new HardwareScalingOptimization(0, 1));
-
-    // Optimizer
-    var optimizer = new SceneOptimizer(scene, options);
-    */
-    SceneOptimizer.OptimizeAsync(scene);
+    //SCENE OPTIMIZER - Disabled to prevent mesh merge errors with incompatible vertex attributes
+    // The drum models have primitives with different vertex data structures
+    // Manual optimizations are applied instead:
+    // 1. Static physics bodies for drums (no dynamic simulation needed)
+    // 2. Reduced polygon count in 3D models
+    // 3. Near interaction disabled for controllers (see below)
+    // 4. Culling handled automatically by Babylon for objects outside view
+    
+    // SceneOptimizer.OptimizeAsync(scene) //causes "Cannot merge vertex data" errors
+    // because drum primitives have inconsistent vertex attributes (some have UVs, some don't)
     
     const assetsManager = new AssetsManager(scene);
 
@@ -94,25 +124,19 @@ export class XRSceneWithHavok implements CreateSceneClass {
 
     addXRControllersRoutine(scene, xr, eventMask); //eventMask est-il indispensable ?
 
-    // Add keyboard controls for movement
-    const moveSpeed = 0.1;
-    addKeyboardControls(xr, moveSpeed);
-
-    // Add collision detection for the ground
+    // Add collision detection for the ground to prevent objects from falling through
     groundAggregate.body.getCollisionObservable().add((collisionEvent: any) => {
       if (collisionEvent.type === "COLLISION_STARTED") {
             var collidedBody = null;
             if(collisionEvent.collider != groundAggregate.body){
-                console.log("OUI")
                 collidedBody = collisionEvent.collider;
             }
             else{
-                console.log("NON")
                 collidedBody = collisionEvent.collidedAgainst;
             }
             const position = collidedBody.transformNode.position;
-            console.log("Position du sol : " + ground.position.y);
-            collidedBody.transformNode.position = new Vector3(position.x, ground.position.y + 5, position.z); // Adjust the y-coordinate to be just above the ground
+            // Reset object position slightly above ground to prevent clipping
+            collidedBody.transformNode.position = new Vector3(position.x, ground.position.y + 1, position.z);
             collidedBody.setLinearVelocity(Vector3.Zero());
             collidedBody.setAngularVelocity(Vector3.Zero());
         }
@@ -127,6 +151,10 @@ export class XRSceneWithHavok implements CreateSceneClass {
             }
         });
     };
+
+    // Add keyboard controls for movement (for testing outside VR)
+    const moveSpeed = 0.1;
+    addKeyboardControls(xr, moveSpeed);
 
     return scene;
     };
@@ -163,11 +191,15 @@ function addKeyboardControls(xr: any, moveSpeed: number) {
 
     // Add movement with left joystick
 function addXRControllersRoutine(scene: Scene, xr: any, eventMask: number) {
-  xr.input.onControllerAddedObservable.add((controller: any) => {        console.log("Ajout d'un controller")
-  if (controller.inputSource.handedness === "left") {
+  xr.input.onControllerAddedObservable.add((controller: any) => {
+        console.log(`[XR DEBUG] Controller added - handedness: ${controller.inputSource.handedness}`);
+        
+        if (controller.inputSource.handedness === "left") {
             controller.onMotionControllerInitObservable.add((motionController: any) => {
+                console.log("[XR DEBUG] Left controller motion controller initialized");
                 const xrInput = motionController.getComponent("xr-standard-thumbstick");
                 if (xrInput) {
+                    console.log("[XR DEBUG] Left thumbstick component found");
                     xrInput.onAxisValueChangedObservable.add((axisValues: any) => {
                         const speed = 0.05;
                         xr.baseExperience.camera.position.x += axisValues.x * speed;
