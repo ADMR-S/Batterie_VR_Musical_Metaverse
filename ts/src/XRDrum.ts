@@ -2,6 +2,9 @@ import XRDrumComponent from "./XRDrumComponent";
 import { TransformNode } from "@babylonjs/core";
 import { PhysicsAggregate, PhysicsMotionType, PhysicsPrestepType, PhysicsShapeType } from "@babylonjs/core/Physics";
 import { AbstractMesh } from "@babylonjs/core";
+import { Animation } from "@babylonjs/core/Animations/animation";
+import { CubicEase, EasingFunction } from "@babylonjs/core/Animations/easing";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 
 import XRDrumKit from "./XRDrumKit";
 
@@ -14,6 +17,8 @@ class XRDrum implements XRDrumComponent {
     log: boolean = true; // Set to true for debugging
     private lastHitTime: Map<string, number> = new Map(); // Track last hit time per drumstick
     private readonly HIT_DEBOUNCE_MS = 50; // Minimum time between hits (50ms = 20 hits/second max)
+    private drumSkinMesh: AbstractMesh | undefined; // Reference to the drum skin for animation
+    private originalMeshPositions: Map<string, Vector3> = new Map(); // Store original positions
 
     //@ts-ignore
     constructor(name: string, midiKey: number, xrDrumKit: XRDrumKit, drum3Dmodel: AbstractMesh[]) { //diameter in meters, height in meters, midiKey is the MIDI key to play when the trigger is hit
@@ -42,6 +47,16 @@ class XRDrum implements XRDrumComponent {
         if (!trigger) {
             console.error(`Failed to find the trigger mesh inside the body '${name}'.`);
             return;
+        }
+
+        // Find the drum skin mesh for animation (assuming it's named with "Skin" suffix)
+        this.drumSkinMesh = drum3Dmodel.find(mesh => mesh.name === this.name + "Skin");
+        if (!this.drumSkinMesh) {
+            // Try alternative naming conventions
+            this.drumSkinMesh = bodyPrimitives.find(mesh => mesh.name.includes("skin") || mesh.name.includes("Skin"));
+            if (this.log && this.drumSkinMesh) {
+                console.log(`Found drum skin mesh: ${this.drumSkinMesh.name}`);
+            }
         }
 
         
@@ -168,6 +183,9 @@ class XRDrum implements XRDrumComponent {
                         // Scale from 1 to 127
                         currentVelocity = Math.max(1, Math.min(127, Math.round(curvedSpeed * 127)));
 
+                        // Animate drum skin trembling based on hit intensity
+                        this.animateOnHit(currentVelocity);
+
                         // Vibrate the controller
                         const controller = this.xrDrumKit.drumsticks.find(stick =>
                             stick.drumstickAggregate.transformNode.id === collision.collider.transformNode.id
@@ -252,8 +270,83 @@ class XRDrum implements XRDrumComponent {
         });
     }
 
-    animateOnHit(): void {
+    animateOnHit(velocity: number): void {
+        // Simple tremble animation like Hi-Hat
+        // Animate ALL child meshes of the drum INCLUDING the trigger (drum skin)
+        const meshesToAnimate = this.drumComponentContainer.getChildMeshes();
         
+        if (meshesToAnimate.length === 0) {
+            return; // No mesh to animate
+        }
+
+        // Calculate trembling intensity based on velocity (1-127 MIDI range)
+        const maxDisplacement = 0.015; // 1.5cm maximum displacement
+        const displacement = (velocity / 127) * maxDisplacement;
+        
+        // Animate each mesh
+        meshesToAnimate.forEach(mesh => {
+            // Store original position if not already stored
+            if (!this.originalMeshPositions.has(mesh.name)) {
+                this.originalMeshPositions.set(mesh.name, mesh.position.clone());
+            }
+            
+            const basePosition = this.originalMeshPositions.get(mesh.name)!;
+            
+            // Simple trembling animation
+            const animationPosition = new Animation(
+                "drumTrembleAnimation_" + mesh.name + "_" + Date.now(),
+                "position.y",
+                60,
+                Animation.ANIMATIONTYPE_FLOAT,
+                Animation.ANIMATIONLOOPMODE_CONSTANT
+            );
+
+            const numOscillations = 3;
+            const totalDuration = 0.3;
+            const keys = [];
+            
+            // Start from base position
+            keys.push({ frame: 0, value: basePosition.y });
+            
+            // Create oscillations with damping
+            for (let i = 1; i <= numOscillations; i++) {
+                const frame = i * (totalDuration * 60 / numOscillations);
+                const damping = Math.pow(0.5, i - 1);
+                const direction = Math.pow(-1, i);
+                
+                keys.push({
+                    frame: frame,
+                    value: basePosition.y + displacement * damping * direction
+                });
+            }
+            
+            // Return to base position
+            keys.push({ frame: totalDuration * 60, value: basePosition.y });
+
+            animationPosition.setKeys(keys);
+            
+            // Apply easing
+            const easingFunction = new CubicEase();
+            easingFunction.setEasingMode(EasingFunction.EASINGMODE_EASEINOUT);
+            animationPosition.setEasingFunction(easingFunction);
+
+            // Apply the animation
+            mesh.animations = [];
+            mesh.animations.push(animationPosition);
+            
+            const animatable = this.xrDrumKit.scene.beginAnimation(
+                mesh, 
+                0, 
+                totalDuration * 60, 
+                false,
+                1.0
+            );
+            
+            // Ensure mesh returns to base position when done
+            animatable.onAnimationEnd = () => {
+                mesh.position.y = basePosition.y;
+            };
+        });
     }
 
 }

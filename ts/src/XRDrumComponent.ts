@@ -1,5 +1,6 @@
 import { AbstractMesh } from "@babylonjs/core";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 
 
 interface XRDrumComponent {
@@ -7,7 +8,7 @@ interface XRDrumComponent {
     drumComponentContainer: TransformNode;
 
     playSoundOnTrigger(midiKey: number, duration: number) : void;
-    animateOnHit() : void;
+    animateOnHit(velocity: number, hitDirection?: Vector3) : void;
     createDrumComponentBody(body : AbstractMesh) : void;
     createDrumComponentTrigger(trigger : AbstractMesh) : void;
 }
