@@ -89,7 +89,8 @@ class XRCymbal implements XRDrumComponent {
             
             // Store the original position and rotation for limiting
             const originalPosition = trigger.position.clone();
-            const maxRotationRadians = Math.PI / 4; // 45 degrees
+            const maxRotationUp = Math.PI / 4; // 45 degrees up
+            const maxRotationDown = Math.PI * 1.25; // 225 degrees down (5π/4)
             
             // Get the initial rotation quaternion from the physics body
             const originalBodyRotation = triggerAggregate.body.transformNode.rotationQuaternion!.clone();
@@ -130,19 +131,33 @@ class XRCymbal implements XRDrumComponent {
                     console.log(`[${this.name}] Body rotation: offsetX=${(offsetX * 180/Math.PI).toFixed(1)}°, vel=${angularVelocity.x.toFixed(3)}`);
                 }
                 
-                // Bounce-back effect: reverse velocity when hitting the limit
-                if (Math.abs(offsetX) > maxRotationRadians) {
+                // Apply spring force to return to original position (like real cymbal between pads)
+                const springStrength = 0.8; // How strong the spring force is
+                const springDamping = 0.3; // Damping to prevent oscillation
+                
+                // Calculate spring force: F = -k * x (Hooke's law)
+                const springForce = -offsetX * springStrength;
+                const dampingForce = -angularVelocity.x * springDamping;
+                const totalTorque = springForce + dampingForce;
+                
+                // Apply torque to pull cymbal back to rest position
+                triggerAggregate.body.applyAngularImpulse(new Vector3(totalTorque * 0.016, 0, 0)); // 0.016 ≈ 1/60 for frame time
+                
+                // Asymmetric bounce limits: different max for up vs down
+                const maxLimit = offsetX > 0 ? maxRotationUp : maxRotationDown;
+                
+                if (Math.abs(offsetX) > maxLimit) {
                     if(this.log){
                         console.log(`[${this.name}] ROTATION LIMIT HIT: ${(offsetX * 180/Math.PI).toFixed(1)}°, bouncing back!`);
                     }
                     
-                    // Clamp position to limit
-                    const clampedX = Math.sign(offsetX) * maxRotationRadians;
+                    // Clamp to just INSIDE the limit (95% of max) to avoid infinite bouncing
+                    const clampedX = Math.sign(offsetX) * maxLimit * 0.95;
                     const newEuler = new Vector3(origEuler.x + clampedX, origEuler.y, origEuler.z);
                     const newQuat = Quaternion.FromEulerAngles(newEuler.x, newEuler.y, newEuler.z);
                     triggerAggregate.body.transformNode.rotationQuaternion = newQuat;
                     
-                    // REVERSE angular velocity for bounce-back (with some energy loss)
+                    // REVERSE angular velocity for bounce-back (with energy loss)
                     triggerAggregate.body.setAngularVelocity(new Vector3(-angularVelocity.x * 0.7, 0, 0));
                 }
                 
