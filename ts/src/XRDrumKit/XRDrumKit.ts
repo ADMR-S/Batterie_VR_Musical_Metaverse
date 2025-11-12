@@ -12,6 +12,8 @@ import XRCymbal from "./XRDrumComponent/XRCymbal"
 import XRHiHat from "./XRDrumComponent/XRHiHat";
 import XRLogger from "../XRLogger";
 import { DRUMKIT_CONFIG } from "./XRDrumKitConfig";
+import ThroneController from "./ThroneController";
+import ThroneUI from "./ThroneUI";
 
 //TODO : 
     //Baguettes qui s'entrechoquent = son ? ("1,2,3,4 !"...)
@@ -67,6 +69,8 @@ class XRDrumKit {
     closedHiHatKey: number = 42;
     openHiHatKey: number = 46;
     throne : TransformNode | undefined;
+    throneController: ThroneController | undefined; // Controller for sitting/standing functionality
+    throneUI: ThroneUI | undefined; // UI for throne interaction prompts
     path = DRUMKIT_CONFIG.model.path; // Path to the 3D model folder
     log = false;
     scaleFactor: number = DRUMKIT_CONFIG.physics.scaleFactor; // Scale factor for physics trigger shapes (0.7 = 70% of visual size)
@@ -136,6 +140,12 @@ class XRDrumKit {
             
             this.drumContainer.addChild(throneContainer); // Attach the throne container to the drum container
             this.throne = throneContainer; // Store the throne container
+            
+            // Initialize throne controller for sit/stand functionality
+            this.throneController = new ThroneController(xr, this, throneContainer, this.scene);
+            
+            // Initialize throne UI for visual feedback
+            this.throneUI = new ThroneUI(this.scene, xr, this.throneController);
         
             //RESCALE: 
             this.drumContainer.scaling = new Vector3(
@@ -186,7 +196,7 @@ class XRDrumKit {
     async initializeWAMPlugin() {
         const hostGroupId = await setupWamHost(this.audioContext);
         //const wamURIDrumSampler = 'https://www.webaudiomodules.com/community/plugins/burns-audio/drumsampler/index.js';
-        const wamURIDrumSampler = 'https://mainline.i3s.unice.fr/WAMDrumSamplerVel/index.js';
+        const wamURIDrumSampler = DRUMKIT_CONFIG.wam.wamUri;
         const wamInstance = await loadDynamicComponent(wamURIDrumSampler, hostGroupId, this.audioContext);
 
         // Exemple de selection d'un autre son

@@ -22,6 +22,11 @@ export const DRUMKIT_CONFIG = {
             impulseScale: 0.3, // Scale factor for angular impulse from hits
         }
     },
+
+    wam : {
+        //wamUri : "https://www.webaudiomodules.com/community/plugins/burns-audio/drumsampler/index.js"
+        wamUri : "https://mainline.i3s.unice.fr/WAMDrumSamplerVel/index.js"
+    },
     
     // MIDI key mappings
     midi: {
@@ -40,7 +45,7 @@ export const DRUMKIT_CONFIG = {
         durations: {
             drums: 0.25, // Duration for drum sounds (seconds)
             cymbals: 5.0, // Duration for cymbal sounds (seconds)
-            hiHat: 5.0, // Duration for hi-hat sounds (seconds)
+            hiHat: 0.25, // Duration for hi-hat sounds (seconds)
         }
     },
     

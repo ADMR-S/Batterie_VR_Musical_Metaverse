@@ -3,11 +3,17 @@ Interagir avec le trône pour s'installer
 Se lever (bouton B maintenu) = lâcher les baguettes et repasser en déplacement libre (retirer les listeners de la batterie)
 
 Coups manqués parfois ?
+Double hit (comme s'il y avait 2 triggers ? Mesh + trigger et bug via détection par nom "trigger" ?)
 
 Intégrer à WamJam
 
-Ajuster animation cymbales
-Double hit (comme s'il y avait 2 triggers ? Mesh + trigger et bug via détection par nom "trigger" ?)
+Intégrer rimshot
+
+Classe dédiée Kick
+
+Ajouter pédales Kick et hiHat
+
+Ajuster dynamisme cymbales
 
 Permettre de changer la prise de la baguette (/ le type de baguette plus tard)
 
@@ -25,6 +31,3 @@ Changer enveloppe en fonction du lieu de la frappe (centre =/= bords drums)
 Hi-Hat trop sensible (fusionner les deux triggers ? Attention à la zone intermédiaire vide entre les deux parties, il faudrait remplir le trigger)
 
 Si la batterie n'est pas orientée vers le sol, détecter un mouvement descendant ou ascendant ne suffit pas
-
-Le kick est frappé depuis le côté (secondaire si pédale ajoutée plus tard)
-

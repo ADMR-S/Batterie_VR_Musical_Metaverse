@@ -129,54 +129,40 @@ class XRDrumstick {
             console.log("Aucun mesh sous le pointeur");
         }
         if (meshUnderPointer === this.drumstickAggregate.transformNode) {
-            if (controller.grip) {
-                this.drumstickAggregate.body.setMotionType(PhysicsMotionType.ANIMATED);
-                this.drumstickAggregate.body.setPrestepType(PhysicsPrestepType.TELEPORT);
-                this.drumstickAggregate.body.setCollisionCallbackEnabled(true);
-                this.drumstickAggregate.body.setEventMask(this.eventMask);
-                this.drumstickAggregate.transformNode.setParent(controller.grip);
-                this.controllerAttached = controller;
-
-                this.drumstickAggregate.transformNode.position = new Vector3(0, 0, stickLength / 4); // Adjust position to remove offset
-                this.drumstickAggregate.transformNode.rotationQuaternion = Quaternion.RotationAxis(Axis.X, Math.PI / 2); // Align with the hand
-            }
-            /*
-            const linearVelocity = Vector3.Zero();
-                const angularVelocity = Vector3.Zero();
-                
-                xr.baseExperience.sessionManager.onXRFrameObservable.add((xrFrame) => {
-                    const pose = xrFrame.getPose(
-                        controller.inputSource.targetRaySpace,
-                        xr.baseExperience.sessionManager.referenceSpace
-                    );
-                    if(pose){
-                        const lv = pose.linearVelocity;
-                        if(lv){
-                            const newLinearVelocity = new Vector3(-lv.x, lv.y, -lv.z);
-                            const smoothing = 0;
-                            // Exponential smoothing
-                            linearVelocity.addInPlace(newLinearVelocity.subtract(linearVelocity).scale(1 - smoothing));
-
-                            // text1.text = vector3toString(newLinearVelocity);
-                            // text2.text = vector3toString(linearVelocity);
-
-                            const av = pose.angularVelocity;
-                            if(av){
-                                const newAngularVelocity = new Vector3(-av.x, av.y, -av.z);
-                                angularVelocity.addInPlace(newAngularVelocity.subtract(angularVelocity).scale(1 - smoothing));
-                                console.log("Angular velocity : " + angularVelocity);
-                            }
-                        }    
-                    }
-                });*/
-
-            // Set velocity to a null vector to stop movement if any
-            this.drumstickAggregate.body.setLinearVelocity(Vector3.Zero());
-            this.drumstickAggregate.body.setAngularVelocity(Vector3.Zero());
-
+            this.attachToController(controller, stickLength);
             return this.drumstickAggregate;
         }
         return null;
+    }
+    
+    /**
+     * Force-attach drumstick to controller without requiring pointer selection
+     * Used when automatically placing sticks in hands (e.g., when sitting at throne)
+     */
+    forceAttachToController(controller: WebXRInputSource, stickLength: number) {
+        this.attachToController(controller, stickLength);
+        return this.drumstickAggregate;
+    }
+    
+    /**
+     * Internal method to attach drumstick to a controller
+     */
+    private attachToController(controller: WebXRInputSource, stickLength: number) {
+        if (controller.grip) {
+            this.drumstickAggregate.body.setMotionType(PhysicsMotionType.ANIMATED);
+            this.drumstickAggregate.body.setPrestepType(PhysicsPrestepType.TELEPORT);
+            this.drumstickAggregate.body.setCollisionCallbackEnabled(true);
+            this.drumstickAggregate.body.setEventMask(this.eventMask);
+            this.drumstickAggregate.transformNode.setParent(controller.grip);
+            this.controllerAttached = controller;
+
+            this.drumstickAggregate.transformNode.position = new Vector3(0, 0, stickLength / 4); // Adjust position to remove offset
+            this.drumstickAggregate.transformNode.rotationQuaternion = Quaternion.RotationAxis(Axis.X, Math.PI / 2); // Align with the hand
+            
+            // Set velocity to zero to stop any movement
+            this.drumstickAggregate.body.setLinearVelocity(Vector3.Zero());
+            this.drumstickAggregate.body.setAngularVelocity(Vector3.Zero());
+        }
     }
 
     releaseStick(drumstickAggregate: PhysicsAggregate) {
