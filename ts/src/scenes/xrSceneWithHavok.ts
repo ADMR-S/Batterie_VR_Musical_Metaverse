@@ -20,7 +20,7 @@ import { Mesh, MeshBuilder, PhysicsAggregate, PhysicsShapeType, WebXRNearInterac
 import { AbstractEngine } from "@babylonjs/core/Engines/abstractEngine";
 import HavokPhysics from "@babylonjs/havok";
 
-import XRDrumKit from "../XRDrumKit";
+import XRDrumKit from "../XRDrumKit/XRDrumKit.ts";
 
 import { AssetsManager } from "@babylonjs/core";
 import XRHandler from "../XRHandler";

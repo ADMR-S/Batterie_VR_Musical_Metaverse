@@ -3,19 +3,15 @@ import { Color3, PhysicsViewer } from "@babylonjs/core";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { TransformNode, StandardMaterial, SixDofDragBehavior } from "@babylonjs/core";
 import { WebXRDefaultExperience } from "@babylonjs/core";
-//import { WebXRControllerPhysics } from "@babylonjs/core/XR/features/WebXRControllerPhysics";
-//import { Observable } from "@babylonjs/core/Misc/observable";
-
 import { AssetsManager } from "@babylonjs/core";
 
-import XRDrumComponent from "./XRDrumComponent";
-
+import XRDrumComponent from "./XRDrumComponent/XRDrumComponent";
 import XRDrumstick from "./XRDrumstick";
-import XRDrum from "./XRDrum";
-import XRCymbal from "./XRCymbal"
-import XRHiHat from "./XRHiHat";
-
-import XRLogger from "./XRLogger";
+import XRDrum from "./XRDrumComponent/XRDrum";
+import XRCymbal from "./XRDrumComponent/XRCymbal"
+import XRHiHat from "./XRDrumComponent/XRHiHat";
+import XRLogger from "../XRLogger";
+import { DRUMKIT_CONFIG } from "./XRDrumKitConfig";
 
 //TODO : 
     //Baguettes qui s'entrechoquent = son ? ("1,2,3,4 !"...)
@@ -58,28 +54,22 @@ class XRDrumKit {
     drumsticks: XRDrumstick[] = [];
     drumSoundsEnabled: boolean;
     kick : XRDrum | undefined;
-    kickKey: number = 36;
     snare: XRDrum | undefined;
     snareKey: number = 38;
     rimshotKey: number = 37;
     floorTom: XRDrum | undefined;
-    floorTomKey: number = 41;
     midTom: XRDrum | undefined;
-    midTomKey: number = 47;
     highTom: XRDrum | undefined;
-    highTomKey: number = 43;
     crashCymbal1: XRCymbal | undefined;
     crashCymbal2: XRCymbal | undefined;
-    crashCymbalKey: number = 49;
     rideCymbal: XRCymbal | undefined;
-    rideCymbalKey: number = 51;
     hiHat: XRHiHat | undefined;
     closedHiHatKey: number = 42;
     openHiHatKey: number = 46;
     throne : TransformNode | undefined;
-    path = "/drum_3D_model/"; // Path to the 3D model folder
+    path = DRUMKIT_CONFIG.model.path; // Path to the 3D model folder
     log = false;
-    scaleFactor: number = 0.7; // Scale factor for physics trigger shapes (0.7 = 70% of visual size)
+    scaleFactor: number = DRUMKIT_CONFIG.physics.scaleFactor; // Scale factor for physics trigger shapes (0.7 = 70% of visual size)
 
     constructor(audioContext: AudioContext, scene: Scene, eventMask: number, xr: WebXRDefaultExperience, hk: any, assetsManager: AssetsManager) {
         this.audioContext = audioContext;
@@ -95,7 +85,7 @@ class XRDrumKit {
             this.move(new Vector3(0, 0, 4)); // NEW POSITION
         });
 
-        const meshTask = assetsManager.addMeshTask("drum3DModel", "", this.path, `drum3DModel.glb`);
+        const meshTask = assetsManager.addMeshTask("drum3DModel", "", this.path, DRUMKIT_CONFIG.model.fileName);
         
                 //@ts-ignore
         meshTask.onError = (task, message, exception) => {
@@ -110,15 +100,15 @@ class XRDrumKit {
                 console.log("Available meshes:", drumMeshes.map(mesh => mesh.name)); // Log available meshes for debugging
             }
 
-            this.kick = new XRDrum("kick", this.kickKey, this, drumMeshes); //Create kick
-            this.snare = new XRDrum("snare", this.snareKey, this, drumMeshes); // Create snare drum
-            this.floorTom = new XRDrum("floorTom", this.floorTomKey, this, drumMeshes); // Create floor tom
-            this.midTom = new XRDrum("midTom", this.midTomKey, this, drumMeshes); // Create mid tom
-            this.highTom = new XRDrum("highTom", this.highTomKey, this, drumMeshes); // Create high tom
-            this.crashCymbal1 = new XRCymbal("crashCymbal1", this.crashCymbalKey, this, drumMeshes); // Create crash cymbal
-            this.crashCymbal2 = new XRCymbal("crashCymbal2", this.crashCymbalKey, this, drumMeshes); // Create crash cymbal
-            this.rideCymbal = new XRCymbal("rideCymbal", this.rideCymbalKey, this, drumMeshes); // Create ride cymbal
-            this.hiHat = new XRHiHat("hiHat", this.closedHiHatKey, this, drumMeshes); // Create Hi-Hat with tremble animation
+            this.kick = new XRDrum("kick", DRUMKIT_CONFIG.midi.keys.kick, this, drumMeshes); //Create kick
+            this.snare = new XRDrum("snare", DRUMKIT_CONFIG.midi.keys.snare, this, drumMeshes); // Create snare drum
+            this.floorTom = new XRDrum("floorTom", DRUMKIT_CONFIG.midi.keys.floorTom, this, drumMeshes); // Create floor tom
+            this.midTom = new XRDrum("midTom", DRUMKIT_CONFIG.midi.keys.midTom, this, drumMeshes); // Create mid tom
+            this.highTom = new XRDrum("highTom", DRUMKIT_CONFIG.midi.keys.highTom, this, drumMeshes); // Create high tom
+            this.crashCymbal1 = new XRCymbal("crashCymbal1", DRUMKIT_CONFIG.midi.keys.crashCymbal, this, drumMeshes); // Create crash cymbal
+            this.crashCymbal2 = new XRCymbal("crashCymbal2", DRUMKIT_CONFIG.midi.keys.crashCymbal, this, drumMeshes); // Create crash cymbal
+            this.rideCymbal = new XRCymbal("rideCymbal", DRUMKIT_CONFIG.midi.keys.rideCymbal, this, drumMeshes); // Create ride cymbal
+            this.hiHat = new XRHiHat("hiHat", DRUMKIT_CONFIG.midi.keys.closedHiHat, this, drumMeshes); // Create Hi-Hat with tremble animation
         
             //Stands
             const stands = drumMeshes.filter(mesh => mesh.name.startsWith("stand") || mesh.name.startsWith("kickPedal") || mesh.name.startsWith("hiHatPedal")); // Find all primitives
@@ -148,7 +138,11 @@ class XRDrumKit {
             this.throne = throneContainer; // Store the throne container
         
             //RESCALE: 
-            this.drumContainer.scaling = new Vector3(0.7, 0.7, 0.7); // Rescale the drum container
+            this.drumContainer.scaling = new Vector3(
+                DRUMKIT_CONFIG.model.scaleFactor, 
+                DRUMKIT_CONFIG.model.scaleFactor, 
+                DRUMKIT_CONFIG.model.scaleFactor
+            ); // Rescale the drum container
             //this.crashCymbal1.drumComponentContainer.scaling = new Vector3(0.7, 0.7, 0.7); // Rescale crash cymbal 1
             // PERFORMANCE OPTIMIZATIONS for rendering
             // 1. Freeze materials to prevent unnecessary shader recompilations
@@ -175,7 +169,9 @@ class XRDrumKit {
             */
             
             // Enable physics viewer for ALL drum components after they're created
-            this.enablePhysicsViewerForAll();
+            if (DRUMKIT_CONFIG.debug.enablePhysicsViewer) {
+                this.enablePhysicsViewerForAll();
+            }
         }
 
 
