@@ -2,6 +2,7 @@ import XRDrumComponent from "./XRDrumComponent";
 import { TransformNode } from "@babylonjs/core";
 import { PhysicsAggregate, PhysicsMotionType, PhysicsPrestepType, PhysicsShapeType } from "@babylonjs/core/Physics";
 import { AbstractMesh } from "@babylonjs/core";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 
 import XRDrumKit from "./XRDrumKit";
 
@@ -64,25 +65,69 @@ class XRCymbal implements XRDrumComponent {
         if (trigger) {
             this.drumComponentContainer.addChild(trigger); // Attach the trigger to the drum component container
 
-            const triggerAggregate = new PhysicsAggregate(trigger, PhysicsShapeType.MESH, { mass: 0 }, this.xrDrumKit.scene);
+            // Cymbals need mass to swing properly when hit - light enough to move easily
+            const triggerAggregate = new PhysicsAggregate(trigger, PhysicsShapeType.MESH, { mass: 0.5 }, this.xrDrumKit.scene);
             triggerAggregate.transformNode.id = this.name + "Trigger"; // Add trigger to aggregate name for cymbals
-            triggerAggregate.body.setMotionType(PhysicsMotionType.STATIC);
+            
+            // Use regular collisions (NOT triggers) so the cymbal can physically move
+            triggerAggregate.body.setCollisionCallbackEnabled(true);
+            triggerAggregate.body.setEventMask(this.xrDrumKit.eventMask);
+            
+            triggerAggregate.body.setMotionType(PhysicsMotionType.DYNAMIC);
             triggerAggregate.body.setPrestepType(PhysicsPrestepType.TELEPORT);
-            if (triggerAggregate.body.shape) {
-                triggerAggregate.body.shape.isTrigger = true;
-            }
+            
+            // Disable gravity so cymbal doesn't fall
+            triggerAggregate.body.setGravityFactor(0);
+            
+            // Store the original position and rotation for limiting
+            const originalPosition = trigger.position.clone();
+            const originalRotation = trigger.rotation.clone();
+            const maxRotationRadians = Math.PI / 4; // 45 degrees
+            
+            // Lower damping allows more swinging motion
+            triggerAggregate.body.setAngularDamping(0.5);
+            
+            //LIMIT THE MOVEMENT ON EVERY AXIS :
+            this.xrDrumKit.scene.onBeforeRenderObservable.add(() => {
+                // Lock position to prevent any linear movement (no falling)
+                triggerAggregate.transformNode.position.copyFrom(originalPosition);
+                triggerAggregate.body.setLinearVelocity(Vector3.Zero());
+                
+                // Get current velocities
+                const angularVelocity = triggerAggregate.body.getAngularVelocity();
+                
+                // Prevent Z-axis rotation
+                triggerAggregate.body.setAngularVelocity(new Vector3(angularVelocity.x, angularVelocity.y, 0));
+
+                // Clamp rotation to prevent exceeding ±45° on X axis
+                const currentRotation = triggerAggregate.transformNode.rotation;
+                
+                // Calculate the rotation offset from original position
+                const rotationOffsetX = currentRotation.x - originalRotation.x;
+                
+                // If rotation exceeds limits, clamp it and reverse velocity for bounce-back
+                if (rotationOffsetX > maxRotationRadians) {
+                    triggerAggregate.transformNode.rotation.x = originalRotation.x + maxRotationRadians;
+                    // Reverse and dampen X angular velocity to create bounce-back effect
+                    triggerAggregate.body.setAngularVelocity(new Vector3(-angularVelocity.x * 0.3, angularVelocity.y, 0));
+                } else if (rotationOffsetX < -maxRotationRadians) {
+                    triggerAggregate.transformNode.rotation.x = originalRotation.x - maxRotationRadians;
+                    // Reverse and dampen X angular velocity to create bounce-back effect
+                    triggerAggregate.body.setAngularVelocity(new Vector3(-angularVelocity.x * 0.3, angularVelocity.y, 0));
+                }
+            });
         }
     }
 
     playSoundOnTrigger(midiKey: number, duration: number) { //duration in seconds
-        this.xrDrumKit.hk.onTriggerCollisionObservable.add((collision: any) => {
-            // Check if this collision involves THIS cymbal's trigger (could be either collider or collidedAgainst)
-            const triggerName = this.name + "Trigger";
-            const isThisCymbalTrigger = 
-                collision.collidedAgainst.transformNode.id === triggerName ||
-                collision.collider.transformNode.id === triggerName;
+        this.xrDrumKit.hk.onCollisionObservable.add((collision: any) => {
+            // Check if this collision involves THIS cymbal (could be either collider or collidedAgainst)
+            const cymbalName = this.name + "Trigger";
+            const isThisCymbal = 
+                collision.collidedAgainst.transformNode.id === cymbalName ||
+                collision.collider.transformNode.id === cymbalName;
             
-            if (collision.type === "TRIGGER_ENTERED" && isThisCymbalTrigger) {
+            if (collision.type === "COLLISION_STARTED" && isThisCymbal) {
                 if (this.log) {
                     console.log(name + " trigger entered", collision);
                     console.log("Collider : ");
@@ -227,15 +272,15 @@ class XRCymbal implements XRDrumComponent {
                         data: { bytes: new Uint8Array([0x80, midiKey, currentVelocity]) } // Note OFF, third parameter is velocity (how quickly the note should be released)
                     });
                 }
-            } else if (isThisCymbalTrigger) {
-                // Only log collisions that involve THIS cymbal's trigger (for debugging)
+            } else if (isThisCymbal) {
+                // Only log collisions that involve THIS cymbal (for debugging)
                 if(this.log){
                     const otherName = collision.collider.transformNode.name;
                     const collisionType = collision.type || "UNKNOWN";
-                    console.log(`[${performance.now().toFixed(2)}ms] ${this.name} trigger collision (${collisionType}): with ${otherName}`);
+                    console.log(`[${performance.now().toFixed(2)}ms] ${this.name} collision (${collisionType}): with ${otherName}`);
                 }
             }
-            // Ignore all collisions that don't involve this cymbal's trigger
+            // Ignore all collisions that don't involve this cymbal
         });
     }
 
