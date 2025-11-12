@@ -64,6 +64,8 @@ class XRCymbal implements XRDrumComponent {
 
     createDrumComponentTrigger(trigger: AbstractMesh) {
         if (trigger) {
+            // Important: trigger will be parented to container, and cymbal mesh will be child of trigger
+            // This way the visual mesh follows the physics-limited rotation of the trigger
             this.drumComponentContainer.addChild(trigger); // Attach the trigger to the drum component container
 
             // Cymbals need mass to swing properly when hit - light enough to move easily
@@ -93,6 +95,9 @@ class XRCymbal implements XRDrumComponent {
             const originalBodyRotation = triggerAggregate.body.transformNode.rotationQuaternion!.clone();
             
             triggerAggregate.body.setAngularDamping(0.5);
+            
+            // Store reference to the visual mesh to sync its rotation
+            const visualMesh = trigger;
             
             //LIMIT THE MOVEMENT ON EVERY AXIS :
             this.xrDrumKit.scene.onBeforeRenderObservable.add(() => {
@@ -125,23 +130,28 @@ class XRCymbal implements XRDrumComponent {
                     console.log(`[${this.name}] Body rotation: offsetX=${(offsetX * 180/Math.PI).toFixed(1)}°, vel=${angularVelocity.x.toFixed(3)}`);
                 }
                 
-                // If rotation exceeds limits, CLAMP the physics body rotation
+                // Bounce-back effect: reverse velocity when hitting the limit
                 if (Math.abs(offsetX) > maxRotationRadians) {
                     if(this.log){
-                        console.log(`[${this.name}] ROTATION LIMIT HIT: ${(offsetX * 180/Math.PI).toFixed(1)}°, clamping to ±45°`);
+                        console.log(`[${this.name}] ROTATION LIMIT HIT: ${(offsetX * 180/Math.PI).toFixed(1)}°, bouncing back!`);
                     }
                     
-                    // Clamp to limit
+                    // Clamp position to limit
                     const clampedX = Math.sign(offsetX) * maxRotationRadians;
                     const newEuler = new Vector3(origEuler.x + clampedX, origEuler.y, origEuler.z);
                     const newQuat = Quaternion.FromEulerAngles(newEuler.x, newEuler.y, newEuler.z);
-                    
-                    // Apply clamped rotation to PHYSICS BODY
                     triggerAggregate.body.transformNode.rotationQuaternion = newQuat;
                     
-                    // KILL angular velocity
-                    triggerAggregate.body.setAngularVelocity(Vector3.Zero());
+                    // REVERSE angular velocity for bounce-back (with some energy loss)
+                    triggerAggregate.body.setAngularVelocity(new Vector3(-angularVelocity.x * 0.7, 0, 0));
                 }
+                
+                // CRITICAL: Sync visual mesh rotation with physics body rotation
+                // This ensures the visual cymbal ALWAYS matches the physics-limited rotation
+                if (!visualMesh.rotationQuaternion) {
+                    visualMesh.rotationQuaternion = Quaternion.Identity();
+                }
+                visualMesh.rotationQuaternion.copyFrom(bodyQuat);
             });
         }
     }
