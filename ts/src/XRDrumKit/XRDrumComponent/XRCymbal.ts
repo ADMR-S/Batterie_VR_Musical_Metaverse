@@ -4,7 +4,7 @@ import { PhysicsAggregate, PhysicsMotionType, PhysicsPrestepType, PhysicsShapeTy
 import { AbstractMesh } from "@babylonjs/core";
 import { Vector3, Quaternion } from "@babylonjs/core/Maths/math.vector";
 
-import XRDrumKit from "../../XRDrumKit";
+import XRDrumKit from "../XRDrumKit";
 import { DRUMKIT_CONFIG } from "../XRDrumKitConfig";
 import { CollisionUtils } from "../CollisionUtils";
 import { DrumComponentLogger } from "./XRDrumComponentLogger";
