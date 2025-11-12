@@ -11,6 +11,7 @@ import { AssetsManager } from "@babylonjs/core";
 import XRDrumstick from "./XRDrumstick";
 import XRDrum from "./XRDrum";
 import XRCymbal from "./XRCymbal"
+import XRHiHat from "./XRHiHat";
 
 import XRLogger from "./XRLogger";
 
@@ -70,7 +71,7 @@ class XRDrumKit {
     crashCymbalKey: number = 49;
     rideCymbal: XRCymbal | undefined;
     rideCymbalKey: number = 51;
-    hiHat: XRCymbal | undefined;
+    hiHat: XRHiHat | undefined;
     closedHiHatKey: number = 42;
     openHiHatKey: number = 46;
     throne : TransformNode | undefined;
@@ -113,7 +114,7 @@ class XRDrumKit {
             this.crashCymbal1 = new XRCymbal("crashCymbal1", this.crashCymbalKey, this, drumMeshes); // Create crash cymbal
             this.crashCymbal2 = new XRCymbal("crashCymbal2", this.crashCymbalKey, this, drumMeshes); // Create crash cymbal
             this.rideCymbal = new XRCymbal("rideCymbal", this.rideCymbalKey, this, drumMeshes); // Create ride cymbal
-            this.hiHat = new XRCymbal("hiHat", this.closedHiHatKey, this, drumMeshes); // Create hi-hat cymbal
+            this.hiHat = new XRHiHat("hiHat", this.closedHiHatKey, this, drumMeshes); // Create Hi-Hat with tremble animation
         
             //Stands
             const stands = drumMeshes.filter(mesh => mesh.name.startsWith("stand") || mesh.name.startsWith("kickPedal") || mesh.name.startsWith("hiHatPedal")); // Find all primitives

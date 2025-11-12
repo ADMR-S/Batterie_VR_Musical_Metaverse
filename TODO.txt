@@ -3,6 +3,11 @@ Animer cymbales
 Double hit (comme s'il y avait 2 triggers ? Mesh + trigger et bug via détection par nom "trigger" ?)
 Taille des triggers trop grande vis à vis du mesh (pb de rescale ?)
 
+Permettre de changer la prise de la baguette (/ le type de baguette plus tard)
+
+Interagir avec le trône pour s'installer
+--> Faire spawn les baguettes dans les mains
+Se lever (bouton B maintenu) = lâcher les baguettes et repasser en déplacement libre (retirer les listeners de la batterie)
 
 Intégrer à WamJam
 
