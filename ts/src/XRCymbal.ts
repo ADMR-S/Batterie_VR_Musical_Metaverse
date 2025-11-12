@@ -2,7 +2,7 @@ import XRDrumComponent from "./XRDrumComponent";
 import { TransformNode } from "@babylonjs/core";
 import { PhysicsAggregate, PhysicsMotionType, PhysicsPrestepType, PhysicsShapeType } from "@babylonjs/core/Physics";
 import { AbstractMesh } from "@babylonjs/core";
-import { Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { Vector3, Quaternion } from "@babylonjs/core/Maths/math.vector";
 
 import XRDrumKit from "./XRDrumKit";
 
@@ -14,7 +14,8 @@ class XRCymbal implements XRDrumComponent {
     xrDrumKit: XRDrumKit;
     log: boolean = true; // Set to true for debugging, false for production
     private lastHitTime: Map<string, number> = new Map(); // Track last hit time per drumstick
-    private readonly HIT_DEBOUNCE_MS = 50; // Minimum time between hits (50ms = 20 hits/second max)
+    private readonly HIT_DEBOUNCE_MS = 50; // Same as drums
+    private cymbalAggregate: PhysicsAggregate | null = null; // Store reference to apply impulses
 
     //@ts-ignore
     constructor(name: string, midiKey: number, xrDrumKit: XRDrumKit, drum3Dmodel: AbstractMesh[]) { //diameter in meters, height in meters, midiKey is the MIDI key to play when the trigger is hit
@@ -69,11 +70,16 @@ class XRCymbal implements XRDrumComponent {
             const triggerAggregate = new PhysicsAggregate(trigger, PhysicsShapeType.MESH, { mass: 0.5 }, this.xrDrumKit.scene);
             triggerAggregate.transformNode.id = this.name + "Trigger"; // Add trigger to aggregate name for cymbals
             
+            // Store reference for applying impulses on hit
+            this.cymbalAggregate = triggerAggregate;
+            
             // Use regular collisions (NOT triggers) so the cymbal can physically move
             triggerAggregate.body.setCollisionCallbackEnabled(true);
             triggerAggregate.body.setEventMask(this.xrDrumKit.eventMask);
             
             triggerAggregate.body.setMotionType(PhysicsMotionType.DYNAMIC);
+            // TELEPORT prestep keeps cymbal following the drum kit when it moves
+            // This is necessary for when the entire drum kit position is changed
             triggerAggregate.body.setPrestepType(PhysicsPrestepType.TELEPORT);
             
             // Disable gravity so cymbal doesn't fall
@@ -81,10 +87,11 @@ class XRCymbal implements XRDrumComponent {
             
             // Store the original position and rotation for limiting
             const originalPosition = trigger.position.clone();
-            const originalRotation = trigger.rotation.clone();
             const maxRotationRadians = Math.PI / 4; // 45 degrees
             
-            // Lower damping allows more swinging motion
+            // Get the initial rotation quaternion from the physics body
+            const originalBodyRotation = triggerAggregate.body.transformNode.rotationQuaternion!.clone();
+            
             triggerAggregate.body.setAngularDamping(0.5);
             
             //LIMIT THE MOVEMENT ON EVERY AXIS :
@@ -93,27 +100,47 @@ class XRCymbal implements XRDrumComponent {
                 triggerAggregate.transformNode.position.copyFrom(originalPosition);
                 triggerAggregate.body.setLinearVelocity(Vector3.Zero());
                 
-                // Get current velocities
+                // Get the PHYSICS BODY rotation (not the transformNode!)
+                const bodyQuat = triggerAggregate.body.transformNode.rotationQuaternion!;
+                const bodyEuler = bodyQuat.toEulerAngles();
+                
+                // Get original rotation as euler
+                const origEuler = originalBodyRotation.toEulerAngles();
+                
+                // Calculate rotation offset on X-axis
+                let offsetX = bodyEuler.x - origEuler.x;
+                
+                // Normalize angle to [-PI, PI] range
+                while (offsetX > Math.PI) offsetX -= 2 * Math.PI;
+                while (offsetX < -Math.PI) offsetX += 2 * Math.PI;
+                
+                // Get current angular velocity
                 const angularVelocity = triggerAggregate.body.getAngularVelocity();
                 
-                // Prevent Z-axis rotation
-                triggerAggregate.body.setAngularVelocity(new Vector3(angularVelocity.x, angularVelocity.y, 0));
-
-                // Clamp rotation to prevent exceeding ±45° on X axis
-                const currentRotation = triggerAggregate.transformNode.rotation;
+                // Prevent Y and Z-axis rotation completely
+                triggerAggregate.body.setAngularVelocity(new Vector3(angularVelocity.x, 0, 0));
                 
-                // Calculate the rotation offset from original position
-                const rotationOffsetX = currentRotation.x - originalRotation.x;
+                // Debug logging
+                if (this.log && Math.abs(offsetX) > 0.01) {
+                    console.log(`[${this.name}] Body rotation: offsetX=${(offsetX * 180/Math.PI).toFixed(1)}°, vel=${angularVelocity.x.toFixed(3)}`);
+                }
                 
-                // If rotation exceeds limits, clamp it and reverse velocity for bounce-back
-                if (rotationOffsetX > maxRotationRadians) {
-                    triggerAggregate.transformNode.rotation.x = originalRotation.x + maxRotationRadians;
-                    // Reverse and dampen X angular velocity to create bounce-back effect
-                    triggerAggregate.body.setAngularVelocity(new Vector3(-angularVelocity.x * 0.3, angularVelocity.y, 0));
-                } else if (rotationOffsetX < -maxRotationRadians) {
-                    triggerAggregate.transformNode.rotation.x = originalRotation.x - maxRotationRadians;
-                    // Reverse and dampen X angular velocity to create bounce-back effect
-                    triggerAggregate.body.setAngularVelocity(new Vector3(-angularVelocity.x * 0.3, angularVelocity.y, 0));
+                // If rotation exceeds limits, CLAMP the physics body rotation
+                if (Math.abs(offsetX) > maxRotationRadians) {
+                    if(this.log){
+                        console.log(`[${this.name}] ROTATION LIMIT HIT: ${(offsetX * 180/Math.PI).toFixed(1)}°, clamping to ±45°`);
+                    }
+                    
+                    // Clamp to limit
+                    const clampedX = Math.sign(offsetX) * maxRotationRadians;
+                    const newEuler = new Vector3(origEuler.x + clampedX, origEuler.y, origEuler.z);
+                    const newQuat = Quaternion.FromEulerAngles(newEuler.x, newEuler.y, newEuler.z);
+                    
+                    // Apply clamped rotation to PHYSICS BODY
+                    triggerAggregate.body.transformNode.rotationQuaternion = newQuat;
+                    
+                    // KILL angular velocity
+                    triggerAggregate.body.setAngularVelocity(Vector3.Zero());
                 }
             });
         }
@@ -127,6 +154,9 @@ class XRCymbal implements XRDrumComponent {
                 collision.collidedAgainst.transformNode.id === cymbalName ||
                 collision.collider.transformNode.id === cymbalName;
             
+            // CRITICAL: Only respond to COLLISION_STARTED, not COLLISION_CONTINUED
+            // COLLISION_CONTINUED fires every physics frame while objects are touching
+            // This would create sound spam - we only want ONE sound per hit
             if (collision.type === "COLLISION_STARTED" && isThisCymbal) {
                 if (this.log) {
                     console.log(name + " trigger entered", collision);
@@ -203,6 +233,31 @@ class XRCymbal implements XRDrumComponent {
                         // Scale to MIDI velocity range (1-127, never 0 for a detected hit)
                         currentVelocity = Math.max(1, Math.min(127, Math.round(curvedSpeed * 127)));
 
+                        // MANUAL IMPULSE APPLICATION:
+                        // Since drumsticks use TELEPORT prestep, they don't transfer momentum naturally
+                        // We need to manually apply an angular impulse to the cymbal based on the stick velocity
+                        if (this.cymbalAggregate) {
+                            // Determine hit direction: hitting from top (negative Y velocity) should swing the cymbal down
+                            // This creates torque around the X axis
+                            const hitFromTop = linear.y < 0;
+                            
+                            // Calculate impulse strength based on combined velocity
+                            // Scale factor converts m/s to appropriate angular impulse
+                            const impulseScale = 0.3; // REDUCED from 0.8 - cymbals were too sensitive
+                            const angularImpulse = combinedSpeed * impulseScale;
+                            
+                            // Apply torque on X-axis (swing motion) in the direction of the hit
+                            const torqueDirection = hitFromTop ? -1 : 1;
+                            const torque = new Vector3(angularImpulse * torqueDirection, 0, 0);
+                            
+                            // Apply the angular impulse
+                            this.cymbalAggregate.body.applyAngularImpulse(torque);
+                            
+                            if(this.log){
+                                console.log(`Applied angular impulse: ${torque.x.toFixed(3)} (hit from ${hitFromTop ? 'top' : 'bottom'})`);
+                            }
+                        }
+
                         if (controller?.motionController?.gamepadObject?.hapticActuators?.[0]) {
                             // Scale haptic feedback with velocity (0.3-1.0 intensity)
                             const hapticIntensity = 0.3 + (currentVelocity / 127) * 0.7;
@@ -272,15 +327,9 @@ class XRCymbal implements XRDrumComponent {
                         data: { bytes: new Uint8Array([0x80, midiKey, currentVelocity]) } // Note OFF, third parameter is velocity (how quickly the note should be released)
                     });
                 }
-            } else if (isThisCymbal) {
-                // Only log collisions that involve THIS cymbal (for debugging)
-                if(this.log){
-                    const otherName = collision.collider.transformNode.name;
-                    const collisionType = collision.type || "UNKNOWN";
-                    console.log(`[${performance.now().toFixed(2)}ms] ${this.name} collision (${collisionType}): with ${otherName}`);
-                }
             }
-            // Ignore all collisions that don't involve this cymbal
+            // Ignore all other collision types (COLLISION_CONTINUED, COLLISION_ENDED, etc.)
+            // and all collisions that don't involve this cymbal
         });
     }
 
