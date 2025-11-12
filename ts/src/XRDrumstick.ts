@@ -17,6 +17,7 @@ class XRDrumstick {
     scene: Scene;
     eventMask: number;
     name : string;
+    showBoundingBox: boolean = true; // Display collision bounding boxes for debugging
     controllerAttached: WebXRInputSource | null = null;
     private previousPosition: Vector3 = new Vector3();
     private linearVelocity: Vector3 = new Vector3();
@@ -82,6 +83,12 @@ class XRDrumstick {
         var drumstickAggregate = new PhysicsAggregate(mergedStick, PhysicsShapeType.CONVEX_HULL, { mass: 1 }, this.scene);
         drumstickAggregate.body.setCollisionCallbackEnabled(true);
         drumstickAggregate.body.setEventMask(this.eventMask);
+
+        // Show bounding box for debugging collision shapes
+        if (this.showBoundingBox) {
+            mergedStick.showBoundingBox = true;
+            console.log(`[${this.name}] Bounding box enabled. Convex hull shape: ${mergedStick.getTotalVertices()} vertices`);
+        }
 
         xr.input.onControllerAddedObservable.add((controller: WebXRInputSource) => {
             controller.onMotionControllerInitObservable.add((motionController: any) => {

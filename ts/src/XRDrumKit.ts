@@ -1,5 +1,5 @@
 import { Scene } from "@babylonjs/core/scene";
-import { Color3 } from "@babylonjs/core";
+import { Color3, PhysicsViewer } from "@babylonjs/core";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { TransformNode, StandardMaterial, SixDofDragBehavior } from "@babylonjs/core";
 import { WebXRDefaultExperience } from "@babylonjs/core";
@@ -7,6 +7,8 @@ import { WebXRDefaultExperience } from "@babylonjs/core";
 //import { Observable } from "@babylonjs/core/Misc/observable";
 
 import { AssetsManager } from "@babylonjs/core";
+
+import XRDrumComponent from "./XRDrumComponent";
 
 import XRDrumstick from "./XRDrumstick";
 import XRDrum from "./XRDrum";
@@ -50,7 +52,7 @@ class XRDrumKit {
     scene: Scene;
     eventMask: number; //retirer ?
     wamInstance: any;
-    drumComponents: TransformNode[];
+    drumComponents: XRDrumComponent[];
     drumContainer: TransformNode;
     xr: WebXRDefaultExperience;
     drumsticks: XRDrumstick[] = [];
@@ -77,6 +79,7 @@ class XRDrumKit {
     throne : TransformNode | undefined;
     path = "/drum_3D_model/"; // Path to the 3D model folder
     log = false;
+    scaleFactor: number = 0.7; // Scale factor for physics trigger shapes (0.7 = 70% of visual size)
 
     constructor(audioContext: AudioContext, scene: Scene, eventMask: number, xr: WebXRDefaultExperience, hk: any, assetsManager: AssetsManager) {
         this.audioContext = audioContext;
@@ -106,6 +109,7 @@ class XRDrumKit {
             if(this.log){
                 console.log("Available meshes:", drumMeshes.map(mesh => mesh.name)); // Log available meshes for debugging
             }
+
             this.kick = new XRDrum("kick", this.kickKey, this, drumMeshes); //Create kick
             this.snare = new XRDrum("snare", this.snareKey, this, drumMeshes); // Create snare drum
             this.floorTom = new XRDrum("floorTom", this.floorTomKey, this, drumMeshes); // Create floor tom
@@ -145,7 +149,7 @@ class XRDrumKit {
         
             //RESCALE: 
             this.drumContainer.scaling = new Vector3(0.7, 0.7, 0.7); // Rescale the drum container
-        
+            //this.crashCymbal1.drumComponentContainer.scaling = new Vector3(0.7, 0.7, 0.7); // Rescale crash cymbal 1
             // PERFORMANCE OPTIMIZATIONS for rendering
             // 1. Freeze materials to prevent unnecessary shader recompilations
             this.drumContainer.getChildMeshes().forEach(mesh => {
@@ -169,6 +173,9 @@ class XRDrumKit {
             console.log(this.drumContainer.getChildMeshes());
             this.drumContainer.getChildMeshes().forEach(mesh => mesh.isVisible = false);
             */
+            
+            // Enable physics viewer for ALL drum components after they're created
+            this.enablePhysicsViewerForAll();
         }
 
 
@@ -243,6 +250,58 @@ class XRDrumKit {
             }, 100);
             this.drumSoundsEnabled = true; // Enable drum sounds after moving
         });
+    }
+
+    // Enable physics viewer for all drum components (drums, cymbals, hi-hat, drumsticks)
+    enablePhysicsViewerForAll() {
+        const physicsViewer = new PhysicsViewer(this.scene);
+
+
+        console.log("[XRDrumKit] Enabling physics viewer for all components...");
+        
+        // Show physics for all drums
+        const drums = [this.kick, this.snare, this.floorTom, this.midTom, this.highTom];
+        drums.forEach(drum => {
+            if (drum && (drum as any).drumComponentContainer) {
+                const meshes = (drum as any).drumComponentContainer.getChildMeshes();
+                meshes.forEach((mesh: any) => {
+                    if (mesh._physicsBody) {
+                        physicsViewer!.showBody(mesh._physicsBody);
+                        console.log(`  [${(drum as any).name}] Physics shape visualized`);
+                    }
+                });
+            }
+        });
+
+        // Show physics for all cymbals
+        const cymbals = [this.crashCymbal1, this.crashCymbal2, this.rideCymbal];
+        cymbals.forEach(cymbal => {
+            if (cymbal && (cymbal as any).cymbalAggregate) {
+                physicsViewer!.showBody((cymbal as any).cymbalAggregate.body);
+                console.log(`  [${(cymbal as any).name}] Physics shape visualized`);
+            }
+        });
+
+        // Show physics for hi-hat
+        if (this.hiHat && (this.hiHat as any).drumComponentContainer) {
+            const meshes = (this.hiHat as any).drumComponentContainer.getChildMeshes();
+            meshes.forEach((mesh: any) => {
+                if (mesh._physicsBody) {
+                    physicsViewer!.showBody(mesh._physicsBody);
+                    console.log(`  [hiHat] Physics shape visualized`);
+                }
+            });
+        }
+
+        // Show physics for drumsticks
+        this.drumsticks.forEach(drumstick => {
+            if (drumstick && drumstick.drumstickAggregate) {
+                physicsViewer!.showBody(drumstick.drumstickAggregate.body);
+                console.log(`  [${drumstick.name}] Physics shape visualized`);
+            }
+        });
+
+        console.log("[XRDrumKit] Physics viewer enabled for all components ✓");
     }
 }
 

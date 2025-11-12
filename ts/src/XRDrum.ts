@@ -15,6 +15,7 @@ class XRDrum implements XRDrumComponent {
     drumComponentContainer: TransformNode;
     xrDrumKit: XRDrumKit;
     log: boolean = true; // Set to true for debugging
+    showBoundingBox: boolean = true; // Display collision bounding boxes for debugging
     private lastHitTime: Map<string, number> = new Map(); // Track last hit time per drumstick
     private readonly HIT_DEBOUNCE_MS = 50; // Minimum time between hits (50ms = 20 hits/second max)
     private drumSkinMesh: AbstractMesh | undefined; // Reference to the drum skin for animation
@@ -27,7 +28,7 @@ class XRDrum implements XRDrumComponent {
 
         this.drumComponentContainer = new TransformNode(name + "Container");
         this.drumComponentContainer.parent = xrDrumKit.drumContainer;
-        xrDrumKit.drumComponents.push(this.drumComponentContainer);
+        xrDrumKit.drumComponents.push(this);
 
         
         const bodyPrimitives = drum3Dmodel.filter(mesh => (mesh.name === name || mesh.name.startsWith(name + "_primitive"))); // Find all primitives
@@ -59,6 +60,7 @@ class XRDrum implements XRDrumComponent {
             }
         }
 
+        this.drumComponentContainer.addChild(trigger); // Attach the trigger to the drum component container
         
         this.createDrumComponentTrigger(trigger);
 
@@ -86,13 +88,38 @@ class XRDrum implements XRDrumComponent {
         });
     }
 
+    refreshPhysicsAggregate(): void {
+        this.drumComponentContainer.getChildMeshes().forEach(mesh => {
+            if(mesh.name === this.name + "Trigger"){
+                mesh.physicsBody?.dispose();
+                this.createDrumComponentTrigger(mesh);
+            }
+        });
+    }
     createDrumComponentTrigger(trigger: AbstractMesh) {
         if (trigger) {
-            this.drumComponentContainer.addChild(trigger); // Attach the trigger to the drum component container
 
+            // IMPORTANT: Store original scale before creating physics aggregate
+            const originalScale = trigger.scaling.clone();
+            
+            // Temporarily scale the mesh down to create a smaller physics shape
+            trigger.scaling.scaleInPlace(this.xrDrumKit.scaleFactor);
+            
+            // Create physics aggregate with the scaled mesh (physics shape will be smaller)
             const triggerAggregate = new PhysicsAggregate(trigger, PhysicsShapeType.MESH, { mass: 0 }, this.xrDrumKit.scene);
             triggerAggregate.body.setMotionType(PhysicsMotionType.STATIC);
             triggerAggregate.body.setPrestepType(PhysicsPrestepType.TELEPORT);
+            
+            // CRITICAL: Restore the visual mesh to its original scale
+            // This keeps the visual at full size while the physics shape remains at scaled size
+            trigger.scaling.copyFrom(originalScale);
+            
+            // Show bounding box for debugging collision shapes
+            if (this.showBoundingBox) {
+                trigger.showBoundingBox = true;
+                console.log(`[${this.name}] Bounding box enabled. Mesh shape: ${trigger.getTotalVertices()} vertices`);
+            }
+            
             if (triggerAggregate.body.shape) {
                 triggerAggregate.body.shape.isTrigger = true;
             }

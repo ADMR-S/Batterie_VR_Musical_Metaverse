@@ -15,10 +15,12 @@ class XRHiHat implements XRDrumComponent {
     drumComponentContainer: TransformNode;
     xrDrumKit: XRDrumKit;
     log: boolean = true; // Set to true for debugging, false for production
+    showBoundingBox: boolean = true; // Display collision bounding boxes for debugging
     private lastHitTime: Map<string, number> = new Map(); // Track last hit time per drumstick
     private readonly HIT_DEBOUNCE_MS = 50; // Minimum time between hits (50ms = 20 hits/second max)
     private hiHatMesh: AbstractMesh | undefined; // Reference to the Hi-Hat mesh for animation
     private originalPosition: Vector3 | undefined; // Store original position
+    hiHatAggregate: PhysicsAggregate | undefined; // Store physics aggregate reference
 
     //@ts-ignore
     constructor(name: string, midiKey: number, xrDrumKit: XRDrumKit, drum3Dmodel: AbstractMesh[]) {
@@ -27,7 +29,7 @@ class XRHiHat implements XRDrumComponent {
 
         this.drumComponentContainer = new TransformNode(name + "Container");
         this.drumComponentContainer.parent = xrDrumKit.drumContainer;
-        xrDrumKit.drumComponents.push(this.drumComponentContainer);
+        xrDrumKit.drumComponents.push(this);
 
         const hiHat3DMesh = drum3Dmodel.find(mesh => mesh.name === name);
         if (hiHat3DMesh === undefined) {
@@ -43,6 +45,8 @@ class XRHiHat implements XRDrumComponent {
         this.drumComponentContainer.addChild(hiHat3DMesh);
 
         this.createDrumComponentBody(this.drumComponentContainer);
+
+        this.drumComponentContainer.addChild(hiHat3DMesh);
 
         this.createDrumComponentTrigger(hiHat3DMesh);
 
@@ -67,15 +71,37 @@ class XRHiHat implements XRDrumComponent {
         // Visual mesh only - no physics aggregate needed
     }
 
+    refreshPhysicsAggregate(): void {
+        this.hiHatAggregate?.dispose();
+        this.createDrumComponentTrigger(this.drumComponentContainer.getChildMeshes()[0]);
+    }
     createDrumComponentTrigger(trigger: AbstractMesh) {
         if (trigger) {
-            this.drumComponentContainer.addChild(trigger);
 
+            // IMPORTANT: Store original scale before creating physics aggregate
+            const originalScale = trigger.scaling.clone();
+            
+            // Temporarily scale the mesh down to create a smaller physics shape
+            trigger.scaling.scaleInPlace(this.xrDrumKit.scaleFactor);
+            
             // Create STATIC physics - Hi-Hat doesn't move via physics, only via animation
+            // The physics shape will be created based on the CURRENT (scaled) mesh geometry
             const triggerAggregate = new PhysicsAggregate(trigger, PhysicsShapeType.MESH, { mass: 0 }, this.xrDrumKit.scene);
             triggerAggregate.transformNode.id = this.name + "Trigger";
             triggerAggregate.body.setMotionType(PhysicsMotionType.STATIC);
             triggerAggregate.body.setPrestepType(PhysicsPrestepType.TELEPORT);
+            
+            // CRITICAL: Restore the visual mesh to its original scale
+            // This keeps the visual at full size while the physics shape remains at scaled size
+            trigger.scaling.copyFrom(originalScale);
+            
+            this.hiHatAggregate = triggerAggregate;
+                      
+            // Show bounding box for debugging collision shapes
+            if (this.showBoundingBox) {
+                trigger.showBoundingBox = true;
+                console.log(`[${this.name}] Bounding box enabled. Mesh shape: ${trigger.getTotalVertices()} vertices`);
+            }
             
             // Set collision filter: Hi-Hat is group 2 (like cymbals), collide with drumsticks only
             if (triggerAggregate.body.shape) {

@@ -13,6 +13,7 @@ class XRCymbal implements XRDrumComponent {
     drumComponentContainer: TransformNode;
     xrDrumKit: XRDrumKit;
     log: boolean = true; // Set to true for debugging, false for production
+    showBoundingBox: boolean = true; // Set to true to show collision boundaries
     private lastHitTime: Map<string, number> = new Map(); // Track last hit time per drumstick
     private readonly HIT_DEBOUNCE_MS = 50; // Same as drums
     private cymbalAggregate: PhysicsAggregate | null = null; // Store reference to apply impulses
@@ -24,7 +25,7 @@ class XRCymbal implements XRDrumComponent {
 
         this.drumComponentContainer = new TransformNode(name + "Container");
         this.drumComponentContainer.parent = xrDrumKit.drumContainer;
-        xrDrumKit.drumComponents.push(this.drumComponentContainer);
+        xrDrumKit.drumComponents.push(this);
 
         const cymbal3DMesh = drum3Dmodel.find(mesh => mesh.name === name); // Find all primitives
         if (cymbal3DMesh === undefined) {
@@ -68,12 +69,29 @@ class XRCymbal implements XRDrumComponent {
             // This way the visual mesh follows the physics-limited rotation of the trigger
             this.drumComponentContainer.addChild(trigger); // Attach the trigger to the drum component container
 
+            // IMPORTANT: Store original scale before creating physics aggregate
+            const originalScale = trigger.scaling.clone();
+            
+            // Temporarily scale the mesh down to create a smaller physics shape
+            trigger.scaling.scaleInPlace(this.xrDrumKit.scaleFactor);
+            
             // Cymbals need mass to swing properly when hit - light enough to move easily
+            // The physics shape will be created based on the CURRENT (scaled) mesh geometry
             const triggerAggregate = new PhysicsAggregate(trigger, PhysicsShapeType.MESH, { mass: 0.5 }, this.xrDrumKit.scene);
             triggerAggregate.transformNode.id = this.name + "Trigger"; // Add trigger to aggregate name for cymbals
             
+            // CRITICAL: Restore the visual mesh to its original scale
+            // This keeps the visual at full size while the physics shape remains at 0.7x
+            trigger.scaling.copyFrom(originalScale);
+            
             // Store reference for applying impulses on hit
             this.cymbalAggregate = triggerAggregate;
+            
+            // Show bounding box for debugging collision shapes
+            if (this.showBoundingBox) {
+                trigger.showBoundingBox = true;
+                console.log(`[${this.name}] Bounding box enabled. Mesh shape: ${trigger.getTotalVertices()} vertices`);
+            }
             
             // Use regular collisions (NOT triggers) so the cymbal can physically move
             triggerAggregate.body.setCollisionCallbackEnabled(true);
