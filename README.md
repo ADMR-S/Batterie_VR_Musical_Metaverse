@@ -22,7 +22,7 @@ Générer clés SSL pour servir en https :
 Déployer localement :  
   `npm run dev`
 
-Accéder à l'URL depuis un casque connecté au même réseau Wi-Fi
+Accéder à l'URL correspondant à l'IP de la machine host depuis un casque connecté au même réseau Wi-Fi
 
 Debug :
 
