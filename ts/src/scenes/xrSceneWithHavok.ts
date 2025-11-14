@@ -16,7 +16,7 @@ import "@babylonjs/core/Debug/debugLayer";
 import "@babylonjs/inspector";
 import "@babylonjs/loaders/glTF";
 //@ts-ignore
-import { Mesh, MeshBuilder, PhysicsAggregate, PhysicsShapeType, WebXRNearInteraction} from "@babylonjs/core";
+import { Mesh, MeshBuilder, PhysicsAggregate, PhysicsShapeType, WebXRNearInteraction, SixDofDragBehavior, Color3, StandardMaterial, TransformNode} from "@babylonjs/core";
 import { AbstractEngine } from "@babylonjs/core/Engines/abstractEngine";
 import HavokPhysics from "@babylonjs/havok";
 
@@ -119,6 +119,9 @@ export class XRSceneWithHavok implements CreateSceneClass {
     // @ts-ignore
     const drum = new XRDrumKit(audioContext, scene, eventMask, xr, hk, assetsManager);
     
+    // Add 6DOF behavior to the drumkit (externalized from XRDrumKit class)
+    add6DofBehaviorToDrumKit(drum);
+    
     //addScaleRoutineToSphere(sphereObservable);
 
     //addXRControllersRoutine(scene, xr, eventMask); //eventMask est-il indispensable ?
@@ -167,6 +170,55 @@ export class XRSceneWithHavok implements CreateSceneClass {
 }
 
 export default new XRSceneWithHavok();
+
+
+// Add 6DOF behavior to the drum kit (moved from XRDrumKit class)
+function add6DofBehaviorToDrumKit(drum: XRDrumKit) {
+    const drumContainer = drum.drumContainer;
+    
+    // Add 6-DoF behavior to the drum container
+    const sixDofBehavior = new SixDofDragBehavior();
+    drumContainer.addBehavior(sixDofBehavior);
+
+    // Freeze world matrices AFTER initial setup to avoid jump on first unfreeze
+    drumContainer.getChildMeshes().forEach(mesh => {
+        mesh.freezeWorldMatrix();
+    });
+
+    // Highlight the drum container in green when selected
+    sixDofBehavior.onDragStartObservable.add(() => {
+        drumContainer.getChildMeshes().forEach(mesh => {
+            // Unfreeze world matrix to allow movement
+            mesh.unfreezeWorldMatrix();
+            
+            if (mesh.material) {
+                // Unfreeze material temporarily to allow color changes
+                mesh.material.unfreeze();
+                (mesh.material as StandardMaterial).emissiveColor = new Color3(0, 1, 0); // Green color
+            }
+        });
+        drum.drumSoundsEnabled = false; // Disable drum sounds when moving
+    });
+
+    sixDofBehavior.onDragEndObservable.add(() => {
+        drumContainer.getChildMeshes().forEach(mesh => {
+            if (mesh.material) {
+                (mesh.material as StandardMaterial).emissiveColor = Color3.Black(); // Reset to default color
+            }
+            // Refreeze world matrix after movement
+            mesh.freezeWorldMatrix();
+        });
+        // Small delay before refreezing materials to ensure color change applies
+        setTimeout(() => {
+            drumContainer.getChildMeshes().forEach(mesh => {
+                if (mesh.material) {
+                    mesh.material.freeze();
+                }
+            });
+        }, 100);
+        drum.drumSoundsEnabled = true; // Enable drum sounds after moving
+    });
+}
 
 
 function addKeyboardControls(xr: any, moveSpeed: number) {

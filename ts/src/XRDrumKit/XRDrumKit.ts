@@ -1,7 +1,7 @@
 import { Scene } from "@babylonjs/core/scene";
-import { Color3, PhysicsViewer } from "@babylonjs/core";
+import { PhysicsViewer } from "@babylonjs/core";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
-import { TransformNode, StandardMaterial, SixDofDragBehavior } from "@babylonjs/core";
+import { TransformNode } from "@babylonjs/core";
 import { WebXRDefaultExperience } from "@babylonjs/core";
 import { AssetsManager } from "@babylonjs/core";
 
@@ -184,8 +184,7 @@ class XRDrumKit {
             }
         }
 
-
-        this.add6DofBehavior(this.drumContainer); // Make the drumkit movable in the VR space on selection
+        // 6DOF behavior is now added externally from xrSceneWithHavok
         this.drumSoundsEnabled = false; // Initialize to false and set to true only when controllers are added
         let xrLogger = new XRLogger(xr, scene);
         for (var i = 0; i < 2; i++) {
@@ -211,51 +210,6 @@ class XRDrumKit {
 
     move(displacementVector: Vector3) {
         this.drumContainer.position.addInPlace(displacementVector);
-    }
-
-    add6DofBehavior(drumContainer: TransformNode) {
-        // Add 6-DoF behavior to the drum container
-        const sixDofBehavior = new SixDofDragBehavior();
-        drumContainer.addBehavior(sixDofBehavior);
-
-        // Freeze world matrices AFTER initial setup to avoid jump on first unfreeze
-        drumContainer.getChildMeshes().forEach(mesh => {
-            mesh.freezeWorldMatrix();
-        });
-
-        // Highlight the drum container in green when selected
-        sixDofBehavior.onDragStartObservable.add(() => {
-            drumContainer.getChildMeshes().forEach(mesh => {
-                // Unfreeze world matrix to allow movement
-                mesh.unfreezeWorldMatrix();
-                
-                if (mesh.material) {
-                    // Unfreeze material temporarily to allow color changes
-                    mesh.material.unfreeze();
-                    (mesh.material as StandardMaterial).emissiveColor = new Color3(0, 1, 0); // Green color
-                }
-            });
-            this.drumSoundsEnabled = false; // Disable drum sounds when moving
-        });
-
-        sixDofBehavior.onDragEndObservable.add(() => {
-            drumContainer.getChildMeshes().forEach(mesh => {
-                if (mesh.material) {
-                    (mesh.material as StandardMaterial).emissiveColor = Color3.Black(); // Reset to default color
-                }
-                // Refreeze world matrix after movement
-                mesh.freezeWorldMatrix();
-            });
-            // Small delay before refreezing materials to ensure color change applies
-            setTimeout(() => {
-                drumContainer.getChildMeshes().forEach(mesh => {
-                    if (mesh.material) {
-                        mesh.material.freeze();
-                    }
-                });
-            }, 100);
-            this.drumSoundsEnabled = true; // Enable drum sounds after moving
-        });
     }
 
     // Enable physics viewer for all drum components (drums, cymbals, hi-hat, drumsticks)

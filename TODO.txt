@@ -6,8 +6,7 @@ Listeners mal attachés si la batterie est créée après que les manettes aient
 Idem Trône
 
 Ajuster limites orientation cymbales par type de cymbale
-
-Ajuster dynamisme cymbales
+Ajuster dynamisme cymbales (petits coups répétés -> la cymbale devrait revenir plus vite qu'elle ne part)
 
 Retirer 6DOF ou ajouter depuis code externe
 
