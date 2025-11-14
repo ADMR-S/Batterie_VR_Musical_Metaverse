@@ -149,32 +149,62 @@ class XRCymbal implements XRDrumComponent {
                     this.logger.logCymbalPhysics(`Rotation: offsetX=${(offsetX * 180/Math.PI).toFixed(1)}°, vel=${angularVelocity.x.toFixed(3)}`);
                 }
                 
-                // Apply spring force to return to original position (like real cymbal between pads)
-                const springStrength = DRUMKIT_CONFIG.physics.cymbal.springStrength;
-                const springDamping = DRUMKIT_CONFIG.physics.cymbal.springDamping;
-                
-                // Calculate spring force: F = -k * x (Hooke's law)
-                const springForce = -offsetX * springStrength;
-                const dampingForce = -angularVelocity.x * springDamping;
-                const totalTorque = springForce + dampingForce;
-                
-                // Apply torque to pull cymbal back to rest position
-                triggerAggregate.body.applyAngularImpulse(new Vector3(totalTorque * 0.016, 0, 0)); // 0.016 ≈ 1/60 for frame time
-                
                 // Asymmetric bounce limits: different max for up vs down
                 const maxLimit = offsetX > 0 ? maxRotationUp : maxRotationDown;
                 
-                if (Math.abs(offsetX) > maxLimit) {
+                // HARD STOP: Check if we're at or past the limit
+                const isAtLimit = Math.abs(offsetX) >= maxLimit;
+                const isMovingAwayFromCenter = Math.sign(offsetX) === Math.sign(angularVelocity.x);
+                
+                if (isAtLimit) {
                     this.logger.logCymbalPhysics(`ROTATION LIMIT HIT: ${(offsetX * 180/Math.PI).toFixed(1)}°, bouncing back!`);
                     
-                    // Clamp to just INSIDE the limit (95% of max) to avoid infinite bouncing
-                    const clampedX = Math.sign(offsetX) * maxLimit * 0.95;
+                    // Teleport back to exactly the limit
+                    const clampedX = Math.sign(offsetX) * maxLimit;
                     const newEuler = new Vector3(origEuler.x + clampedX, origEuler.y, origEuler.z);
                     const newQuat = Quaternion.FromEulerAngles(newEuler.x, newEuler.y, newEuler.z);
                     triggerAggregate.body.transformNode.rotationQuaternion = newQuat;
                     
-                    // REVERSE angular velocity for bounce-back (with energy loss)
-                    triggerAggregate.body.setAngularVelocity(new Vector3(-angularVelocity.x * DRUMKIT_CONFIG.physics.cymbal.bounceEnergyLoss, 0, 0));
+                    // Bounce back with energy loss - ALWAYS reverse velocity when at limit
+                    const bounceVelocity = -angularVelocity.x * DRUMKIT_CONFIG.physics.cymbal.bounceEnergyLoss;
+                    triggerAggregate.body.setAngularVelocity(new Vector3(bounceVelocity, 0, 0));
+                    
+                    // Massively increase damping to stop the motion quickly
+                    triggerAggregate.body.setAngularDamping(5.0); // High damping at limit
+                } else if (Math.abs(offsetX) > maxLimit * 0.90) {
+                    // Near limit (90-100%): Start applying resistance
+                    // Restore normal damping when not at limit
+                    triggerAggregate.body.setAngularDamping(DRUMKIT_CONFIG.physics.cymbal.angularDamping);
+                    
+                    // CRITICAL: If moving AWAY from center and near limit, stop all motion
+                    if (isMovingAwayFromCenter) {
+                        this.logger.logCymbalPhysics(`Near limit, blocking further rotation`);
+                        triggerAggregate.body.setAngularVelocity(Vector3.Zero());
+                    } else {
+                        // Moving back toward center - allow it but apply spring force
+                        const springStrength = DRUMKIT_CONFIG.physics.cymbal.springStrength;
+                        const springDamping = DRUMKIT_CONFIG.physics.cymbal.springDamping;
+                        
+                        const springForce = -offsetX * springStrength;
+                        const dampingForce = -angularVelocity.x * springDamping;
+                        const totalTorque = springForce + dampingForce;
+                        
+                        triggerAggregate.body.applyAngularImpulse(new Vector3(totalTorque * 0.016, 0, 0));
+                    }
+                } else {
+                    // Normal operation: apply spring force to return to original position
+                    // Restore normal damping
+                    triggerAggregate.body.setAngularDamping(DRUMKIT_CONFIG.physics.cymbal.angularDamping);
+                    const springStrength = DRUMKIT_CONFIG.physics.cymbal.springStrength;
+                    const springDamping = DRUMKIT_CONFIG.physics.cymbal.springDamping;
+                    
+                    // Calculate spring force: F = -k * x (Hooke's law)
+                    const springForce = -offsetX * springStrength;
+                    const dampingForce = -angularVelocity.x * springDamping;
+                    const totalTorque = springForce + dampingForce;
+                    
+                    // Apply torque to pull cymbal back to rest position
+                    triggerAggregate.body.applyAngularImpulse(new Vector3(totalTorque * 0.016, 0, 0)); // 0.016 ≈ 1/60 for frame time
                 }
                 
                 // CRITICAL: Sync visual mesh rotation with physics body rotation
