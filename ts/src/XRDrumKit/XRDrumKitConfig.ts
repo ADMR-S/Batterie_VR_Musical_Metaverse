@@ -12,12 +12,12 @@ export const DRUMKIT_CONFIG = {
         
         // Cymbal-specific physics
         cymbal: {
-            mass: 0.5,
+            mass: 1.2, // Increased mass for more realistic weight feel
             angularDamping: 0.5,
             springStrength: 0.8,
             springDamping: 0.3,
             maxRotationUp: Math.PI / 4, // 45 degrees up
-            maxRotationDown: Math.PI * 1.25, // 225 degrees down (5π/4)
+            maxRotationDown: Math.PI / 4, // 45 degrees down - symmetric limits to prevent over-rotation
             bounceEnergyLoss: 0.7, // Energy retained after bounce (30% loss)
             impulseScale: 0.3, // Scale factor for angular impulse from hits
         }
@@ -89,8 +89,8 @@ export const DRUMKIT_CONFIG = {
     
     // Debug configuration
     debug: {
-        showBoundingBoxes: true,
-        enablePhysicsViewer: true,
+        showBoundingBoxes: false,
+        enablePhysicsViewer: false,
         logCollisions: true,
         logVelocity: true,
     }

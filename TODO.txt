@@ -1,19 +1,26 @@
-Interagir avec le trône pour s'installer
---> Faire spawn les baguettes dans les mains
-Se lever (bouton B maintenu) = lâcher les baguettes et repasser en déplacement libre (retirer les listeners de la batterie)
+Améliorer interaction avec le trône pour s'installer
+Couper le déplacement lorsqu'on est assis
+Permettre d'ajuster la hauteur
 
-Coups manqués parfois ?
+Listeners mal attachés si la batterie est créée après que les manettes aient été ajoutées
+Idem Trône
+
+Ajuster dynamisme cymbales
+
+Retirer 6DOF ou ajouter depuis code externe
+
+Attendre un COLLISION_ENDED avant d'autoriser à nouveau une collision avec la même baguette (évite les collisions multiples) ?
+
+Coups manqués parfois ? (pas assez de frame ou vélocité trop basse ? Arrive cependant en général quand on tape vite)
 Double hit (comme s'il y avait 2 triggers ? Mesh + trigger et bug via détection par nom "trigger" ?)
 
-Intégrer à WamJam
+Améliorer intégration à WamJam
 
 Intégrer rimshot
 
 Classe dédiée Kick
 
 Ajouter pédales Kick et hiHat
-
-Ajuster dynamisme cymbales
 
 Permettre de changer la prise de la baguette (/ le type de baguette plus tard)
 
@@ -22,7 +29,7 @@ Near interactions disabled for perf (vérifier compatibilité avec WamJam)
 Bug initialisation : doit sortir et rerentrer pour que les manettes fonctionnent ? 
 --> A priori fixed, à vérifier sur le long terme
 
-Ajuster vélocité 
+Ajuster poids vélocité angulaire : valeurs trop faible
 
 Ajuster durée du son en fonction de la force de frappe ?
 
