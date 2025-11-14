@@ -5,6 +5,8 @@ Permettre d'ajuster la hauteur
 Listeners mal attachés si la batterie est créée après que les manettes aient été ajoutées
 Idem Trône
 
+Ajuster limites orientation cymbales par type de cymbale
+
 Ajuster dynamisme cymbales
 
 Retirer 6DOF ou ajouter depuis code externe

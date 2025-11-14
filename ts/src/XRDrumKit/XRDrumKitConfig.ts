@@ -12,13 +12,13 @@ export const DRUMKIT_CONFIG = {
         
         // Cymbal-specific physics
         cymbal: {
-            mass: 3, // Increased mass for more realistic weight feel
-            angularDamping: 0.5,
-            springStrength: 0.8,
-            springDamping: 0.3,
-            maxRotationXY: 35 * (Math.PI / 180), // 35 degrees limit on X and Y axes
-            bounceEnergyLoss: 0.7, // Energy retained after bounce (30% loss)
-            impulseScale: 0.3, // Scale factor for angular impulse from hits
+            mass: 5, // Heavier for more realistic feel
+            angularDamping: 0.3, // Very low damping - spring force controls restoration, not air resistance
+            springStrength: 15.0, // Strong spring for pronounced bounce-back
+            springDamping: 1.5, // Critical damping to stop oscillation at rest position
+            maxRotationXY: 15 * (Math.PI / 180), // 35 degrees limit on X and Z axes (tilt)
+            bounceEnergyLoss: 0.5, // 50% energy retained - more dramatic bounce
+            impulseScale: 0.25, // Scale factor for angular impulse from hits
         }
     },
 
@@ -90,7 +90,8 @@ export const DRUMKIT_CONFIG = {
     debug: {
         showBoundingBoxes: false,
         enablePhysicsViewer: false,
-        logCollisions: true,
-        logVelocity: true,
+        logCollisions: false, // Disabled - too verbose
+        logVelocity: false, // Disabled - too verbose
+        logCymbalPhysics: true, // Enable cymbal-specific physics debugging
     }
 };
