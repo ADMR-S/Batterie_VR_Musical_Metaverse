@@ -1,6 +1,5 @@
-Améliorer interaction avec le trône pour s'installer
 Couper le déplacement lorsqu'on est assis
-Permettre d'ajuster la hauteur
+Permettre d'ajuster la hauteur d'assise
 
 Listeners mal attachés si la batterie est créée après que les manettes aient été ajoutées
 Idem Trône

@@ -19,6 +19,7 @@ export class ThroneUI {
     private guiPlane: AbstractMesh | null = null;
     private advancedTexture: GUI.AdvancedDynamicTexture | null = null;
     private sitPrompt: GUI.TextBlock | null = null;
+    private leavePrompt: GUI.TextBlock | null = null; // New: prompt for leaving drums
     private standUpIndicator: GUI.Ellipse | null = null;
     private standUpFill: GUI.Ellipse | null = null;
     private standUpText: GUI.TextBlock | null = null;
@@ -65,6 +66,22 @@ export class ThroneUI {
         this.advancedTexture.addControl(this.sitPrompt);
         
         console.log("[ThroneUI] Sit prompt created and added");
+        
+        // "Hold B to leave drums" prompt (shows when sitting)
+        this.leavePrompt = new GUI.TextBlock();
+        this.leavePrompt.text = "Hold B to leave the drums";
+        this.leavePrompt.color = "white";
+        this.leavePrompt.fontSize = 80; // Larger for 3D space
+        this.leavePrompt.fontFamily = "Arial";
+        this.leavePrompt.fontWeight = "bold";
+        this.leavePrompt.outlineWidth = 4;
+        this.leavePrompt.outlineColor = "black";
+        this.leavePrompt.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+        this.leavePrompt.textVerticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_CENTER;
+        this.leavePrompt.isVisible = false;
+        this.advancedTexture.addControl(this.leavePrompt);
+        
+        console.log("[ThroneUI] Leave prompt created and added");
         
         // Stand-up progress indicator (center of GUI)
         // Outer circle
@@ -127,7 +144,7 @@ export class ThroneUI {
             const thronePos = this.throneController.getThronePosition();
             if (thronePos) {
                 const targetPos = thronePos.clone();
-                targetPos.y += 1.5; // 1.5m above throne
+                targetPos.y += 2.0; // 2.0m above throne (raised from 1.5m)
                 this.guiPlane.position = targetPos;
                 this.guiPlane.setEnabled(true);
             }
@@ -144,6 +161,19 @@ export class ThroneUI {
                     console.log("[ThroneUI] Showing sit prompt");
                 } else {
                     console.log("[ThroneUI] Hiding sit prompt");
+                }
+            }
+        }
+        
+        // Show "Hold B to leave" when sitting but NOT holding B
+        if (this.leavePrompt) {
+            const shouldShow = isSitting && standUpProgress === 0;
+            if (this.leavePrompt.isVisible !== shouldShow) {
+                this.leavePrompt.isVisible = shouldShow;
+                if (shouldShow) {
+                    console.log("[ThroneUI] Showing leave prompt");
+                } else {
+                    console.log("[ThroneUI] Hiding leave prompt");
                 }
             }
         }

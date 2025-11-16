@@ -87,7 +87,16 @@ export class ThroneController {
         const throneMeshCenter = totalPosition.scale(1 / throneMeshes.length);
         
         // Get drum kit rotation to apply forward offset correctly
-        const drumKitRotation = this.xrDrumKit.drumContainer.rotation.y;
+        const drumContainer = this.xrDrumKit.drumContainer;
+        let drumKitRotation = 0;
+        
+        if (drumContainer.rotationQuaternion) {
+            // 6DOF uses quaternion rotation - convert to Euler Y angle
+            drumKitRotation = drumContainer.rotationQuaternion.toEulerAngles().y;
+        } else {
+            // Fall back to regular rotation
+            drumKitRotation = drumContainer.rotation.y;
+        }
         
         // Calculate forward offset in world space (toward drums)
         // In Babylon.js with Y-up, negative Z is typically forward when rotation is 0
@@ -189,12 +198,23 @@ export class ThroneController {
         // Calculate target sitting position (where we want the XR rig base to be)
         const targetSittingPos = this.calculateSittingPosition();
         
-        // Set camera position to the throne location
-        camera.position.copyFrom(targetSittingPos);
+        // Get drum kit rotation - use quaternion directly if available (used by 6DOF)
+        const drumContainer = this.xrDrumKit.drumContainer;
         
-        // Face the same direction as the drum kit
-        const drumKitRotation = this.xrDrumKit.drumContainer.rotation.y;
-        camera.cameraRotation.y = drumKitRotation;
+        if (drumContainer.rotationQuaternion) {
+            // 6DOF uses quaternion rotation - apply it directly to camera
+            if (!camera.rotationQuaternion) {
+                camera.rotationQuaternion = drumContainer.rotationQuaternion.clone();
+            } else {
+                camera.rotationQuaternion.copyFrom(drumContainer.rotationQuaternion);
+            }
+        } else {
+            // Fall back to regular Euler rotation
+            camera.cameraRotation.y = drumContainer.rotation.y;
+        }
+        
+        // Then set camera position to the throne location
+        camera.position.copyFrom(targetSittingPos);
         
         this.isSitting = true;
         
@@ -202,14 +222,31 @@ export class ThroneController {
         this.pickupDrumsticks();
         
         if (this.log) {
+            const drumContainer = this.xrDrumKit.drumContainer;
             console.log("[ThroneController] Sitting down. Hold B to stand up.");
             console.log(`[ThroneController] Target sitting pos: ${targetSittingPos.toString()}`);
             console.log(`[ThroneController] XR rig base moved to: ${camera.position.toString()}`);
-            console.log(`[ThroneController] Camera rotation set to: ${camera.cameraRotation.y.toFixed(2)} rad`);
+            console.log(`[ThroneController] Camera uses quaternion: ${!!camera.rotationQuaternion}`);
+            if (camera.rotationQuaternion) {
+                console.log(`[ThroneController] Camera rotation quaternion: ${camera.rotationQuaternion.toString()}`);
+            } else {
+                console.log(`[ThroneController] Camera rotation (Euler Y): ${camera.cameraRotation.y.toFixed(2)} rad`);
+            }
+            console.log(`[ThroneController] Drum kit uses quaternion: ${!!drumContainer.rotationQuaternion}`);
+            if (drumContainer.rotationQuaternion) {
+                console.log(`[ThroneController] Drum kit quaternion: ${drumContainer.rotationQuaternion.toString()}`);
+            }
+            console.log(`[ThroneController] Drum kit rotation (Euler): ${drumContainer.rotation.toString()}`);
+            console.log(`[ThroneController] Drum kit position: ${drumContainer.position.toString()}`);
             
             // Log actual position after a delay
             setTimeout(() => {
                 console.log(`[ThroneController] Player head actually at: ${camera.globalPosition.toString()}`);
+                if (camera.rotationQuaternion) {
+                    console.log(`[ThroneController] Camera quaternion after delay: ${camera.rotationQuaternion.toString()}`);
+                } else {
+                    console.log(`[ThroneController] Camera rotation after delay: ${camera.cameraRotation.y.toFixed(2)} rad`);
+                }
             }, 100);
         }
     }
