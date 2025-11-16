@@ -69,19 +69,33 @@ export class ThroneController {
             return Vector3.Zero();
         }
         
-        // Get the throne's absolute position in world space
-        const throneAbsolutePos = this.throneNode.getAbsolutePosition();
+        // The throne meshes are children of throneNode (throneContainer)
+        // We need to find the actual throne mesh center, not just the container's position
+        const throneMeshes = this.throneNode.getChildMeshes();
         
-        // Position player at throne center, slightly back
+        if (throneMeshes.length === 0) {
+            console.warn("[ThroneController] No throne meshes found!");
+            return Vector3.Zero();
+        }
+        
+        // Calculate the center of all throne meshes in world space
+        let totalPosition = Vector3.Zero();
+        throneMeshes.forEach(mesh => {
+            totalPosition.addInPlace(mesh.getAbsolutePosition());
+        });
+        const throneMeshCenter = totalPosition.scale(1 / throneMeshes.length);
+        
+        // Position player at the throne mesh center
         const sittingPos = new Vector3(
-            throneAbsolutePos.x,
-            throneAbsolutePos.y + this.sittingHeightOffset, // Height above throne
-            throneAbsolutePos.z - 0.2 // 20cm back from throne center
+            throneMeshCenter.x,
+            throneMeshCenter.y + this.sittingHeightOffset,
+            throneMeshCenter.z
         );
         
         if (this.log) {
             console.log(`[ThroneController] Sitting position calculated: ${sittingPos.toString()}`);
-            console.log(`[ThroneController] Throne absolute position: ${throneAbsolutePos.toString()}`);
+            console.log(`[ThroneController] Throne mesh center (world): ${throneMeshCenter.toString()}`);
+            console.log(`[ThroneController] Number of throne meshes: ${throneMeshes.length}`);
         }
         
         return sittingPos;
@@ -162,26 +176,15 @@ export class ThroneController {
         this.savedCameraPosition = camera.position.clone();
         this.savedCameraRotation = camera.cameraRotation.y;
         
-        // Calculate target sitting position (where we want player's HEAD to be)
+        // Calculate target sitting position (where we want the XR rig base to be)
         const targetSittingPos = this.calculateSittingPosition();
         
-        // Calculate player's current physical offset from XR rig base
-        // globalPosition is where the player's head actually is in world space
-        // position is where the XR rig base is
-        const physicalOffset = camera.globalPosition.subtract(camera.position);
+        // Set camera position to the throne location
+        camera.position.copyFrom(targetSittingPos);
         
-        // To position the player's HEAD at targetSittingPos, we need to move the rig base
-        // to (targetSittingPos - physicalOffset)
-        const rigTargetPosition = targetSittingPos.subtract(physicalOffset);
-        
-        // Teleport XR rig base to align player's physical position with throne
-        camera.position.copyFrom(rigTargetPosition);
-        
-        // Face the drums (rotate towards drum kit center)
-        const drumKitPos = this.xrDrumKit.drumContainer.getAbsolutePosition();
-        const direction = drumKitPos.subtract(targetSittingPos); // Use target sitting pos, not rig base
-        const angle = Math.atan2(direction.x, direction.z);
-        camera.cameraRotation.y = angle;
+        // Face the same direction as the drum kit
+        const drumKitRotation = this.xrDrumKit.drumContainer.rotation.y;
+        camera.cameraRotation.y = drumKitRotation;
         
         this.isSitting = true;
         
@@ -190,11 +193,14 @@ export class ThroneController {
         
         if (this.log) {
             console.log("[ThroneController] Sitting down. Hold B to stand up.");
-            console.log(`[ThroneController] Physical offset: ${physicalOffset.toString()}`);
             console.log(`[ThroneController] Target sitting pos: ${targetSittingPos.toString()}`);
             console.log(`[ThroneController] XR rig base moved to: ${camera.position.toString()}`);
-            console.log(`[ThroneController] Player head at: ${camera.globalPosition.toString()}`);
-            console.log(`[ThroneController] Drum kit position: ${drumKitPos.toString()}`);
+            console.log(`[ThroneController] Camera rotation set to: ${camera.cameraRotation.y.toFixed(2)} rad`);
+            
+            // Log actual position after a delay
+            setTimeout(() => {
+                console.log(`[ThroneController] Player head actually at: ${camera.globalPosition.toString()}`);
+            }, 100);
         }
     }
     

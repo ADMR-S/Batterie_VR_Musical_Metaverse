@@ -5,15 +5,15 @@ Permettre d'ajuster la hauteur
 Listeners mal attachés si la batterie est créée après que les manettes aient été ajoutées
 Idem Trône
 
-Ajuster limites orientation cymbales par type de cymbale
-Ajuster dynamisme cymbales (petits coups répétés -> la cymbale devrait revenir plus vite qu'elle ne part)
-
-Retirer 6DOF ou ajouter depuis code externe
-
 Attendre un COLLISION_ENDED avant d'autoriser à nouveau une collision avec la même baguette (évite les collisions multiples) ?
 
 Coups manqués parfois ? (pas assez de frame ou vélocité trop basse ? Arrive cependant en général quand on tape vite)
 Double hit (comme s'il y avait 2 triggers ? Mesh + trigger et bug via détection par nom "trigger" ?)
+
+Ajuster limites orientation cymbales par type de cymbale
+Ajuster dynamisme cymbales (petits coups répétés -> la cymbale devrait revenir plus vite qu'elle ne part)
+
+Permettre de changer la prise de la baguette (/ le type de baguette plus tard)
 
 Améliorer intégration à WamJam
 
@@ -22,8 +22,6 @@ Intégrer rimshot
 Classe dédiée Kick
 
 Ajouter pédales Kick et hiHat
-
-Permettre de changer la prise de la baguette (/ le type de baguette plus tard)
 
 Near interactions disabled for perf (vérifier compatibilité avec WamJam)
 +
