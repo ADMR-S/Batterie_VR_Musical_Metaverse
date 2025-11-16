@@ -379,7 +379,14 @@ export class ThroneController {
         
         // Restore rotation
         if (this.savedCameraRotation !== null) {
-            camera.cameraRotation.y = this.savedCameraRotation;
+            // Restore as quaternion to avoid interpolation
+            if (camera.rotationQuaternion) {
+                const halfYaw = this.savedCameraRotation * 0.5;
+                const restoredQuat = new Quaternion(0, Math.sin(halfYaw), 0, Math.cos(halfYaw));
+                camera.rotationQuaternion.copyFrom(restoredQuat);
+            } else {
+                camera.cameraRotation.y = this.savedCameraRotation;
+            }
         }
         
         this.isSitting = false;
