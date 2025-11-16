@@ -25,7 +25,7 @@ export class ThroneController {
     // State tracking
     private isSitting: boolean = false;
     private savedCameraPosition: Vector3 | null = null;
-    private savedCameraRotation: number | null = null;
+    private appliedYawDifference: Quaternion | null = null; // The Y rotation we added when sitting
     
     // Proximity detection
     private proximityDistance: number = 1.5; // meters - distance to activate "sit" prompt
@@ -195,55 +195,35 @@ export class ThroneController {
         // Save current XR rig base position and rotation
         this.savedCameraPosition = camera.position.clone();
         
-        // Save current camera Y rotation (before teleporting)
-        let currentCameraYaw = 0;
-        if (camera.rotationQuaternion) {
-            const camQuat = camera.rotationQuaternion;
-            currentCameraYaw = Math.atan2(
-                2 * (camQuat._w * camQuat._y + camQuat._x * camQuat._z),
-                1 - 2 * (camQuat._y * camQuat._y + camQuat._z * camQuat._z)
-            );
-        } else {
-            currentCameraYaw = camera.cameraRotation.y;
+        // Ensure camera has a quaternion
+        if (!camera.rotationQuaternion) {
+            camera.rotationQuaternion = new Quaternion(0, 0, 0, 1);
         }
-        this.savedCameraRotation = currentCameraYaw;
         
         // Calculate target sitting position (where we want the XR rig base to be)
         const targetSittingPos = this.calculateSittingPosition();
         
-        // Get drum kit rotation - use quaternion directly if available (used by 6DOF)
+        // Get drum kit rotation
         const drumContainer = this.xrDrumKit.drumContainer;
-        
-        if (drumContainer.rotationQuaternion) {
-            // Extract Y-axis rotation from drum kit (yaw only)
-            const drumQuat = drumContainer.rotationQuaternion;
-            
-            // Calculate drum yaw
-            const drumYaw = Math.atan2(
-                2 * (drumQuat._w * drumQuat._y + drumQuat._x * drumQuat._z),
-                1 - 2 * (drumQuat._y * drumQuat._y + drumQuat._z * drumQuat._z)
-            );
-            
-            // Calculate the Y rotation to add (difference between drum and current camera)
-            const yawDifference = drumYaw - currentCameraYaw;
-            
-            // Create a Y-only rotation quaternion for the difference
-            const halfDiff = yawDifference * 0.5;
-            const yRotationToAdd = new Quaternion(0, Math.sin(halfDiff), 0, Math.cos(halfDiff));
-            
-            // Ensure camera has a quaternion
-            if (!camera.rotationQuaternion) {
-                camera.rotationQuaternion = new Quaternion(0, 0, 0, 1);
-            }
-            
-            // Multiply: new rotation = Y difference * current camera rotation
-            // This adds the Y rotation while preserving pitch and roll
-            camera.rotationQuaternion.copyFrom(yRotationToAdd.multiply(camera.rotationQuaternion));
-        } else {
-            // Fall back to regular Euler rotation
-            const rotationToAdd = drumContainer.rotation.y - currentCameraYaw;
-            camera.cameraRotation.y = currentCameraYaw + rotationToAdd;
+        if (!drumContainer.rotationQuaternion) {
+            drumContainer.rotationQuaternion = new Quaternion(0, 0, 0, 1);
         }
+        
+        // Create Y-only quaternion from drum kit (set X and Z to 0)
+        const drumYOnly = new Quaternion(0, drumContainer.rotationQuaternion._y, 0, drumContainer.rotationQuaternion._w).normalize();
+        
+        // Get current camera Y-only rotation
+        const currentYOnly = new Quaternion(0, camera.rotationQuaternion._y, 0, camera.rotationQuaternion._w).normalize();
+        
+        // Calculate rotation difference: drumYOnly * inverse(currentYOnly)
+        const currentYInverse = Quaternion.Inverse(currentYOnly);
+        const yawDifference = drumYOnly.multiply(currentYInverse);
+        
+        // Save the rotation difference so we can reverse it when standing up
+        this.appliedYawDifference = yawDifference.clone();
+        
+        // Apply the Y rotation difference to current camera (preserves pitch/roll)
+        camera.rotationQuaternion.copyFrom(yawDifference.multiply(camera.rotationQuaternion));
         
         // Then set camera position to the throne location
         camera.position.copyFrom(targetSittingPos);
@@ -377,16 +357,11 @@ export class ThroneController {
             camera.position.copyFrom(rigTargetPosition);
         }
         
-        // Restore rotation
-        if (this.savedCameraRotation !== null) {
-            // Restore as quaternion to avoid interpolation
-            if (camera.rotationQuaternion) {
-                const halfYaw = this.savedCameraRotation * 0.5;
-                const restoredQuat = new Quaternion(0, Math.sin(halfYaw), 0, Math.cos(halfYaw));
-                camera.rotationQuaternion.copyFrom(restoredQuat);
-            } else {
-                camera.cameraRotation.y = this.savedCameraRotation;
-            }
+        // Restore rotation - reverse the rotation difference we applied when sitting
+        if (this.appliedYawDifference !== null && camera.rotationQuaternion) {
+            // Apply the inverse of the rotation we added
+            const inverseYawDifference = Quaternion.Inverse(this.appliedYawDifference);
+            camera.rotationQuaternion.copyFrom(inverseYawDifference.multiply(camera.rotationQuaternion));
         }
         
         this.isSitting = false;
