@@ -139,12 +139,25 @@ export class ThroneUI {
         const isNearThrone = this.throneController.getIsNearThrone();
         const standUpProgress = this.throneController.getStandUpProgress();
         
-        // Position the GUI plane above the throne when needed
+        // Position the GUI plane in front of the drum kit when needed
         if ((isNearThrone || isSitting) && this.guiPlane) {
-            const thronePos = this.throneController.getThronePosition();
-            if (thronePos) {
-                const targetPos = thronePos.clone();
-                targetPos.y += 2.0; // 2.0m above throne (raised from 1.5m)
+            const drumKitPos = this.throneController.getDrumKitPosition();
+            const drumKitRotation = this.throneController.getDrumKitRotation();
+            
+            if (drumKitPos && drumKitRotation) {
+                // Position UI 1m forward from drum kit center and 2m up
+                const forwardOffset = 1.0; // 1 meter forward
+                const heightOffset = 2.0; // 2 meters up
+                
+                // Calculate forward direction based on drum kit rotation
+                const forwardX = -forwardOffset * Math.sin(drumKitRotation.y);
+                const forwardZ = -forwardOffset * Math.cos(drumKitRotation.y);
+                
+                const targetPos = drumKitPos.clone();
+                targetPos.x += forwardX;
+                targetPos.y += heightOffset;
+                targetPos.z += forwardZ;
+                
                 this.guiPlane.position = targetPos;
                 this.guiPlane.setEnabled(true);
             }

@@ -410,6 +410,26 @@ export class ThroneController {
     }
     
     /**
+     * Get drum kit container position in world space
+     * Used for UI positioning
+     */
+    public getDrumKitPosition(): Vector3 | null {
+        return this.xrDrumKit.drumContainer.getAbsolutePosition();
+    }
+    
+    /**
+     * Get drum kit rotation (as quaternion if available)
+     * Used for calculating UI forward offset
+     */
+    public getDrumKitRotation(): { y: number } | null {
+        const drumContainer = this.xrDrumKit.drumContainer;
+        if (drumContainer.rotationQuaternion) {
+            return { y: drumContainer.rotationQuaternion.toEulerAngles().y };
+        }
+        return { y: drumContainer.rotation.y };
+    }
+    
+    /**
      * Update proximity distance threshold
      */
     public setProximityDistance(distance: number): void {
