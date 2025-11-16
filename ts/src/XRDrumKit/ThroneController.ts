@@ -4,6 +4,7 @@ import { WebXRInputSource } from "@babylonjs/core/XR/webXRInputSource";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 import XRDrumKit from "./XRDrumKit";
 import { Scene } from "@babylonjs/core/scene";
+import { Quaternion } from "@babylonjs/core/Maths/math.vector";
 
 /**
  * ThroneController - Manages sitting/standing at the drum throne
@@ -193,7 +194,19 @@ export class ThroneController {
         
         // Save current XR rig base position and rotation
         this.savedCameraPosition = camera.position.clone();
-        this.savedCameraRotation = camera.cameraRotation.y;
+        
+        // Save current camera Y rotation (before teleporting)
+        let currentCameraYaw = 0;
+        if (camera.rotationQuaternion) {
+            const camQuat = camera.rotationQuaternion;
+            currentCameraYaw = Math.atan2(
+                2 * (camQuat._w * camQuat._y + camQuat._x * camQuat._z),
+                1 - 2 * (camQuat._y * camQuat._y + camQuat._z * camQuat._z)
+            );
+        } else {
+            currentCameraYaw = camera.cameraRotation.y;
+        }
+        this.savedCameraRotation = currentCameraYaw;
         
         // Calculate target sitting position (where we want the XR rig base to be)
         const targetSittingPos = this.calculateSittingPosition();
@@ -202,15 +215,34 @@ export class ThroneController {
         const drumContainer = this.xrDrumKit.drumContainer;
         
         if (drumContainer.rotationQuaternion) {
-            // 6DOF uses quaternion rotation - apply it directly to camera
+            // Extract Y-axis rotation from drum kit (yaw only)
+            const drumQuat = drumContainer.rotationQuaternion;
+            
+            // Calculate drum yaw
+            const drumYaw = Math.atan2(
+                2 * (drumQuat._w * drumQuat._y + drumQuat._x * drumQuat._z),
+                1 - 2 * (drumQuat._y * drumQuat._y + drumQuat._z * drumQuat._z)
+            );
+            
+            // Calculate the Y rotation to add (difference between drum and current camera)
+            const yawDifference = drumYaw - currentCameraYaw;
+            
+            // Create a Y-only rotation quaternion for the difference
+            const halfDiff = yawDifference * 0.5;
+            const yRotationToAdd = new Quaternion(0, Math.sin(halfDiff), 0, Math.cos(halfDiff));
+            
+            // Ensure camera has a quaternion
             if (!camera.rotationQuaternion) {
-                camera.rotationQuaternion = drumContainer.rotationQuaternion.clone();
-            } else {
-                camera.rotationQuaternion.copyFrom(drumContainer.rotationQuaternion);
+                camera.rotationQuaternion = new Quaternion(0, 0, 0, 1);
             }
+            
+            // Multiply: new rotation = Y difference * current camera rotation
+            // This adds the Y rotation while preserving pitch and roll
+            camera.rotationQuaternion.copyFrom(yRotationToAdd.multiply(camera.rotationQuaternion));
         } else {
             // Fall back to regular Euler rotation
-            camera.cameraRotation.y = drumContainer.rotation.y;
+            const rotationToAdd = drumContainer.rotation.y - currentCameraYaw;
+            camera.cameraRotation.y = currentCameraYaw + rotationToAdd;
         }
         
         // Then set camera position to the throne location
