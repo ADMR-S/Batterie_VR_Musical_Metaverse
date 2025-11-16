@@ -37,6 +37,7 @@ export class ThroneController {
     
     // Sitting configuration
     private sittingHeightOffset: number = 1.4; // Height above throne position when sitting
+    private sittingForwardOffset: number = -0.1; // Distance forward from throne center (meters) - positive = toward drums
     
     private log: boolean = true;
     
@@ -85,17 +86,26 @@ export class ThroneController {
         });
         const throneMeshCenter = totalPosition.scale(1 / throneMeshes.length);
         
-        // Position player at the throne mesh center
+        // Get drum kit rotation to apply forward offset correctly
+        const drumKitRotation = this.xrDrumKit.drumContainer.rotation.y;
+        
+        // Calculate forward offset in world space (toward drums)
+        // In Babylon.js with Y-up, negative Z is typically forward when rotation is 0
+        const forwardOffsetX = -this.sittingForwardOffset * Math.sin(drumKitRotation);
+        const forwardOffsetZ = -this.sittingForwardOffset * Math.cos(drumKitRotation);
+        
+        // Position player at the throne mesh center plus forward offset
         const sittingPos = new Vector3(
-            throneMeshCenter.x,
+            throneMeshCenter.x + forwardOffsetX,
             throneMeshCenter.y + this.sittingHeightOffset,
-            throneMeshCenter.z
+            throneMeshCenter.z + forwardOffsetZ
         );
         
         if (this.log) {
             console.log(`[ThroneController] Sitting position calculated: ${sittingPos.toString()}`);
             console.log(`[ThroneController] Throne mesh center (world): ${throneMeshCenter.toString()}`);
             console.log(`[ThroneController] Number of throne meshes: ${throneMeshes.length}`);
+            console.log(`[ThroneController] Forward offset applied: ${this.sittingForwardOffset}m toward drums`);
         }
         
         return sittingPos;
