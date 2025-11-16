@@ -1,5 +1,4 @@
-Couper le déplacement lorsqu'on est assis
-Permettre d'ajuster la hauteur d'assise
+Réactivation mouvement depuis throne quand on se lève : OPTIONS CODEES EN DUR, A AMELIORER (réinjecter les options précédentes)
 
 Listeners mal attachés si la batterie est créée après que les manettes aient été ajoutées
 Idem Trône
@@ -8,6 +7,9 @@ Attendre un COLLISION_ENDED avant d'autoriser à nouveau une collision avec la m
 
 Coups manqués parfois ? (pas assez de frame ou vélocité trop basse ? Arrive cependant en général quand on tape vite)
 Double hit (comme s'il y avait 2 triggers ? Mesh + trigger et bug via détection par nom "trigger" ?)
+
+débug : afficher prompt à chaque fois qu'un pic de vélocité est détecté
+Si un pic est détecté mais pas de collision : problème, investiguer (frame loupées, trigger traversées en 1 frame, culling...)
 
 Ajuster limites orientation cymbales par type de cymbale
 Ajuster dynamisme cymbales (petits coups répétés -> la cymbale devrait revenir plus vite qu'elle ne part)

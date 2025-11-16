@@ -2,7 +2,7 @@ import { WebXRInputSource } from "@babylonjs/core/XR/webXRInputSource";
 //import { WebXRControllerPhysics } from "@babylonjs/core/XR/features/WebXRControllerPhysics";
 //import { Observable } from "@babylonjs/core/Misc/observable";
 import { Scene } from "@babylonjs/core/scene";
-import { MeshBuilder, StandardMaterial, PhysicsAggregate, PhysicsShapeType, PhysicsMotionType, PhysicsPrestepType } from "@babylonjs/core";
+import { MeshBuilder, StandardMaterial, PhysicsAggregate, PhysicsShapeType, PhysicsMotionType, PhysicsPrestepType, Color3 } from "@babylonjs/core";
 import { Vector3, Quaternion, Axis } from "@babylonjs/core/Maths/math";
 //import { PhysicsImpostor } from "@babylonjs/core/Physics/physicsImpostor";
 import XRDrumKit from "./XRDrumKit";
@@ -62,7 +62,13 @@ class XRDrumstick {
 
             
         mergedStick.name = this.name;
-        mergedStick.material = new StandardMaterial("stickMaterial", this.scene);
+        
+        // Create brown wood material for drumsticks
+        const stickMaterial = new StandardMaterial("stickMaterial_" + stickNumber, this.scene);
+        stickMaterial.diffuseColor = new Color3(0.6, 0.4, 0.2); // Brown wood color
+        stickMaterial.specularColor = new Color3(0.2, 0.2, 0.2); // Subtle shine
+        mergedStick.material = stickMaterial;
+        
 
         mergedStick.position = new Vector3(0, 1, 1);
         /*
