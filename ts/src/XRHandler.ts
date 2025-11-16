@@ -2,6 +2,8 @@ import { Scene } from "@babylonjs/core/scene";
 import { WebXRDefaultExperience } from "@babylonjs/core/XR/webXRDefaultExperience";
 import { WebXRAbstractMotionController } from "@babylonjs/core/XR/motionController/webXRAbstractMotionController";
 import { WebXRInputSource } from "@babylonjs/core/XR/webXRInputSource";
+import { WebXRFeatureName } from "@babylonjs/core/XR/webXRFeaturesManager";
+import { WebXRControllerComponent } from "@babylonjs/core/XR/motionController/webXRControllerComponent";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 
 export class XRHandler {
@@ -11,11 +13,6 @@ export class XRHandler {
     scene: Scene;
     private setupControllers: Set<string>;
     private controllerSetupCallbacks: Array<(controller: WebXRInputSource, motionController: WebXRAbstractMotionController) => void>;
-    
-    // Movement state
-    private xPositionInput: number = 0;
-    private yPositionInput: number = 0;
-    private rotationInput: number = 0;
 
     constructor(
         scene: Scene,
@@ -28,9 +25,82 @@ export class XRHandler {
         this.setupControllers = new Set<string>();
         this.controllerSetupCallbacks = [];
         
+        this.initializeCameraPhysics();
         this.initializeControllerDetection();
-        this.setupDefaultMovementControls();
+        this.initializeMovementFeature();
         this.monitorXRState();
+    }
+    
+    /**
+     * Initialize camera physics (gravity and collisions)
+     */
+    private initializeCameraPhysics() {
+        const camera = this.xr.baseExperience.camera;
+        
+        // Enable collisions and gravity
+        camera.checkCollisions = true;
+        camera.applyGravity = true;
+        camera.ellipsoid = new Vector3(1, 1, 1);
+        
+        console.log("[XR Handler] Camera physics initialized (gravity + collisions)");
+    }
+    
+    /**
+     * Initialize Babylon's WebXR MOVEMENT feature with custom configuration
+     */
+    private initializeMovementFeature() {
+        const featuresManager = this.xr.baseExperience.featuresManager;
+        
+        // Disable teleportation
+        try {
+            featuresManager.disableFeature(WebXRFeatureName.TELEPORTATION);
+        } catch (e) {
+            // Feature might not be enabled
+        }
+        
+        // Enable the MOVEMENT feature with our configuration
+        featuresManager.enableFeature(WebXRFeatureName.MOVEMENT, "latest", this.getMovementConfiguration());
+        
+        console.log("[XR Handler] Movement feature initialized");
+    }
+    
+    /**
+     * Get the MOVEMENT feature configuration
+     * This can be used to re-enable the feature with the same settings
+     */
+    public getMovementConfiguration() {
+        // Custom configuration: left stick = movement, right stick = rotation
+        const swappedHandednessConfiguration = [
+            {
+                // Right stick (right hand) -> rotation
+                allowedComponentTypes: [WebXRControllerComponent.THUMBSTICK_TYPE, WebXRControllerComponent.TOUCHPAD_TYPE],
+                forceHandedness: "right" as XRHandedness,
+                axisChangedHandler: (axes: any, movementState: any, featureContext: any, _xrInput: any) => {
+                    movementState.rotateX = Math.abs(axes.x) > featureContext.rotationThreshold ? axes.x : 0;
+                    movementState.rotateY = Math.abs(axes.y) > featureContext.rotationThreshold ? axes.y : 0;
+                },
+            },
+            {
+                // Left stick (left hand) -> movement
+                allowedComponentTypes: [WebXRControllerComponent.THUMBSTICK_TYPE, WebXRControllerComponent.TOUCHPAD_TYPE],
+                forceHandedness: "left" as XRHandedness,
+                axisChangedHandler: (axes: any, movementState: any, featureContext: any, _xrInput: any) => {
+                    movementState.moveX = Math.abs(axes.x) > featureContext.movementThreshold ? axes.x : 0;
+                    movementState.moveY = Math.abs(axes.y) > featureContext.movementThreshold ? axes.y : 0;
+                },
+            },
+        ];
+        
+        return {
+            xrInput: this.xr.input,
+            movementEnabled: true,
+            rotationEnabled: true,
+            movementSpeed: 0.2,
+            rotationSpeed: 0.3,
+            movementOrientationFollowsViewerPose: true,
+            movementOrientationFollowsController: false,
+            customRegistrationConfigurations: swappedHandednessConfiguration
+        };
     }
 
     /**
@@ -148,6 +218,15 @@ export class XRHandler {
             
             if (state === 2) { // IN_XR
                 console.log("[XR Handler] Entered XR immersive mode, checking for controllers...");
+                
+                // Set initial camera height well above collision boundary
+                // With ellipsoid (1,1,1), the bottom of the ellipsoid is at camera.y - 1
+                // So camera at y=2.0 means ellipsoid bottom at y=1.0 (safely above ground)
+                const cam = this.xr.baseExperience.camera;
+                if (cam.position.y < 2.0) {
+                    cam.position.y = 2.0;
+                }
+                
                 setTimeout(() => {
                     const controllers = this.xr.input.controllers;
                     console.log(`[XR Handler] Found ${controllers.length} controller(s) in immersive mode`);
@@ -161,38 +240,6 @@ export class XRHandler {
                         });
                     }
                 }, 500);
-            }
-        });
-    }
-
-    /**
-     * Setup default movement controls with left and right thumbsticks
-     */
-    private setupDefaultMovementControls() {
-        this.onControllerSetup((_controller, motionController) => {
-            if (motionController.handedness === 'left') {
-                const leftStick = motionController.getComponent("xr-standard-thumbstick");
-                if (leftStick) {
-                    console.log("[XR Handler] Left thumbstick component found");
-                    leftStick.onAxisValueChangedObservable.add((axisValues: any) => {
-                        this.xPositionInput = axisValues.x;
-                        this.yPositionInput = axisValues.y;
-                    });
-                } else {
-                    console.warn("[XR Handler] WARNING: Left thumbstick component not found!");
-                }
-            }
-            
-            if (motionController.handedness === 'right') {
-                const rightStick = motionController.getComponent("xr-standard-thumbstick");
-                if (rightStick) {
-                    console.log("[XR Handler] Right thumbstick component found");
-                    rightStick.onAxisValueChangedObservable.add((axisValues: any) => {
-                        this.rotationInput = axisValues.x;
-                    });
-                } else {
-                    console.warn("[XR Handler] WARNING: Right thumbstick component not found!");
-                }
             }
         });
     }
@@ -214,51 +261,6 @@ export class XRHandler {
                 }
             }
         });
-    }
-
-    /**
-     * Setup camera movement based on thumbstick inputs
-     * Call this in your render loop if you want basic movement
-     */
-    updateCameraMovement(moveSpeed: number = 0.05, rotationSpeed: number = 0.02) {
-        const camera = this.xr.baseExperience.camera;
-        
-        
-        const rotationValue = this.rotationInput;
-        const xValue = this.xPositionInput;
-        const yValue = this.yPositionInput;
-        
-        // Rotation continue proportionnelle à l'input du stick (instantanée, pas de lissage)
-        camera.cameraRotation.y += rotationValue * rotationSpeed;
-        
-        // Forward/backward and strafe movement relative to camera direction
-        if (xValue !== 0 || yValue !== 0) {
-            const forward = camera.getDirection(new Vector3(0, 0, 1));
-            const right = camera.getDirection(new Vector3(1, 0, 0));
-            
-            // Projection sur le plan horizontal (y = 0)
-            forward.y = 0;
-            right.y = 0;
-            forward.normalize();
-            right.normalize();
-            
-            // Appliquer le mouvement
-            const movement = forward.scale(-yValue * moveSpeed)
-                .add(right.scale(xValue * moveSpeed));
-            
-            camera.position.addInPlace(movement);
-        }
-    }
-
-    /**
-     * Get current thumbstick input values
-     */
-    getMovementInput(): { x: number, y: number, rotation: number } {
-        return {
-            x: this.xPositionInput,
-            y: this.yPositionInput,
-            rotation: this.rotationInput
-        };
     }
 
     /**

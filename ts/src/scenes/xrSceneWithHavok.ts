@@ -40,6 +40,7 @@ export class XRSceneWithHavok implements CreateSceneClass {
 
     // Our built-in 'ground' shape.
     const ground: Mesh = MeshBuilder.CreateGround("ground", { width: 100, height: 100 }, scene);
+    ground.checkCollisions = true; // Enable collision detection for camera
 
     const xr = await scene.createDefaultXRExperienceAsync({
         floorMeshes: [ground],
@@ -126,13 +127,10 @@ export class XRSceneWithHavok implements CreateSceneClass {
 
     //addXRControllersRoutine(scene, xr, eventMask); //eventMask est-il indispensable ?
     
-    // Initialize XR Handler for centralized movement controls
+    // Initialize XR Handler for controller detection and movement setup
+    //@ts-ignore
     const xrHandler = new XRHandler(scene, xr);
     
-    // Use XRHandler's movement in render loop
-    scene.onBeforeRenderObservable.add(() => {
-        xrHandler.updateCameraMovement(0.05, 0.02);
-    });
     // Add collision detection for the ground to prevent objects from falling through
     groundAggregate.body.getCollisionObservable().add((collisionEvent: any) => {
       if (collisionEvent.type === "COLLISION_STARTED") {

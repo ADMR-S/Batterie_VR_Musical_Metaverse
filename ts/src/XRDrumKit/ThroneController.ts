@@ -5,6 +5,9 @@ import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 import XRDrumKit from "./XRDrumKit";
 import { Scene } from "@babylonjs/core/scene";
 import { Quaternion } from "@babylonjs/core/Maths/math.vector";
+import { WebXRFeatureName } from "@babylonjs/core/XR/webXRFeaturesManager";
+import { WebXRAbstractMotionController } from "@babylonjs/core/XR/motionController/webXRAbstractMotionController";
+import { WebXRControllerComponent } from "@babylonjs/core/XR/motionController/webXRControllerComponent";
 
 /**
  * ThroneController - Manages sitting/standing at the drum throne
@@ -15,6 +18,8 @@ import { Quaternion } from "@babylonjs/core/Maths/math.vector";
  * - Automatic drumstick placement in hands when sitting
  * - Drumsticks released when standing up
  * - Saves/restores user position and height
+ * - Disables MOVEMENT feature when sitting, re-enables when standing
+ * - Height adjustment with left stick while seated (0.5m-1.5m)
  */
 export class ThroneController {
     private xr: WebXRDefaultExperience;
@@ -26,6 +31,9 @@ export class ThroneController {
     private isSitting: boolean = false;
     private savedCameraPosition: Vector3 | null = null;
     private appliedYawDifference: Quaternion | null = null; // The Y rotation we added when sitting
+    
+    // Movement feature state - just track if it was enabled
+    private movementWasEnabled: boolean = false;
     
     // Proximity detection
     private proximityDistance: number = 1.5; // meters - distance to activate "sit" prompt
@@ -39,6 +47,11 @@ export class ThroneController {
     // Sitting configuration
     private sittingHeightOffset: number = 1.4; // Height above throne position when sitting
     private sittingForwardOffset: number = -0.1; // Distance forward from throne center (meters) - positive = toward drums
+    
+    // Height adjustment
+    private readonly MIN_SITTING_HEIGHT = 0.5; // meters
+    private readonly MAX_SITTING_HEIGHT = 1.5; // meters
+    private readonly HEIGHT_ADJUSTMENT_SPEED = 0.01; // meters per frame
     
     private log: boolean = true;
     
@@ -54,7 +67,12 @@ export class ThroneController {
         this.setupControllers();
         
         // Monitor proximity to throne
-        this.scene.onBeforeRenderObservable.add(() => this.checkProximity());
+        this.scene.onBeforeRenderObservable.add(() => {
+            this.checkProximity();
+            if (this.isSitting) {
+                this.handleHeightAdjustment();
+            }
+        });
         
         if (this.log) {
             console.log("[ThroneController] Initialized. Press X near throne to sit.");
@@ -171,10 +189,15 @@ export class ThroneController {
         
         // Calculate sitting position on the fly to get latest throne position
         const thronePos = this.throneNode.getAbsolutePosition();
-        const distance = Vector3.Distance(cameraPos, thronePos);
+        
+        // Only check horizontal distance (XZ plane), ignore height difference
+        const horizontalDistance = Math.sqrt(
+            Math.pow(cameraPos.x - thronePos.x, 2) + 
+            Math.pow(cameraPos.z - thronePos.z, 2)
+        );
         
         const wasNear = this.isNearThrone;
-        this.isNearThrone = distance <= this.proximityDistance;
+        this.isNearThrone = horizontalDistance <= this.proximityDistance;
         
         // Log when entering/exiting proximity
         if (this.isNearThrone && !wasNear && this.log) {
@@ -191,6 +214,22 @@ export class ThroneController {
         if (this.isSitting) return;
         
         const camera = this.xr.baseExperience.camera;
+        const featuresManager = this.xr.baseExperience.featuresManager;
+        
+        // Check if MOVEMENT feature is enabled and disable it
+        const movementFeature = featuresManager.getEnabledFeature(WebXRFeatureName.MOVEMENT);
+        this.movementWasEnabled = movementFeature !== null;
+        
+        if (this.movementWasEnabled) {
+            featuresManager.disableFeature(WebXRFeatureName.MOVEMENT);
+            if (this.log) {
+                console.log("[ThroneController] MOVEMENT feature disabled");
+            }
+        }
+        
+        // Disable gravity while sitting to prevent camera drift
+        // Keep collisions enabled so we don't fall through throne
+        camera.applyGravity = false;
         
         // Save current XR rig base position and rotation
         this.savedCameraPosition = camera.position.clone();
@@ -224,6 +263,9 @@ export class ThroneController {
         
         // Apply the Y rotation difference to current camera (preserves pitch/roll)
         camera.rotationQuaternion.copyFrom(yawDifference.multiply(camera.rotationQuaternion));
+        
+        // Stop camera velocity before teleporting to prevent drift
+        this.stopCameraVelocity(camera);
         
         // Then set camera position to the throne location
         camera.position.copyFrom(targetSittingPos);
@@ -342,9 +384,13 @@ export class ThroneController {
         if (!this.isSitting) return;
         
         const camera = this.xr.baseExperience.camera;
+        const featuresManager = this.xr.baseExperience.featuresManager;
         
         // Release drumsticks
         this.releaseDrumsticks();
+        
+        // Stop camera velocity before teleporting to prevent drift
+        this.stopCameraVelocity(camera);
         
         // Calculate current physical offset (might have changed while sitting)
         const currentPhysicalOffset = camera.globalPosition.subtract(camera.position);
@@ -363,6 +409,50 @@ export class ThroneController {
             const inverseYawDifference = Quaternion.Inverse(this.appliedYawDifference);
             camera.rotationQuaternion.copyFrom(inverseYawDifference.multiply(camera.rotationQuaternion));
         }
+        
+        // Re-enable MOVEMENT feature if it was enabled before
+        // Must provide full configuration including xrInput
+        if (this.movementWasEnabled) {
+            // Custom configuration: left stick = movement, right stick = rotation
+            const swappedHandednessConfiguration = [
+                {
+                    // Right stick (right hand) -> rotation
+                    allowedComponentTypes: [WebXRControllerComponent.THUMBSTICK_TYPE, WebXRControllerComponent.TOUCHPAD_TYPE],
+                    forceHandedness: "right" as XRHandedness,
+                    axisChangedHandler: (axes: any, movementState: any, featureContext: any, _xrInput: any) => {
+                        movementState.rotateX = Math.abs(axes.x) > featureContext.rotationThreshold ? axes.x : 0;
+                        movementState.rotateY = Math.abs(axes.y) > featureContext.rotationThreshold ? axes.y : 0;
+                    },
+                },
+                {
+                    // Left stick (left hand) -> movement
+                    allowedComponentTypes: [WebXRControllerComponent.THUMBSTICK_TYPE, WebXRControllerComponent.TOUCHPAD_TYPE],
+                    forceHandedness: "left" as XRHandedness,
+                    axisChangedHandler: (axes: any, movementState: any, featureContext: any, _xrInput: any) => {
+                        movementState.moveX = Math.abs(axes.x) > featureContext.movementThreshold ? axes.x : 0;
+                        movementState.moveY = Math.abs(axes.y) > featureContext.movementThreshold ? axes.y : 0;
+                    },
+                },
+            ];
+            
+            featuresManager.enableFeature(WebXRFeatureName.MOVEMENT, "latest", {
+                xrInput: this.xr.input,
+                movementEnabled: true,
+                rotationEnabled: true,
+                movementSpeed: 0.2,
+                rotationSpeed: 0.3,
+                movementOrientationFollowsViewerPose: true,
+                movementOrientationFollowsController: false,
+                customRegistrationConfigurations: swappedHandednessConfiguration
+            });
+            
+            if (this.log) {
+                console.log("[ThroneController] MOVEMENT feature re-enabled");
+            }
+        }
+        
+        // Re-enable gravity when standing up
+        camera.applyGravity = true;
         
         this.isSitting = false;
         this.isHoldingStandUpButton = false;
@@ -455,6 +545,55 @@ export class ThroneController {
      */
     public setSittingHeight(height: number): void {
         this.sittingHeightOffset = height;
+    }
+    
+    /**
+     * Handle height adjustment while seated using left stick Y-axis
+     * Only active when sitting down
+     */
+    private handleHeightAdjustment(): void {
+        const controllers = this.xr.input.controllers;
+        
+        // Find the left controller
+        for (const controller of controllers) {
+            if (controller.inputSource.handedness === 'left' && controller.motionController) {
+                const motionController = controller.motionController as WebXRAbstractMotionController;
+                const leftStick = motionController.getComponent("xr-standard-thumbstick");
+                
+                if (leftStick && leftStick.axes) {
+                    const yAxis = leftStick.axes.y;
+                    
+                    // Only adjust if there's meaningful input (deadzone)
+                    if (Math.abs(yAxis) > 0.1) {
+                        const camera = this.xr.baseExperience.camera;
+                        
+                        // Adjust height: stick up = higher, stick down = lower
+                        const heightChange = -yAxis * this.HEIGHT_ADJUSTMENT_SPEED;
+                        const newHeight = camera.position.y + heightChange;
+                        
+                        // Clamp to min/max range
+                        if (newHeight >= this.MIN_SITTING_HEIGHT && newHeight <= this.MAX_SITTING_HEIGHT) {
+                            camera.position.y = newHeight;
+                        }
+                    }
+                }
+                break; // Found left controller, no need to continue
+            }
+        }
+    }
+    
+    /**
+     * Stop camera momentum/velocity to prevent drift during teleport
+     * This resets the camera's direction and rotation vectors to zero
+     */
+    private stopCameraVelocity(camera: any): void {
+        // Reset camera direction and rotation vectors to prevent drift
+        camera.cameraDirection.setAll(0);
+        camera.cameraRotation.setAll(0);
+        
+        if (this.log) {
+            console.log("[ThroneController] Camera velocity stopped");
+        }
     }
 }
 
