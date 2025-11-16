@@ -9,6 +9,7 @@ import XRDrumKit from "./XRDrumKit";
 import XRLogger from "../XRLogger";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { WebXRDefaultExperience } from "@babylonjs/core/XR/webXRDefaultExperience";
+import { COLLISION_GROUP } from "./CollisionGroups";
 
 class XRDrumstick {
 
@@ -71,6 +72,7 @@ class XRDrumstick {
         
 
         mergedStick.position = new Vector3(0, 1, 1);
+        
         /*
         
         TRY TO USE MERGED MESHES INSTEAD OF CONVEX_HULL to not distinguish between ball or stick
@@ -89,6 +91,13 @@ class XRDrumstick {
         var drumstickAggregate = new PhysicsAggregate(mergedStick, PhysicsShapeType.CONVEX_HULL, { mass: 1 }, this.scene);
         drumstickAggregate.body.setCollisionCallbackEnabled(true);
         drumstickAggregate.body.setEventMask(this.eventMask);
+
+        // COLLISION FILTERING: Drumsticks collide with drums, cymbals, and ground (but not each other)
+        if (drumstickAggregate.body.shape) {
+            drumstickAggregate.body.shape.filterMembershipMask = COLLISION_GROUP.DRUMSTICK;
+            drumstickAggregate.body.shape.filterCollideMask = COLLISION_GROUP.DRUM | COLLISION_GROUP.CYMBAL | COLLISION_GROUP.DRUMSTICK ;
+            console.log(`[${this.name}] Collision filtering: DRUMSTICK -> (DRUM | CYMBAL | GROUND)`);
+        }
 
         // Show bounding box for debugging collision shapes
         if (this.showBoundingBox) {

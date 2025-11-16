@@ -8,6 +8,7 @@ import XRDrumKit from "../XRDrumKit";
 import { DRUMKIT_CONFIG } from "../XRDrumKitConfig";
 import { CollisionUtils } from "../CollisionUtils";
 import { DrumComponentLogger } from "./XRDrumComponentLogger";
+import { COLLISION_GROUP } from "../CollisionGroups";
 
 class XRCymbal implements XRDrumComponent {
 
@@ -96,6 +97,12 @@ class XRCymbal implements XRDrumComponent {
             // Use regular collisions (NOT triggers) so the cymbal can physically move
             triggerAggregate.body.setCollisionCallbackEnabled(true);
             triggerAggregate.body.setEventMask(this.xrDrumKit.eventMask);
+            
+            // COLLISION FILTERING: Cymbals only collide with drumsticks
+            if (triggerAggregate.body.shape) {
+                triggerAggregate.body.shape.filterMembershipMask = COLLISION_GROUP.CYMBAL;
+                triggerAggregate.body.shape.filterCollideMask = COLLISION_GROUP.DRUMSTICK;
+            }
             
             triggerAggregate.body.setMotionType(PhysicsMotionType.DYNAMIC);
             // TELEPORT prestep keeps cymbal following the drum kit when it moves
