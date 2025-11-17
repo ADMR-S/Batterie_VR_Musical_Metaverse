@@ -12,6 +12,7 @@ import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { WebXRDefaultExperience } from "@babylonjs/core/XR/webXRDefaultExperience";
 import { COLLISION_GROUP } from "./CollisionGroups";
 import { DRUMKIT_CONFIG } from "./XRDrumKitConfig";
+import { PhysicsShapeSphere, PhysicsShapeCapsule } from "@babylonjs/core/Physics/v2/physicsShape";
 
 class XRDrumstick {
 
@@ -70,7 +71,32 @@ class XRDrumstick {
         
         mergedStick.position = new Vector3(0, 1, 1);
         
-        var drumstickAggregate = new PhysicsAggregate(mergedStick, PhysicsShapeType.CONVEX_HULL, { mass: DRUMKIT_CONFIG.drumstick.mass }, this.scene);
+        // Create COMPOUND physics shape: Capsule (stick) + Sphere (ball) = Single collision object
+        // This prevents double-hits when both parts pass through a trigger
+        var drumstickAggregate = new PhysicsAggregate(
+            mergedStick, 
+            PhysicsShapeType.CONTAINER,  // Container for compound shapes
+            { mass: DRUMKIT_CONFIG.drumstick.mass }, 
+            this.scene
+        );
+        
+        // Add capsule shape for the stick portion (full length of stick)
+        const capsuleShape = new PhysicsShapeCapsule(
+            new Vector3(0, -stickLength / 2, 0),  // Point A (bottom of stick)
+            new Vector3(0, stickLength / 2, 0),   // Point B (top of stick where ball starts)
+            stickDiameter / 2,                     // Radius
+            this.scene
+        );
+        drumstickAggregate.shape.addChildFromParent(mergedStick, capsuleShape, mergedStick);
+        
+        // Add sphere shape for the ball tip
+        const sphereShape = new PhysicsShapeSphere(
+            new Vector3(0, stickLength / 2, 0),   // Ball position at tip (same as capsule top point)
+            ballDiameter / 2,                      // Ball radius
+            this.scene
+        );
+        drumstickAggregate.shape.addChildFromParent(mergedStick, sphereShape, mergedStick);
+        
         drumstickAggregate.body.setCollisionCallbackEnabled(true);
         drumstickAggregate.body.setEventMask(this.eventMask);
 
@@ -84,7 +110,7 @@ class XRDrumstick {
         // Show bounding box for debugging collision shapes
         if (this.showBoundingBox) {
             mergedStick.showBoundingBox = true;
-            console.log(`[${this.name}] Bounding box enabled. Convex hull shape: ${mergedStick.getTotalVertices()} vertices`);
+            console.log(`[${this.name}] Bounding box enabled. Compound shape: Capsule + Sphere`);
         }
 
         xr.input.onControllerAddedObservable.add((controller: WebXRInputSource) => {

@@ -35,4 +35,6 @@ Changer enveloppe en fonction du lieu de la frappe (centre =/= bords drums)
 
 Hi-Hat trop sensible (fusionner les deux triggers ? Attention à la zone intermédiaire vide entre les deux parties, il faudrait remplir le trigger)
 
+Si la batterie n'est pas orientée vers le sol, détecter un mouvement descendant ou ascendant ne suffit pas
+
 Collisions entre drumsticks : ajouter son
