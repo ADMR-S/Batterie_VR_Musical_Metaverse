@@ -14,10 +14,10 @@ export const DRUMKIT_CONFIG = {
             mass: 5, // Mass for linear motion (not critical for cymbals that don't move linearly)
             inertia: 4.0, // Moment of inertia - controls rotational resistance (higher = harder to rotate)
             angularDamping: 2, // Higher damping = faster velocity decay after hit
-            springStrength: 8.0, // Reduced from 20.0 - smoother return to rest (less jarring)
+            springStrength: 8.0, // Torsional spring strength to return to rest position
             springDamping: 3, // Reduced from 5 - allows more natural movement
-            maxRotationXY: 15 * (Math.PI / 180), // 35 degrees limit on X and Z axes (tilt)
-            bounceEnergyLoss: 0.5, // 50% energy retained - more dramatic bounce
+            maxRotationXY: 15 * (Math.PI / 180), // 15 degrees limit on X and Z axes (tilt)
+            bounceEnergyLoss: 0.5, // 50% energy retained
             impulseScale: 0.25, // Scale factor for angular impulse from hits 
         }
     },
@@ -82,6 +82,14 @@ export const DRUMKIT_CONFIG = {
     // Drumstick pickup configuration
     drumstick: {
         pickupTransitionMs: 200, // Time (ms) to wait before switching from TELEPORT to ACTION prestep
+        
+        // Drumstick dimensions
+        stickLength: 0.4,
+        stickDiameter: 0.02,
+        ballDiameter: 0.03,
+        
+        // Physics
+        mass: 1,
     },
     
     // Drum kit 3D model configuration

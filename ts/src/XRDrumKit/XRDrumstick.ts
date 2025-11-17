@@ -40,9 +40,9 @@ class XRDrumstick {
     }
 
     createDrumstick(xr: WebXRDefaultExperience, stickNumber : Number) {
-        const stickLength = 0.4;
-        const stickDiameter = 0.02;
-        const ballDiameter = 0.03;
+        const stickLength = DRUMKIT_CONFIG.drumstick.stickLength;
+        const stickDiameter = DRUMKIT_CONFIG.drumstick.stickDiameter;
+        const ballDiameter = DRUMKIT_CONFIG.drumstick.ballDiameter;
 
         const stick = MeshBuilder.CreateCylinder("stick" + stickNumber, { height: stickLength, diameter: stickDiameter }, this.scene);
         const ball = MeshBuilder.CreateSphere("ball" + stickNumber, { diameter: ballDiameter }, this.scene);
@@ -53,14 +53,13 @@ class XRDrumstick {
         stick.material = new StandardMaterial("stickMaterial", this.scene);
         ball.material = new StandardMaterial("ballMaterial", this.scene);
 
-            // Merge the stick and ball into a single mesh
+        // Merge the stick and ball into a single mesh
         const mergedStick = Mesh.MergeMeshes([stick, ball], true, false, undefined, false, true);
         if (!mergedStick) {
-        console.error("Failed to merge drumstick meshes");
-        return;
+            console.error("Failed to merge drumstick meshes");
+            return;
         }
-
-            
+        
         mergedStick.name = this.name;
         
         // Create brown wood material for drumsticks
@@ -69,25 +68,9 @@ class XRDrumstick {
         stickMaterial.specularColor = new Color3(0.2, 0.2, 0.2); // Subtle shine
         mergedStick.material = stickMaterial;
         
-
         mergedStick.position = new Vector3(0, 1, 1);
         
-        /*
-        
-        TRY TO USE MERGED MESHES INSTEAD OF CONVEX_HULL to not distinguish between ball or stick
-        
-        const avgPosition = stick.position.add(ball.position).scale(0.5);
-
-        var mergeArray = [stick, ball];
-        const mergedStick1 = BABYLON.Mesh.MergeMeshes(mergeArray, false, false, false, false, true);
-        const mergedStick2 = mergedStick1.clone("stick2_merged");
-        mergedStick1.setPivotMatrix(BABYLON.Matrix.Translation(-avgPosition.x, -avgPosition.y, -avgPosition.z), false);
-        mergedStick2.setPivotMatrix(BABYLON.Matrix.Translation(-avgPosition.x, -avgPosition.y, -avgPosition.z), false);
-        
-        console.log("Merged stick 1 : " + mergedStick1.name);
-        console.log("Merged stick 2 : " + mergedStick2.name);
-        */
-        var drumstickAggregate = new PhysicsAggregate(mergedStick, PhysicsShapeType.CONVEX_HULL, { mass: 1 }, this.scene);
+        var drumstickAggregate = new PhysicsAggregate(mergedStick, PhysicsShapeType.CONVEX_HULL, { mass: DRUMKIT_CONFIG.drumstick.mass }, this.scene);
         drumstickAggregate.body.setCollisionCallbackEnabled(true);
         drumstickAggregate.body.setEventMask(this.eventMask);
 
@@ -268,7 +251,7 @@ class XRDrumstick {
         // If drumstick is attached to a controller, update its transform to follow the controller
         // NOTE: This section is NOT needed if using APPROACH 2 (parenting)
         if (this.controllerAttached && this.controllerAttached.grip) {
-            const stickLength = 0.4; // Same as in createDrumstick
+            const stickLength = DRUMKIT_CONFIG.drumstick.stickLength;
             
             // Get controller's world transform
             const controllerPosition = this.controllerAttached.grip.absolutePosition.clone();
