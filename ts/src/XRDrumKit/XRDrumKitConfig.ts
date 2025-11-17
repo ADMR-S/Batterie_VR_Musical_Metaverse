@@ -14,10 +14,10 @@ export const DRUMKIT_CONFIG = {
             mass: 5, // Mass for linear motion (not critical for cymbals that don't move linearly)
             inertia: 4.0, // Moment of inertia - controls rotational resistance (higher = harder to rotate)
             angularDamping: 2, // Higher damping = faster velocity decay after hit
-            springStrength: 8.0, // Torsional spring strength to return to rest position
+            springStrength: 20.0, // Torsional spring strength to return to rest position
             springDamping: 3, // Reduced from 5 - allows more natural movement
             maxRotationXY: 15 * (Math.PI / 180), // 15 degrees limit on X and Z axes (tilt)
-            bounceEnergyLoss: 0.5, // 50% energy retained
+            bounceEnergyRetained: 0.25, // 25% energy retained (75% loss)
             impulseScale: 0.25, // Scale factor for angular impulse from hits 
         }
     },
@@ -114,7 +114,7 @@ export const DRUMKIT_CONFIG = {
     // Debug configuration
     debug: {
         showBoundingBoxes: false,
-        enablePhysicsViewer: true,
+        enablePhysicsViewer: false,
         logCollisions: true,
         logVelocity: true, 
         logCymbalPhysics: false, // cymbal-specific physics debugging
