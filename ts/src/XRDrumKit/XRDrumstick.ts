@@ -23,7 +23,7 @@ class XRDrumstick {
     showBoundingBox: boolean = false; // Display collision bounding boxes for debugging
     controllerAttached: WebXRInputSource | null = null;
     private transitionTimeout: number | null = null; // Timeout for TELEPORT -> ACTION transition
-    log = true;
+    log = false;
     xrLogger : XRLogger; //To get controller positions, consider moving this logic outside this class
 
     constructor(xr : WebXRDefaultExperience, xrDrumKit: XRDrumKit, scene: Scene, eventMask: number, stickNumber : Number, xrLogger : XRLogger) {
@@ -293,6 +293,20 @@ class XRDrumstick {
             
             // Sync physics body with the visual transform
             this.drumstickAggregate.body.setTargetTransform(finalPosition, finalRotation);
+            
+            // VELOCITY LOGGING FOR TUNING - Only log when drumstick is held
+            if(this.log && this.controllerAttached) {
+                // Get velocities directly from physics body
+                const linearVel = this.drumstickAggregate.body.getLinearVelocity();
+                const angularVel = this.drumstickAggregate.body.getAngularVelocity();
+                
+                const linearSpeed = linearVel.length();
+                const angularSpeed = angularVel.length();
+                const combinedSpeed = linearSpeed + (angularSpeed * DRUMKIT_CONFIG.velocity.angularWeight);
+                
+                // Log every frame to capture peak velocities during fast movements
+                console.log(`[${this.name}] Linear: ${linearSpeed.toFixed(3)} m/s | Angular: ${angularSpeed.toFixed(3)} rad/s | Combined: ${combinedSpeed.toFixed(3)}`);
+            }
         }
     }
 

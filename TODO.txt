@@ -1,3 +1,7 @@
+Clean code
+
+Collisions avec cymbales un peu aggressives
+
 Coups manqués parfois ? (pas assez de frame ou vélocité trop basse ? Arrive cependant en général quand on tape vite)
 débug : afficher prompt à chaque fois qu'un pic de vélocité est détecté
 Si un pic est détecté mais pas de collision : problème, investiguer (frame loupées, trigger traversées en 1 frame, culling...)

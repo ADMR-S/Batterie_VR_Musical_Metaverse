@@ -6,8 +6,8 @@ export const DRUMKIT_CONFIG = {
     physics: {
         scaleFactor: 0.7, // Scale factor for physics trigger shapes (0.7 = 70% of visual size)
         debounceMs: 50, // Minimum time between hits (50ms = 20 hits/second max)
-        minVelocity: 0.05, // Minimum detectable hit (m/s)
-        maxVelocity: 3.0, // Maximum expected hit speed (m/s)
+        minVelocity: 0.5, // Minimum detectable hit (m/s)
+        maxVelocity: 35.0, // Maximum expected hit speed (m/s) 
         velocityCurve: 0.85, // Power curve for velocity response (0.5 = very sensitive, 1.0 = linear)
         
         // Cymbal-specific physics
@@ -76,7 +76,7 @@ export const DRUMKIT_CONFIG = {
     
     // Velocity calculation configuration
     velocity: {
-        angularWeight: 0.25, // Weight of angular velocity in combined speed calculation
+        angularWeight: 0.25, // Weight of angular velocity in combined speed calculation - increased from 0.25 based on testing
     },
     
     // Drumstick pickup configuration
