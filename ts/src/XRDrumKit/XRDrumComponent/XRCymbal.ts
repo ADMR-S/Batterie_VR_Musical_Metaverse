@@ -207,7 +207,7 @@ class XRCymbal implements XRDrumComponent {
                     }
                     clampedX = Math.sign(offsetX) * maxRotationXY;
                     // Bounce back with energy loss
-                    newAngularVelocity.x = -angularVelocity.x * DRUMKIT_CONFIG.physics.cymbal.bounceEnergyLoss;
+                    newAngularVelocity.x = -angularVelocity.x * DRUMKIT_CONFIG.physics.cymbal.bounceEnergyRetained;
                     needsRotationClamp = true;
                 }
                 
@@ -218,7 +218,7 @@ class XRCymbal implements XRDrumComponent {
                     }
                     clampedZ = Math.sign(offsetZ) * maxRotationXY;
                     // Bounce back with energy loss
-                    newAngularVelocity.z = -angularVelocity.z * DRUMKIT_CONFIG.physics.cymbal.bounceEnergyLoss;
+                    newAngularVelocity.z = -angularVelocity.z * DRUMKIT_CONFIG.physics.cymbal.bounceEnergyRetained;
                     needsRotationClamp = true;
                 }
                 
