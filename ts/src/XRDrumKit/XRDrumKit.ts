@@ -56,7 +56,7 @@ class XRDrumKit {
     throneUI: ThroneUI | undefined; // UI for throne interaction prompts
     path = DRUMKIT_CONFIG.model.path; // Path to the 3D model folder
     log = false;
-    scaleFactor: number = DRUMKIT_CONFIG.physics.scaleFactor; // Scale factor for physics trigger shapes (0.7 = 70% of visual size)
+    scaleFactor: number = DRUMKIT_CONFIG.model.scaleFactor; // Scale factor for physics trigger shapes (0.7 = 70% of visual size)
 
     constructor(audioContext: AudioContext, scene: Scene, eventMask: number, xr: WebXRDefaultExperience, hk: any, assetsManager: AssetsManager) {
         this.audioContext = audioContext;

@@ -4,7 +4,6 @@
 export const DRUMKIT_CONFIG = {
     // Physics configuration
     physics: {
-        scaleFactor: 0.7, // Scale factor for physics trigger shapes (0.7 = 70% of visual size)
         debounceMs: 50, // Minimum time between hits (50ms = 20 hits/second max)
         minVelocity: 0.5, // Minimum detectable hit (m/s)
         maxVelocity: 35.0, // Maximum expected hit speed (m/s) 
