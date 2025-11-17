@@ -12,13 +12,13 @@ export const DRUMKIT_CONFIG = {
         
         // Cymbal-specific physics
         cymbal: {
-            mass: 5, // Heavier for more realistic feel
-            angularDamping: 0.3, // Very low damping - spring force controls restoration, not air resistance
-            springStrength: 15.0, // Strong spring for pronounced bounce-back
-            springDamping: 1.5, // Critical damping to stop oscillation at rest position
+            mass: 5, // Mass doesn't affect angular resistance much - use damping instead
+            angularDamping: 2, // Higher damping = harder to rotate
+            springStrength: 20.0, // Stronger spring = more resistance to tilting 
+            springDamping: 5, // Higher damping = less oscillation 
             maxRotationXY: 15 * (Math.PI / 180), // 35 degrees limit on X and Z axes (tilt)
             bounceEnergyLoss: 0.5, // 50% energy retained - more dramatic bounce
-            impulseScale: 0.25, // Scale factor for angular impulse from hits
+            impulseScale: 0.25, // Scale factor for angular impulse from hits 
         }
     },
 

@@ -321,7 +321,10 @@ class XRCymbal implements XRDrumComponent {
                     this.logger.logVelocity(linear, angular, currentVelocity, combinedSpeed);
                 }
 
-                // MANUAL IMPULSE APPLICATION:
+                // MANUAL IMPULSE APPLICATION - COMMENTED OUT:
+                // With ACTION prestep type, drumsticks now transfer momentum naturally through physics
+                // Manual impulse is no longer needed and makes cymbals feel too light
+                /*
                 // Since drumsticks use TELEPORT prestep, they don't transfer momentum naturally
                 // We need to manually apply an angular impulse to the cymbal based on the stick velocity
                 if (this.cymbalAggregate) {
@@ -373,6 +376,7 @@ class XRCymbal implements XRDrumComponent {
                         );
                     }
                 }
+                */
 
                 // Vibrate the controller
                 CollisionUtils.triggerHapticFeedback(drumstick.controllerAttached, currentVelocity);
