@@ -89,9 +89,9 @@ export const DRUMKIT_CONFIG = {
     // Debug configuration
     debug: {
         showBoundingBoxes: false,
-        enablePhysicsViewer: false,
-        logCollisions: false, // Disabled - too verbose
-        logVelocity: false, // Disabled - too verbose
-        logCymbalPhysics: true, // Enable cymbal-specific physics debugging
+        enablePhysicsViewer: true,
+        logCollisions: true,
+        logVelocity: true, 
+        logCymbalPhysics: true, // cymbal-specific physics debugging
     }
 };

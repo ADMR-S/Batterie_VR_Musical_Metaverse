@@ -16,30 +16,13 @@ import ThroneController from "./ThroneController";
 import ThroneUI from "./ThroneUI";
 
 //TODO : 
-    //Baguettes qui s'entrechoquent = son ? ("1,2,3,4 !"...)
-    //Respecter UML (drumComponents est un tableau de transformNode)
-    //Améliorer releaseStick  
-    //Rapport
-    //Switch_to_static() / Switch_to_dynamic() ?
-    //Ajuster vibrations collision controllers
-    //Ajuster échelle de la batterie (sur blender)
-    //Optimiser scène et modèle 3D pour éviter les ralentissements
-    //Remplacer les triggers havok par de réelles collisions avec les meshs appropriés ? (utile si les cymbales doivent bouger) -> Voir pour collision entre baguettes et objets statiques
-    //Pourquoi le paramètre de vélocité sur scheduleEvent ne fonctionne pas ? (même avec valeurs manuelles)
-    //Retour haptique et visuel collision baguettes (vibrations, tremblement du tambour, oscillation des cymbales...)
     //Ajouter option pour sortir un enregistrement sous forme de piano roll / liste d'évènements MIDI
     //Ajuster vélocité IHM
-    //Commande pour reset l'emplacement des drumSticks
-    //Cleaner
-    //Bien vérifier qu'on ne peut pas taper par dessous pour les tambours mais ok pour cymbales
-    //Empêcher les objets de passer à travers le sol
     //Sons différents en bordure / au centre de la peau ? (+ bordure métallique)
     //Pédale Grosse caisse / Hi-Hat ? (appuyer sur un bouton en attendant d'ajouter des pédales midi ?)
     //Tenir les baguettes avec la gachette interne plutôt ? (permet d'avoir une autre position de main, plus adaptée ?)
-    //Replace invisible cube meshes for controllers by physicsImpostors ?
     //Use a 0 distance constraint to snap drumsticks to hands ? 
-    //Test interactions projet Ismail
-
+    
 //Intégration avec Musical Metaverse (interface PedalNode3D) :
     //EventBus Emitter
     //Ajouter signature de la batterie

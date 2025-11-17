@@ -18,7 +18,7 @@ class XRDrumstick {
     scene: Scene;
     eventMask: number;
     name : string;
-    showBoundingBox: boolean = true; // Display collision bounding boxes for debugging
+    showBoundingBox: boolean = false; // Display collision bounding boxes for debugging
     controllerAttached: WebXRInputSource | null = null;
     private previousPosition: Vector3 = new Vector3();
     private linearVelocity: Vector3 = new Vector3();
@@ -161,22 +161,46 @@ class XRDrumstick {
     
     /**
      * Internal method to attach drumstick to a controller
+     * 
+     * TWO APPROACHES:
+     * 
+     * APPROACH 1 (CURRENT): Manual Transform Updates with setTargetTransform()
+     * -> Allows proper collision event sequence (STARTED -> CONTINUED -> ENDED)
+     * 
+     * APPROACH 2 (COMMENTED): Simple Parenting with TELEPORT
      */
-    private attachToController(controller: WebXRInputSource, stickLength: number) {
+    private attachToController(controller: WebXRInputSource, _stickLength: number) {
         if (controller.grip) {
+            // ===== APPROACH 1: ACTION PRESTEP Type=====
+            // Transform is updated manually in updateVelocity() using setTargetTransform()
+            this.drumstickAggregate.body.setMotionType(PhysicsMotionType.ANIMATED);
+            
+            this.drumstickAggregate.body.setPrestepType(PhysicsPrestepType.ACTION);
+            
+            this.drumstickAggregate.body.setCollisionCallbackEnabled(true);
+            this.drumstickAggregate.body.setEventMask(this.eventMask);
+            
+            this.controllerAttached = controller;
+
+            // This allows for better collision detection without TELEPORT artifacts
+            
+            /* ===== APPROACH 2: Simple Parenting with TELEPORT (COMMENTED) =====
             this.drumstickAggregate.body.setMotionType(PhysicsMotionType.ANIMATED);
             this.drumstickAggregate.body.setPrestepType(PhysicsPrestepType.TELEPORT);
             this.drumstickAggregate.body.setCollisionCallbackEnabled(true);
             this.drumstickAggregate.body.setEventMask(this.eventMask);
+            
             this.drumstickAggregate.transformNode.setParent(controller.grip);
             this.controllerAttached = controller;
 
-            this.drumstickAggregate.transformNode.position = new Vector3(0, 0, stickLength / 4); // Adjust position to remove offset
-            this.drumstickAggregate.transformNode.rotationQuaternion = Quaternion.RotationAxis(Axis.X, Math.PI / 2); // Align with the hand
+            // Position and rotation relative to controller grip
+            this.drumstickAggregate.transformNode.position = new Vector3(0, 0, _stickLength / 4);
+            this.drumstickAggregate.transformNode.rotationQuaternion = Quaternion.RotationAxis(Axis.X, Math.PI / 2);
             
             // Set velocity to zero to stop any movement
             this.drumstickAggregate.body.setLinearVelocity(Vector3.Zero());
             this.drumstickAggregate.body.setAngularVelocity(Vector3.Zero());
+            */
         }
     }
 
@@ -184,9 +208,10 @@ class XRDrumstick {
         if (drumstickAggregate) {
             drumstickAggregate.body.setMotionType(PhysicsMotionType.DYNAMIC);
             drumstickAggregate.body.setPrestepType(PhysicsPrestepType.DISABLED);
-            drumstickAggregate.transformNode.setParent(null);
             this.controllerAttached = null;
-            //stickAggregate.controllerPhysicsImpostor = null;
+            
+            // If using APPROACH 2, also need to unparent:
+            // drumstickAggregate.transformNode.setParent(null);
         }
     }
 
@@ -217,6 +242,36 @@ class XRDrumstick {
         const currentTime = performance.now();
         const deltaTime = (currentTime - this.lastUpdateTime) / 1000; // Convert to seconds
         this.lastUpdateTime = currentTime;
+
+        // ===== APPROACH 1 ONLY: Manual Transform Updates =====
+        // If drumstick is attached to a controller, update its transform to follow the controller
+        // NOTE: This section is NOT needed if using APPROACH 2 (parenting)
+        if (this.controllerAttached && this.controllerAttached.grip) {
+            const stickLength = 0.4; // Same as in createDrumstick
+            
+            // Get controller's world transform
+            const controllerPosition = this.controllerAttached.grip.absolutePosition.clone();
+            const controllerRotation = this.controllerAttached.grip.absoluteRotationQuaternion || Quaternion.Identity();
+            
+            // Calculate drumstick offset (same as before when parented)
+            const offset = new Vector3(0, 0, stickLength / 4);
+            const rotationOffset = Quaternion.RotationAxis(new Vector3(1, 0, 0), Math.PI / 2); // Axis.X = new Vector3(1,0,0)
+            
+            // Apply rotation offset
+            const finalRotation = controllerRotation.multiply(rotationOffset);
+            
+            // Rotate offset by controller rotation and add to position
+            const rotatedOffset = offset.rotateByQuaternionToRef(controllerRotation, new Vector3());
+            const finalPosition = controllerPosition.add(rotatedOffset);
+            
+            // Update drumstick transform using setTargetTransform for smooth physics
+            // This is the proper way for ANIMATED bodies - avoids TELEPORT issues
+            this.drumstickAggregate.transformNode.position.copyFrom(finalPosition);
+            this.drumstickAggregate.transformNode.rotationQuaternion = finalRotation;
+            
+            // Sync physics body with the visual transform
+            this.drumstickAggregate.body.setTargetTransform(finalPosition, finalRotation);
+        }
 
         // Update linear velocity
         const currentPosition = this.drumstickAggregate.transformNode.getAbsolutePosition();
