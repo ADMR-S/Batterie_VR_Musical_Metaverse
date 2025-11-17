@@ -173,6 +173,12 @@ class XRDrumKit {
         for (var i = 0; i < 2; i++) {
             this.drumsticks[i] = new XRDrumstick(xr, this, this.scene, this.eventMask, i+1, xrLogger);
         }
+        
+        // Set references so drumsticks can detect collisions with each other (only if feature enabled)
+        if (DRUMKIT_CONFIG.drumstick.enableCollisionDetection) {
+            this.drumsticks[0].setOtherDrumstick(this.drumsticks[1]);
+            this.drumsticks[1].setOtherDrumstick(this.drumsticks[0]);
+        }
     }
 
     async initializeWAMPlugin() {

@@ -3,6 +3,7 @@ import { WebXRInputSource } from "@babylonjs/core/XR/webXRInputSource";
 //import { Observable } from "@babylonjs/core/Misc/observable";
 import { Scene } from "@babylonjs/core/scene";
 import { MeshBuilder, StandardMaterial, PhysicsAggregate, PhysicsShapeType, PhysicsMotionType, PhysicsPrestepType, Color3 } from "@babylonjs/core";
+import { Sound } from "@babylonjs/core/Audio/sound";
 import { Vector3, Quaternion } from "@babylonjs/core/Maths/math";
 //import { Axis } from "@babylonjs/core/Maths/math";
 //import { PhysicsImpostor } from "@babylonjs/core/Physics/physicsImpostor";
@@ -26,6 +27,14 @@ class XRDrumstick {
     private transitionTimeout: number | null = null; // Timeout for TELEPORT -> ACTION transition
     log = false;
     xrLogger : XRLogger; //To get controller positions, consider moving this logic outside this class
+    
+    // Drumstick collision detection (using Babylon.js collision system, not Havok)
+    private collisionStick: Mesh | null = null; // Invisible sphere at tip for collision detection
+    private collisionSound: Sound | null = null;
+    private lastCollisionTime: number = 0;
+    private otherDrumstick: XRDrumstick | null = null; // Reference to the other drumstick for collision checks
+    private isCurrentlyColliding: boolean = false; // Track if currently in collision to prevent repeated triggers
+    private pickupTime: number = 0; // Track when drumstick was picked up to prevent immediate collision sound
 
     constructor(xr : WebXRDefaultExperience, xrDrumKit: XRDrumKit, scene: Scene, eventMask: number, stickNumber : Number, xrLogger : XRLogger) {
         
@@ -38,6 +47,15 @@ class XRDrumstick {
         // Only update transform when attached - no need for manual velocity calculation
         scene.onBeforeRenderObservable.add(() => this.updateTransform());
         this.xrLogger = xrLogger; // Initialize the logger
+        
+        // Only initialize collision detection if enabled in config
+        if (DRUMKIT_CONFIG.drumstick.enableCollisionDetection) {
+            // Create collision detection sphere
+            this.createcollisionStick(stickNumber);
+            
+            // Load collision sound
+            this.loadCollisionSound();
+        }
     }
 
     createDrumstick(xr: WebXRDefaultExperience, stickNumber : Number) {
@@ -188,6 +206,9 @@ class XRDrumstick {
                 this.transitionTimeout = null;
             }
             
+            // Record pickup time to prevent immediate collision detection
+            this.pickupTime = performance.now();
+            
             // ===== PHASE 1: TELEPORT (Safe Pickup) =====
             // Use TELEPORT initially to avoid collisions during pickup
             this.drumstickAggregate.body.setMotionType(PhysicsMotionType.ANIMATED);
@@ -316,6 +337,12 @@ class XRDrumstick {
                 // Log every frame to capture peak velocities during fast movements
                 console.log(`[${this.name}] Linear: ${linearSpeed.toFixed(3)} m/s | Angular: ${angularSpeed.toFixed(3)} rad/s | Combined: ${combinedSpeed.toFixed(3)}`);
             }
+            
+            // Update collision sphere position and check for collisions ONLY when held
+            if (DRUMKIT_CONFIG.drumstick.enableCollisionDetection) {
+                this.updatecollisionStick();
+                this.checkDrumstickCollision();
+            }
         }
     }
 
@@ -328,6 +355,194 @@ class XRDrumstick {
             linear: this.drumstickAggregate.body.getLinearVelocity(),
             angular: this.drumstickAggregate.body.getAngularVelocity()
         };
+    }
+
+    /**
+     * Create an invisible collision cylinder along the drumstick body
+     * Uses Babylon.js collision system (not Havok physics)
+     */
+    private createcollisionStick(stickNumber: Number): void {
+        const radius = DRUMKIT_CONFIG.drumstick.stickDiameter / 2;
+        const length = DRUMKIT_CONFIG.drumstick.stickLength;
+        
+        // Create invisible cylinder along the stick body (not the ball)
+        this.collisionStick = MeshBuilder.CreateCylinder(
+            `drumstickCollisionCylinder${stickNumber}`,
+            { 
+                height: length,
+                diameter: radius * 2 
+            },
+            this.scene
+        );
+        
+        // Make it visible for debugging/adjustment (controlled by config)
+        const showMesh = DRUMKIT_CONFIG.drumstick.showCollisionMesh;
+        this.collisionStick.isVisible = showMesh;
+        if (showMesh) {
+            const mat = new StandardMaterial(`collisionCylinderMat${stickNumber}`, this.scene);
+            mat.diffuseColor = new Color3(0, 1, 0); // Green for cylinder
+            mat.alpha = 0.4; // Semi-transparent so you can see the stick inside
+            mat.wireframe = false; // Set to true to see as wireframe
+            this.collisionStick.material = mat;
+        }
+        
+        // Position along stick body initially (centered on stick, not at tip)
+        this.collisionStick.position = new Vector3(0, 0, 0);
+        
+        // Enable collision checking for intersectsMesh() detection
+        this.collisionStick.checkCollisions = false; // Don't use physics collisions
+        
+        // Make it non-collidable with physics objects (camera, etc.)
+        this.collisionStick.isPickable = false; // Can't be picked/selected
+        
+        if (DRUMKIT_CONFIG.debug.logDrumstickCollisions) {
+            console.log(`[${this.name}] Created collision detection cylinder on stick body (length: ${length}m, radius: ${radius}m)`);
+            console.log(`[${this.name}] Collision mesh is VISIBLE (green cylinder) for adjustment`);
+        }
+    }
+
+    /**
+     * Update collision cylinder position and rotation to follow the drumstick body
+     * Called every frame in updateTransform()
+     */
+    private updatecollisionStick(): void {
+        if (!this.collisionStick) return;
+
+        const cylinderOffset = new Vector3(0, 0, 0);
+        
+        // Get drumstick's rotation
+        const drumstickRotation = this.drumstickAggregate.transformNode.rotationQuaternion || Quaternion.Identity();
+        
+        // Rotate the cylinder offset by drumstick rotation
+        const rotatedOffset = cylinderOffset.rotateByQuaternionToRef(drumstickRotation, new Vector3());
+        
+        // Calculate world position of the cylinder center
+        const cylinderPosition = this.drumstickAggregate.transformNode.position.add(rotatedOffset);
+        
+        // Update collision cylinder position and rotation
+        this.collisionStick.position.copyFrom(cylinderPosition);
+        this.collisionStick.rotationQuaternion = drumstickRotation;
+    }
+
+    /**
+     * Check for collision with the other drumstick
+     * Uses Babylon.js's intersectsMesh() method
+     * Implements TRIGGER_ENTERED logic - only fires once until sticks separate
+     */
+    private checkDrumstickCollision(): void {
+        if (!this.otherDrumstick || !this.collisionStick || !this.otherDrumstick.collisionStick) {
+            return;
+        }
+        
+        // Don't check collision during grace period after pickup
+        const now = performance.now();
+        const timeSincePickup = now - this.pickupTime;
+        const timeSinceOtherPickup = now - this.otherDrumstick.pickupTime;
+        const gracePeriod = DRUMKIT_CONFIG.drumstick.collisionGracePeriodMs;
+        
+        // If either stick was recently picked up, skip collision detection
+        if (timeSincePickup < gracePeriod || timeSinceOtherPickup < gracePeriod) {
+            return;
+        }
+        
+        // Check if our collision cylinder intersects with the other drumstick's collision cylinder
+        // Use precise=true for accurate mesh-to-mesh collision detection
+        const isIntersecting = this.collisionStick.intersectsMesh(this.otherDrumstick.collisionStick, true);
+        
+        if (isIntersecting) {
+            // COLLISION ENTER - only trigger if we weren't colliding before
+            if (!this.isCurrentlyColliding) {
+                this.isCurrentlyColliding = true;
+                
+                // Debounce to prevent sound spam (extra safety)
+                if (now - this.lastCollisionTime < DRUMKIT_CONFIG.drumstick.collisionDebounceMs) {
+                    return;
+                }
+                
+                this.lastCollisionTime = now;
+                
+                // Play collision sound
+                this.playCollisionSound();
+                
+                // Trigger haptic feedback on BOTH controllers
+                this.triggerCollisionHaptics();
+                if (this.otherDrumstick) {
+                    this.otherDrumstick.triggerCollisionHaptics();
+                }
+                
+                if (DRUMKIT_CONFIG.debug.logDrumstickCollisions) {
+                    console.log(`[${this.name}] COLLISION ENTERED with ${this.otherDrumstick.name}`);
+                }
+            }
+        } else {
+            // COLLISION EXIT - reset flag when sticks separate
+            if (this.isCurrentlyColliding) {
+                this.isCurrentlyColliding = false;
+                
+                if (DRUMKIT_CONFIG.debug.logDrumstickCollisions) {
+                    console.log(`[${this.name}] COLLISION EXITED from ${this.otherDrumstick.name}`);
+                }
+            }
+        }
+    }
+
+    /**
+     * Load the drumstick collision sound
+     */
+    private loadCollisionSound(): void {
+        const soundPath = DRUMKIT_CONFIG.drumstick.collisionSoundPath;
+        const volume = DRUMKIT_CONFIG.drumstick.collisionSoundVolume;
+        
+        this.collisionSound = new Sound(
+            `${this.name}_collision`,
+            soundPath,
+            this.scene,
+            null,
+            {
+                loop: false,
+                autoplay: false,
+                volume: volume
+            }
+        );
+        
+        if (DRUMKIT_CONFIG.debug.logDrumstickCollisions) {
+            console.log(`[${this.name}] Loaded collision sound: ${soundPath}`);
+        }
+    }
+
+    /**
+     * Play the collision sound when drumsticks collide
+     */
+    private playCollisionSound(): void {
+        if (this.collisionSound && this.collisionSound.isReady()) {
+            this.collisionSound.play();
+        }
+    }
+
+    /**
+     * Trigger haptic feedback on the controller holding this drumstick
+     */
+    private triggerCollisionHaptics(): void {
+        if (!this.controllerAttached?.motionController?.gamepadObject?.hapticActuators?.[0]) {
+            return;
+        }
+
+        // Use configured intensity and duration for stick collisions
+        const intensity = DRUMKIT_CONFIG.drumstick.collisionHapticIntensity;
+        const duration = DRUMKIT_CONFIG.drumstick.collisionHapticDuration;
+
+        this.controllerAttached.motionController.gamepadObject.hapticActuators[0].pulse(
+            intensity,
+            duration
+        );
+    }
+
+    /**
+     * Set reference to the other drumstick for collision detection
+     * Called from XRDrumKit after both drumsticks are created
+     */
+    setOtherDrumstick(otherDrumstick: XRDrumstick): void {
+        this.otherDrumstick = otherDrumstick;
     }
 }
 export default XRDrumstick;

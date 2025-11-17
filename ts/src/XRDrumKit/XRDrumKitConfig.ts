@@ -90,6 +90,18 @@ export const DRUMKIT_CONFIG = {
         
         // Physics
         mass: 1,
+        
+        // Collision detection (drumstick-to-drumstick)
+        enableCollisionDetection: true, // Master switch to enable/disable stick collision feature
+        showCollisionMesh: false, // Show collision cylinders for debugging/adjustment (set to false when satisfied)
+        collisionDebounceMs: 100, // Minimum time between stick collision sounds (ms)
+        collisionGracePeriodMs: 500, // Time after pickup before collision detection is active (prevents pickup sound)
+        collisionSoundPath: "/sounds/drum_stick.mp3",
+        collisionSoundVolume: 0.3,
+        
+        // Haptic feedback for stick collisions
+        collisionHapticIntensity: 0.6, // Vibration intensity (0.0 - 1.0)
+        collisionHapticDuration: 100, // Vibration duration (ms)
     },
     
     // Drum kit 3D model configuration
@@ -106,5 +118,6 @@ export const DRUMKIT_CONFIG = {
         logCollisions: true,
         logVelocity: true, 
         logCymbalPhysics: false, // cymbal-specific physics debugging
+        logDrumstickCollisions: false, // Log drumstick-to-drumstick collisions
     }
 };
