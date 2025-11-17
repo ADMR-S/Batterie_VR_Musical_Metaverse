@@ -18,6 +18,7 @@ class XRCymbal implements XRDrumComponent {
     xrDrumKit: XRDrumKit;
     private logger: DrumComponentLogger;
     private lastHitTime: Map<string, number> = new Map(); // Track last hit time per drumstick
+    //@ts-ignore
     private cymbalAggregate: PhysicsAggregate | null = null; // Store reference to apply impulses
 
     //@ts-ignore
@@ -80,6 +81,23 @@ class XRCymbal implements XRDrumComponent {
             // The physics shape will be created based on the CURRENT (scaled) mesh geometry
             const triggerAggregate = new PhysicsAggregate(trigger, PhysicsShapeType.MESH, { mass: DRUMKIT_CONFIG.physics.cymbal.mass }, this.xrDrumKit.scene);
             triggerAggregate.transformNode.id = this.name + "Trigger"; // Add trigger to aggregate name for cymbals
+            
+            // CRITICAL: Set custom moment of inertia to make cymbals feel heavier
+            // For a disc rotating around its center, I = 0.5 * mass * radius²
+            // We artificially increase this to make rotation harder (more realistic cymbal feel)
+            const inertiaMultiplier = DRUMKIT_CONFIG.physics.cymbal.inertia;
+            const massProps = triggerAggregate.body.getMassProperties();
+            if (massProps.inertia) {
+                const scaledInertia = massProps.inertia.scale(inertiaMultiplier);
+                triggerAggregate.body.setMassProperties({
+                    inertia: scaledInertia
+                });
+                
+                if (DRUMKIT_CONFIG.debug.logCymbalPhysics) {
+                    this.logger.logCymbalPhysics(`[${this.name}] Default inertia: ${massProps.inertia}`);
+                    this.logger.logCymbalPhysics(`[${this.name}] Scaled inertia (×${inertiaMultiplier}): ${scaledInertia}`);
+                }
+            }
             
             // CRITICAL: Restore the visual mesh to its original scale
             // This keeps the visual at full size while the physics shape remains at 0.7x
