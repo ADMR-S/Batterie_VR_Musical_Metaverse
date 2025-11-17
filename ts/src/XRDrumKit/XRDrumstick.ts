@@ -21,11 +21,6 @@ class XRDrumstick {
     name : string;
     showBoundingBox: boolean = false; // Display collision bounding boxes for debugging
     controllerAttached: WebXRInputSource | null = null;
-    private previousPosition: Vector3 = new Vector3();
-    private linearVelocity: Vector3 = new Vector3();
-    private lastUpdateTime: number = performance.now();
-    private previousRotation: Quaternion = new Quaternion();
-    private angularVelocity: Vector3 = new Vector3();
     log = true;
     xrLogger : XRLogger; //To get controller positions, consider moving this logic outside this class
 
@@ -37,7 +32,8 @@ class XRDrumstick {
         //@ts-ignore
         this.drumstickAggregate = this.createDrumstick(xr, stickNumber);
         this.xrDrumKit = xrDrumKit;
-        scene.onBeforeRenderObservable.add(() => this.updateVelocity());
+        // Only update transform when attached - no need for manual velocity calculation
+        scene.onBeforeRenderObservable.add(() => this.updateTransform());
         this.xrLogger = xrLogger; // Initialize the logger
     }
 
@@ -126,7 +122,11 @@ class XRDrumstick {
                     const controllerPos = controller.grip.position;
                     const controllerRot = controller.grip.rotationQuaternion || Quaternion.Identity();
                     this.xrLogger.updateControllerPositions(controllerPos, controllerRot, controller.inputSource.handedness);
-                    this.xrLogger.updateControllerVelocity(this.linearVelocity, this.angularVelocity, this.drumstickAggregate.transformNode.id);
+                    
+                    // Get velocities directly from physics body (automatically calculated by ACTION prestep)
+                    const linearVel = this.drumstickAggregate.body.getLinearVelocity();
+                    const angularVel = this.drumstickAggregate.body.getAngularVelocity();
+                    this.xrLogger.updateControllerVelocity(linearVel, angularVel, this.drumstickAggregate.transformNode.id);
                 }
             });
         });
@@ -239,11 +239,11 @@ class XRDrumstick {
     }
     */
 
-    private updateVelocity() {
-        const currentTime = performance.now();
-        const deltaTime = (currentTime - this.lastUpdateTime) / 1000; // Convert to seconds
-        this.lastUpdateTime = currentTime;
-
+    /**
+     * Update drumstick transform to follow controller when attached
+     * With ACTION prestep type, the physics engine automatically calculates velocities
+     */
+    private updateTransform() {
         // ===== APPROACH 1 ONLY: Manual Transform Updates =====
         // If drumstick is attached to a controller, update its transform to follow the controller
         // NOTE: This section is NOT needed if using APPROACH 2 (parenting)
@@ -267,28 +267,24 @@ class XRDrumstick {
             
             // Update drumstick transform using setTargetTransform for smooth physics
             // This is the proper way for ANIMATED bodies - avoids TELEPORT issues
+            // The physics engine will automatically calculate velocities from the transform change
             this.drumstickAggregate.transformNode.position.copyFrom(finalPosition);
             this.drumstickAggregate.transformNode.rotationQuaternion = finalRotation;
             
             // Sync physics body with the visual transform
             this.drumstickAggregate.body.setTargetTransform(finalPosition, finalRotation);
         }
-
-        // Update linear velocity
-        const currentPosition = this.drumstickAggregate.transformNode.getAbsolutePosition();
-        this.linearVelocity = currentPosition.subtract(this.previousPosition).scale(1 / deltaTime);
-        this.previousPosition.copyFrom(currentPosition);
-
-        // Update angular velocity and position
-        const currentRotation = this.drumstickAggregate.transformNode.rotationQuaternion || Quaternion.Identity();
-        const deltaRotation = currentRotation.multiply(Quaternion.Inverse(this.previousRotation));
-        deltaRotation.toEulerAnglesToRef(this.angularVelocity);
-        this.angularVelocity.scaleInPlace(1 / deltaTime);
-        this.previousRotation.copyFrom(currentRotation);
     }
 
+    /**
+     * Get drumstick velocities directly from physics body
+     * With ACTION prestep type and setTargetTransform(), the engine calculates these automatically
+     */
     getVelocity(): { linear: Vector3; angular: Vector3 } {
-        return { linear: this.linearVelocity, angular: this.angularVelocity };
+        return {
+            linear: this.drumstickAggregate.body.getLinearVelocity(),
+            angular: this.drumstickAggregate.body.getAngularVelocity()
+        };
     }
 }
 export default XRDrumstick;

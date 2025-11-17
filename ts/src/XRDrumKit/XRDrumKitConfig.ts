@@ -92,6 +92,6 @@ export const DRUMKIT_CONFIG = {
         enablePhysicsViewer: true,
         logCollisions: true,
         logVelocity: true, 
-        logCymbalPhysics: true, // cymbal-specific physics debugging
+        logCymbalPhysics: false, // cymbal-specific physics debugging
     }
 };
