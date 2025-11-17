@@ -119,6 +119,8 @@ export class XRSceneWithHavok implements CreateSceneClass {
         
     // @ts-ignore
     const drum = new XRDrumKit(audioContext, scene, eventMask, xr, hk, assetsManager);
+
+    drum.move(new Vector3(0, 0, 4)); // Position initiale du drumkit
     
     // Add 6DOF behavior to the drumkit (externalized from XRDrumKit class)
     add6DofBehaviorToDrumKit(drum);

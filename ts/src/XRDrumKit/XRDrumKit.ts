@@ -69,7 +69,6 @@ class XRDrumKit {
         this.drumContainer = new TransformNode("drumContainer", this.scene);
         this.initializeWAMPlugin().then((wamInstance) => {
             this.wamInstance = wamInstance;
-            this.move(new Vector3(0, 0, 4)); // NEW POSITION
         });
 
         const meshTask = assetsManager.addMeshTask("drum3DModel", "", this.path, DRUMKIT_CONFIG.model.fileName);
