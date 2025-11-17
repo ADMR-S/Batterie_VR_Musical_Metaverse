@@ -79,6 +79,11 @@ export const DRUMKIT_CONFIG = {
         angularWeight: 0.25, // Weight of angular velocity in combined speed calculation
     },
     
+    // Drumstick pickup configuration
+    drumstick: {
+        pickupTransitionMs: 200, // Time (ms) to wait before switching from TELEPORT to ACTION prestep
+    },
+    
     // Drum kit 3D model configuration
     model: {
         path: "/drum_3D_model/",

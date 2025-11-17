@@ -11,6 +11,7 @@ import XRLogger from "../XRLogger";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { WebXRDefaultExperience } from "@babylonjs/core/XR/webXRDefaultExperience";
 import { COLLISION_GROUP } from "./CollisionGroups";
+import { DRUMKIT_CONFIG } from "./XRDrumKitConfig";
 
 class XRDrumstick {
 
@@ -21,6 +22,7 @@ class XRDrumstick {
     name : string;
     showBoundingBox: boolean = false; // Display collision bounding boxes for debugging
     controllerAttached: WebXRInputSource | null = null;
+    private transitionTimeout: number | null = null; // Timeout for TELEPORT -> ACTION transition
     log = true;
     xrLogger : XRLogger; //To get controller positions, consider moving this logic outside this class
 
@@ -163,50 +165,68 @@ class XRDrumstick {
     /**
      * Internal method to attach drumstick to a controller
      * 
-     * TWO APPROACHES:
+     * PICKUP TRANSITION STRATEGY:
+     * 1. Initially use TELEPORT prestep to avoid hitting other objects during pickup
+     * 2. After a short delay (200ms), switch to ACTION prestep for proper collision physics
      * 
-     * APPROACH 1 (CURRENT): Manual Transform Updates with setTargetTransform()
-     * -> Allows proper collision event sequence (STARTED -> CONTINUED -> ENDED)
-     * 
-     * APPROACH 2 (COMMENTED): Simple Parenting with TELEPORT
+     * This prevents the drumstick from sending other objects flying when being picked up
      */
     private attachToController(controller: WebXRInputSource, _stickLength: number) {
         if (controller.grip) {
-            // ===== APPROACH 1: ACTION PRESTEP Type=====
-            // Transform is updated manually in updateVelocity() using setTargetTransform()
-            this.drumstickAggregate.body.setMotionType(PhysicsMotionType.ANIMATED);
+            // Clear any existing transition timeout
+            if (this.transitionTimeout !== null) {
+                clearTimeout(this.transitionTimeout);
+                this.transitionTimeout = null;
+            }
             
-            this.drumstickAggregate.body.setPrestepType(PhysicsPrestepType.ACTION);
-            
-            this.drumstickAggregate.body.setCollisionCallbackEnabled(true);
-            this.drumstickAggregate.body.setEventMask(this.eventMask);
-            
-            this.controllerAttached = controller;
-
-            // This allows for better collision detection without TELEPORT artifacts
-            
-            /* ===== APPROACH 2: Simple Parenting with TELEPORT (COMMENTED) =====
+            // ===== PHASE 1: TELEPORT (Safe Pickup) =====
+            // Use TELEPORT initially to avoid collisions during pickup
             this.drumstickAggregate.body.setMotionType(PhysicsMotionType.ANIMATED);
             this.drumstickAggregate.body.setPrestepType(PhysicsPrestepType.TELEPORT);
             this.drumstickAggregate.body.setCollisionCallbackEnabled(true);
             this.drumstickAggregate.body.setEventMask(this.eventMask);
             
-            this.drumstickAggregate.transformNode.setParent(controller.grip);
-            this.controllerAttached = controller;
-
-            // Position and rotation relative to controller grip
-            this.drumstickAggregate.transformNode.position = new Vector3(0, 0, _stickLength / 4);
-            this.drumstickAggregate.transformNode.rotationQuaternion = Quaternion.RotationAxis(Axis.X, Math.PI / 2);
-            
-            // Set velocity to zero to stop any movement
+            // Zero out velocity to prevent sudden movements
             this.drumstickAggregate.body.setLinearVelocity(Vector3.Zero());
             this.drumstickAggregate.body.setAngularVelocity(Vector3.Zero());
+            
+            this.controllerAttached = controller;
+            
+            if (this.log) {
+                console.log(`[${this.name}] Attached with TELEPORT prestep (transition in ${DRUMKIT_CONFIG.drumstick.pickupTransitionMs}ms)`);
+            }
+            
+            // ===== PHASE 2: Transition to ACTION (After Delay) =====
+            // After a short delay, switch to ACTION for proper physics-based collisions
+            this.transitionTimeout = window.setTimeout(() => {
+                if (this.controllerAttached && this.drumstickAggregate) {
+                    this.drumstickAggregate.body.setPrestepType(PhysicsPrestepType.ACTION);
+                    
+                    if (this.log) {
+                        console.log(`[${this.name}] Transitioned to ACTION prestep - collisions now active`);
+                    }
+                }
+                this.transitionTimeout = null;
+            }, DRUMKIT_CONFIG.drumstick.pickupTransitionMs);
+            
+            /* ===== OLD APPROACH: Immediate ACTION (causes flying objects) =====
+            this.drumstickAggregate.body.setMotionType(PhysicsMotionType.ANIMATED);
+            this.drumstickAggregate.body.setPrestepType(PhysicsPrestepType.ACTION);
+            this.drumstickAggregate.body.setCollisionCallbackEnabled(true);
+            this.drumstickAggregate.body.setEventMask(this.eventMask);
+            this.controllerAttached = controller;
             */
         }
     }
 
     releaseStick(drumstickAggregate: PhysicsAggregate) {
         if (drumstickAggregate) {
+            // Clear transition timeout if stick is released during pickup
+            if (this.transitionTimeout !== null) {
+                clearTimeout(this.transitionTimeout);
+                this.transitionTimeout = null;
+            }
+            
             drumstickAggregate.body.setMotionType(PhysicsMotionType.DYNAMIC);
             drumstickAggregate.body.setPrestepType(PhysicsPrestepType.DISABLED);
             this.controllerAttached = null;
