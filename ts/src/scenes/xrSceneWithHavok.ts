@@ -20,6 +20,13 @@ import { Mesh, MeshBuilder, PhysicsAggregate, PhysicsShapeType, WebXRNearInterac
 import { AbstractEngine } from "@babylonjs/core/Engines/abstractEngine";
 import HavokPhysics from "@babylonjs/havok";
 
+// GUI imports
+import { AdvancedDynamicTexture } from "@babylonjs/gui/2D/advancedDynamicTexture";
+import { Button } from "@babylonjs/gui/2D/controls/button";
+import { TextBlock } from "@babylonjs/gui/2D/controls/textBlock";
+import { StackPanel } from "@babylonjs/gui/2D/controls/stackPanel";
+import { Control } from "@babylonjs/gui/2D/controls/control";
+
 import XRDrumKit from "../XRDrumKit/XRDrumKit.ts";
 
 import { AssetsManager } from "@babylonjs/core";
@@ -133,6 +140,9 @@ export class XRSceneWithHavok implements CreateSceneClass {
     //@ts-ignore
     const xrHandler = new XRHandler(scene, xr);
     
+    // Initialize song control GUI
+    initializeSongControlGUI(scene);
+    
     // Add collision detection for the ground to prevent objects from falling through
     groundAggregate.body.getCollisionObservable().add((collisionEvent: any) => {
       if (collisionEvent.type === "COLLISION_STARTED") {
@@ -171,6 +181,340 @@ export class XRSceneWithHavok implements CreateSceneClass {
 
 export default new XRSceneWithHavok();
 
+// Song management
+interface Song {
+    title: string;
+    artist: string;
+    audioUrl: string;
+    bpm?: number;
+}
+
+const songs: Song[] = [
+    { 
+        title: "Basket Case", 
+        artist: "Green Day", 
+        audioUrl: "https://wasabi.i3s.unice.fr/WebAudioPluginBank/BasketCaseGreendayriffDI.mp3",
+        bpm: 168,
+    },
+    { 
+        title: "Europa", 
+        artist: "Santana", 
+        audioUrl: "sounds/europa.mp3",
+        bpm: 92
+    },
+    { 
+        title: "Take Five", 
+        artist: "Dave Brubeck", 
+        audioUrl: "sounds/take_five.mp3",
+        bpm: 170
+    },
+];
+
+let currentSongIndex = 0;
+let isPlaying = false;
+let audioElement: HTMLAudioElement | null = null;
+
+// Initialize audio element
+function initializeAudio() {
+    if (!audioElement) {
+        audioElement = new Audio();
+        audioElement.loop = true;
+        audioElement.crossOrigin = "anonymous";
+        audioElement.volume = 0.2;
+        
+        // Log when audio is ready
+        audioElement.addEventListener('canplaythrough', () => {
+            console.log(`[Song Control] Audio ready: ${songs[currentSongIndex].title}`);
+        });
+        
+        // Log any errors
+        audioElement.addEventListener('error', (e) => {
+            console.error('[Song Control] Audio error:', e);
+        });
+    }
+    return audioElement;
+}
+
+// Load and prepare a song
+function loadSong(songIndex: number): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const audio = initializeAudio();
+        const song = songs[songIndex];
+        
+        // Set up event listeners before loading
+        const onCanPlay = () => {
+            console.log(`[Song Control] Ready: ${song.title} by ${song.artist}`);
+            audio.removeEventListener('canplaythrough', onCanPlay);
+            audio.removeEventListener('error', onError);
+            resolve();
+        };
+        
+        const onError = (e: Event) => {
+            console.error(`[Song Control] Load error for ${song.title}:`, e);
+            audio.removeEventListener('canplaythrough', onCanPlay);
+            audio.removeEventListener('error', onError);
+            reject(e);
+        };
+        
+        audio.addEventListener('canplaythrough', onCanPlay, { once: true });
+        audio.addEventListener('error', onError, { once: true });
+        
+        audio.src = song.audioUrl;
+        audio.load();
+        console.log(`[Song Control] Loading: ${song.title} by ${song.artist}`);
+    });
+}
+
+// Initialize the 3D GUI for song controls
+function initializeSongControlGUI(scene: Scene) {
+    // Initialize audio on first load (async, no need to await here)
+    loadSong(currentSongIndex).catch(err => {
+        console.error('[Song Control] Initial load error:', err);
+    });
+    
+    // Create a plane for the GUI
+    const guiPlane = MeshBuilder.CreatePlane("songControlGUI", { 
+        width: 3, 
+        height: 2 
+    }, scene);
+    
+    // Position the GUI to the left of the user
+    guiPlane.position = new Vector3(-3, 2.5, 0);
+    // Rotate to face the user (90 degrees to the right)
+    guiPlane.rotation.y = Math.PI / 2;
+    
+    // Create the advanced texture for 3D GUI
+    const advancedTexture = AdvancedDynamicTexture.CreateForMesh(
+        guiPlane, 
+        1024, 
+        1024
+    );
+    
+    // Create a main container panel
+    const mainPanel = new StackPanel();
+    mainPanel.width = "100%";
+    mainPanel.height = "100%";
+    mainPanel.background = "rgba(0, 0, 0, 0.7)";
+    mainPanel.paddingTop = "40px";
+    mainPanel.paddingBottom = "40px";
+    advancedTexture.addControl(mainPanel);
+    
+    // Title
+    const titleText = new TextBlock("title", "Song Selection");
+    titleText.height = "80px";
+    titleText.fontSize = 48;
+    titleText.color = "white";
+    titleText.fontWeight = "bold";
+    titleText.paddingBottom = "20px";
+    mainPanel.addControl(titleText);
+    
+    // Current song display
+    const songInfoText = new TextBlock("songInfo");
+    songInfoText.height = "180px";
+    songInfoText.fontSize = 36;
+    songInfoText.color = "#00ff00";
+    songInfoText.textWrapping = true;
+    songInfoText.paddingBottom = "30px";
+    updateSongDisplay(songInfoText);
+    mainPanel.addControl(songInfoText);
+    
+    // Playback status
+    const statusText = new TextBlock("status");
+    statusText.height = "60px";
+    statusText.fontSize = 28;
+    statusText.color = "#ffaa00";
+    statusText.text = "● Stopped";
+    statusText.paddingBottom = "30px";
+    mainPanel.addControl(statusText);
+    
+    // Button container with horizontal layout
+    const buttonPanel = new StackPanel();
+    buttonPanel.isVertical = false;
+    buttonPanel.height = "120px";
+    buttonPanel.width = "90%";
+    buttonPanel.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_CENTER;
+    buttonPanel.paddingBottom = "20px";
+    mainPanel.addControl(buttonPanel);
+    
+    // Previous button
+    const prevButton = Button.CreateSimpleButton("prevBtn", "◄ Previous");
+    prevButton.width = "280px";
+    prevButton.height = "100px";
+    prevButton.color = "white";
+    prevButton.background = "#2060d0";
+    prevButton.fontSize = 28;
+    prevButton.cornerRadius = 10;
+    prevButton.thickness = 2;
+    prevButton.paddingRight = "10px";
+    prevButton.onPointerClickObservable.add(() => {
+        currentSongIndex = (currentSongIndex - 1 + songs.length) % songs.length;
+        updateSongDisplay(songInfoText);
+        console.log(`[Song Control] Previous - Now playing: ${songs[currentSongIndex].title}`);
+    });
+    buttonPanel.addControl(prevButton);
+    
+    // Play/Stop button
+    const playButton = Button.CreateSimpleButton("playBtn", "▶ Play");
+    playButton.width = "280px";
+    playButton.height = "100px";
+    playButton.color = "white";
+    playButton.background = "#20d060";
+    playButton.fontSize = 32;
+    playButton.fontWeight = "bold";
+    playButton.cornerRadius = 10;
+    playButton.thickness = 2;
+    playButton.paddingLeft = "10px";
+    playButton.paddingRight = "10px";
+    playButton.onPointerClickObservable.add(() => {
+        isPlaying = !isPlaying;
+        const audio = initializeAudio();
+        
+        if (isPlaying) {
+            playButton.textBlock!.text = "■ Stop";
+            playButton.background = "#d02020";
+            statusText.text = "● Playing";
+            statusText.color = "#00ff00";
+            console.log(`[Song Control] Started playing: ${songs[currentSongIndex].title}`);
+            
+            // Start audio playback
+            audio.play().catch(err => {
+                console.error('[Song Control] Play error:', err);
+                // Revert UI if play fails
+                isPlaying = false;
+                playButton.textBlock!.text = "▶ Play";
+                playButton.background = "#20d060";
+                statusText.text = "● Stopped";
+                statusText.color = "#ffaa00";
+            });
+        } else {
+            playButton.textBlock!.text = "▶ Play";
+            playButton.background = "#20d060";
+            statusText.text = "● Stopped";
+            statusText.color = "#ffaa00";
+            console.log(`[Song Control] Stopped playback`);
+            
+            // Stop audio playback
+            audio.pause();
+            audio.currentTime = 0;
+        }
+    });
+    buttonPanel.addControl(playButton);
+    
+    // Next button
+    const nextButton = Button.CreateSimpleButton("nextBtn", "Next ►");
+    nextButton.width = "280px";
+    nextButton.height = "100px";
+    nextButton.color = "white";
+    nextButton.background = "#2060d0";
+    nextButton.fontSize = 28;
+    nextButton.cornerRadius = 10;
+    nextButton.thickness = 2;
+    nextButton.paddingLeft = "10px";
+    nextButton.onPointerClickObservable.add(() => {
+        currentSongIndex = (currentSongIndex + 1) % songs.length;
+        updateSongDisplay(songInfoText);
+        console.log(`[Song Control] Next - Now playing: ${songs[currentSongIndex].title}`);
+    });
+    buttonPanel.addControl(nextButton);
+    
+    // Add hover effects to all buttons
+    [prevButton, playButton, nextButton].forEach(button => {
+        button.onPointerEnterObservable.add(() => {
+            button.alpha = 0.8;
+        });
+        button.onPointerOutObservable.add(() => {
+            button.alpha = 1.0;
+        });
+    });
+    
+    // BPM display
+    const bpmText = new TextBlock("bpm");
+    bpmText.height = "60px";
+    bpmText.fontSize = 24;
+    bpmText.color = "#aaaaaa";
+    bpmText.text = `BPM: ${songs[currentSongIndex].bpm || 'N/A'}`;
+    mainPanel.addControl(bpmText);
+    
+    // Helper function to update both song info and BPM
+    const updateAllSongInfo = (textBlock: TextBlock) => {
+        updateSongDisplay(textBlock);
+        bpmText.text = `BPM: ${songs[currentSongIndex].bpm || 'N/A'}`;
+    };
+    
+    // Override the button callbacks to use the combined updater
+    prevButton.onPointerClickObservable.clear();
+    prevButton.onPointerClickObservable.add(async () => {
+        const wasPlaying = isPlaying;
+        currentSongIndex = (currentSongIndex - 1 + songs.length) % songs.length;
+        updateAllSongInfo(songInfoText);
+        
+        // Show loading state
+        statusText.text = "⟳ Loading...";
+        statusText.color = "#ffaa00";
+        
+        // Load new song and wait for it to be ready
+        try {
+            await loadSong(currentSongIndex);
+            
+            // If was playing, restart with new song
+            if (wasPlaying && audioElement) {
+                await audioElement.play();
+                statusText.text = "● Playing";
+                statusText.color = "#00ff00";
+            } else {
+                statusText.text = "● Stopped";
+                statusText.color = "#ffaa00";
+            }
+        } catch (err) {
+            console.error('[Song Control] Load/play error:', err);
+            statusText.text = "✗ Error";
+            statusText.color = "#ff0000";
+        }
+        
+        console.log(`[Song Control] Previous - Now on: ${songs[currentSongIndex].title}`);
+    });
+    
+    nextButton.onPointerClickObservable.clear();
+    nextButton.onPointerClickObservable.add(async () => {
+        const wasPlaying = isPlaying;
+        currentSongIndex = (currentSongIndex + 1) % songs.length;
+        updateAllSongInfo(songInfoText);
+        
+        // Show loading state
+        statusText.text = "⟳ Loading...";
+        statusText.color = "#ffaa00";
+        
+        // Load new song and wait for it to be ready
+        try {
+            await loadSong(currentSongIndex);
+            await loadSong(currentSongIndex);
+            
+            // If was playing, restart with new song
+            if (wasPlaying && audioElement) {
+                await audioElement.play();
+                statusText.text = "● Playing";
+                statusText.color = "#00ff00";
+            } else {
+                statusText.text = "● Stopped";
+                statusText.color = "#ffaa00";
+            }
+        } catch (err) {
+            console.error('[Song Control] Load/play error:', err);
+            statusText.text = "✗ Error";
+            statusText.color = "#ff0000";
+        }
+        
+        console.log(`[Song Control] Next - Now on: ${songs[currentSongIndex].title}`);
+    });
+    
+    console.log("[Song Control] GUI initialized successfully");
+}
+
+// Update the song information display
+function updateSongDisplay(textBlock: TextBlock) {
+    const song = songs[currentSongIndex];
+    textBlock.text = `${song.title}\n${song.artist}\n(${currentSongIndex + 1}/${songs.length})`;
+}
 
 // Add 6DOF behavior to the drum kit (moved from XRDrumKit class)
 function add6DofBehaviorToDrumKit(drum: XRDrumKit) {

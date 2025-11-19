@@ -1,3 +1,18 @@
+Batterie spawn inclinée de 90°, mettre droite
+
+Ajouter preview dans le shop
+
+Listeners mal attachés sur controllers, besoin de sortir et rerentrer via home pressé 2x pour attacher les listeners
+    -> Changer les listeners ajoutés sur onControllerAdded par un appel au XRManager ou classe appropriée ?
+
+Améliorer rec pianoroll
+    -> Barre de tempo pas synchro avec le rec
+    -> Besoin de retirer ou ajouter une note avant que le pattern ne soit vraiment lu par le piano roll quand on stoppe 
+    l'enregistrement (pas de playback tant qu'on a pas fini alors qu'il n'y a que 4 mesures) 
+
+S'assoir ne rotate pas correctement, normalement on finit face à la batterie dans le standalone
+-> OK
+
 Clean code
 
 Collisions avec cymbales un peu aggressives
