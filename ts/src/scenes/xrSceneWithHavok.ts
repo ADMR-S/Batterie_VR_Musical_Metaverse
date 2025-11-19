@@ -279,7 +279,7 @@ function initializeSongControlGUI(scene: Scene) {
     }, scene);
     
     // Position the GUI to the left of the user
-    guiPlane.position = new Vector3(-3, 2.5, 0);
+    guiPlane.position = new Vector3(3, 2.5, 0);
     // Rotate to face the user (90 degrees to the right)
     guiPlane.rotation.y = Math.PI / 2;
     
